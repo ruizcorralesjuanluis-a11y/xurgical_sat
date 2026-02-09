@@ -1462,8 +1462,8 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
     instrumentos = [dict(r) for r in cur.fetchall()]
 
     if _user_role(user) == "tecnico":
-        # DEF_TECNICO_FILTER: Los instrumentos ya reparados desaparecen de la mochila del técnico
-        instrumentos = [i for i in instrumentos if (i.get("estado") or "Pendiente") != "Reparado"]
+        # Ya no ocultamos los reparados para que puedan ver el icono del PDF/Informe
+        pass
 
     # CLEAN_TRZ_APPLIED: limpia nombre_trazabilidad para mostrar/copiar sin simbolos
     for r in instrumentos:
