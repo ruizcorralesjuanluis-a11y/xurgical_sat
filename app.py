@@ -1394,6 +1394,22 @@ def nuevo_envio_crear(
     return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
 
 
+@app.get("/ot/{ot_num}")
+def ver_ot_directa(ot_num: str, user=Depends(get_current_user)):
+    """Busca una OT por su numero y redirige al detalle."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM envios WHERE ot_num=?", (ot_num,))
+    e = cur.fetchone()
+    conn.close()
+    if not e:
+        return HTMLResponse("OT no encontrada", status_code=404)
+    
+    # Si es técnico, le llevamos a la vista móvil directamente? O lo hacemos por rol en /envios/{id}?
+    # Mejor centralizar en /envios/{id} o crear una ruta específica.
+    return RedirectResponse(url=f"/envios/{e['id']}", status_code=303)
+
+
 @app.get("/envios/{envio_id}", response_class=HTMLResponse)
 def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
     conn = get_conn()
@@ -1441,10 +1457,74 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
 
     conn.close()
 
+    # Si es técnico, le mostramos la vista simplificada/móvil
+    if _user_role(user) == "tecnico":
+        return templates.TemplateResponse(
+            "tecnico_parte.html",
+            {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos},
+        )
+
     return templates.TemplateResponse(
         "envio_detalle.html",
         {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos},
     )
+
+
+# -----------------------------
+# API CHECKLIST (para modo técnico móvil)
+# -----------------------------
+@app.get("/api/instrumentos/{instrumento_id}/checklist")
+def api_get_checklist(instrumento_id: int, user=Depends(get_current_user)):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # Obtener tipo de OT
+    cur.execute("""
+        SELECT e.tipo_trabajo 
+        FROM instrumentos i 
+        JOIN envios e ON e.id = i.envio_id 
+        WHERE i.id=?
+    """, (instrumento_id,))
+    row = cur.fetchone()
+    tipo_ot = (row["tipo_trabajo"] if row else "REPARACION") or "REPARACION"
+    
+    cur.execute("""
+        SELECT ci.id AS item_id, ci.nombre, 
+               COALESCE(ic.hecho,0) AS hecho
+        FROM checklist_items ci
+        LEFT JOIN instrumento_checklist ic ON ic.item_id = ci.id AND ic.instrumento_id = ?
+        WHERE ci.activo = 1 AND ci.tipo_trabajo = ?
+        ORDER BY ci.orden
+    """, (instrumento_id, tipo_ot))
+    
+    checklist = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return {"checklist": checklist}
+
+@app.post("/api/instrumentos/{instrumento_id}/checklist")
+async def api_save_checklist(instrumento_id: int, request: Request, user=Depends(require_roles("admin", "tecnico"))):
+    data = await request.json()
+    items_hechos = data.get("items", []) # lista de IDs de items marcados
+    
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    username = user.get("username")
+    
+    # 1. Desmarcar todos para este instrumento (o marcar como 0)
+    cur.execute("DELETE FROM instrumento_checklist WHERE instrumento_id=?", (instrumento_id,))
+    
+    # 2. Insertar los marcados
+    for item_id in items_hechos:
+        cur.execute("""
+            INSERT INTO instrumento_checklist (instrumento_id, item_id, hecho, hecho_por, hecho_en)
+            VALUES (?, ?, 1, ?, ?)
+        """, (instrumento_id, item_id, username, now))
+    
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 # -----------------------------

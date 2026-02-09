@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xurgical SAT - Modo Técnico</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --success-color: #198754;
+            --bg-light: #f8fafc;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 80px;
+        }
+
+        .header-ot {
+            background: white;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .inst-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .inst-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f1f5f9;
+        }
+
+        .inst-info {
+            padding: 1rem;
+        }
+
+        .inst-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .inst-desc {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-status {
+            width: 100%;
+            padding: 0.75rem;
+            font-weight: 600;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+        }
+
+        /* Checklist Modal */
+        .checklist-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .form-check-input {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-ot d-flex justify-content-between align-items-center shadow-sm">
+        <div>
+            <div class="small text-secondary">Parte de Trabajo</div>
+            <div class="fw-bold h5 mb-0">OT: {{ envio.ot_num }}</div>
+        </div>
+        <a href="/" class="btn btn-outline-dark btn-sm">
+            <i class="fa-solid fa-house"></i>
+        </a>
+    </div>
+
+    <div class="container">
+        {% for inst in instrumentos %}
+        <div class="inst-card" id="inst-{{ inst.id }}">
+            {% if inst.foto_entrada_1 %}
+            <img src="{{ inst.foto_entrada_1 }}" class="inst-img" alt="Foto Instrumento">
+            {% else %}
+            <div class="inst-img d-flex align-items-center justify-content-center text-secondary">
+                <i class="fa-solid fa-image fa-3x"></i>
+            </div>
+            {% endif %}
+
+            <div class="inst-info">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div class="inst-title">{{ inst.denominacion or "Sin denominación" }}</div>
+                        <div class="inst-desc">{{ inst.fabricante or "" }} - {{ inst.codigo_producto or "" }}</div>
+                    </div>
+                    {% if inst.estado == 'Reparado' %}
+                    <span class="badge bg-success badge-status">REPARADO</span>
+                    {% elif inst.estado == 'Baja' %}
+                    <span class="badge bg-danger badge-status">BAJA</span>
+                    {% elif inst.estado == 'En proceso' %}
+                    <span class="badge bg-warning text-dark badge-status">EN PROCESO</span>
+                    {% else %}
+                    <span class="badge bg-secondary badge-status">PENDIENTE</span>
+                    {% endif %}
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button class="btn btn-outline-primary btn-status"
+                            onclick="openStateModal({{ inst.id }}, '{{ inst.estado }}')">
+                            <i class="fa-solid fa-arrows-rotate"></i> Estado
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <a href="/instrumentos/{{ inst.id }}" class="btn btn-outline-dark btn-status">
+                            <i class="fa-solid fa-eye"></i> Ver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Modal Cambiar Estado -->
+    <div class="modal fade" id="stateModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Actualizar Instrumento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group">
+                        <button class="list-group-item list-group-item-action py-3" onclick="selectState('Pendiente')">
+                            <i class="fa-solid fa-clock text-secondary me-2"></i> Pendiente
+                        </button>
+                        <button class="list-group-item list-group-item-action py-3" onclick="selectState('En proceso')">
+                            <i class="fa-solid fa-wrench text-warning me-2"></i> En proceso
+                        </button>
+                        <button class="list-group-item list-group-item-action py-3" onclick="selectState('Reparado')">
+                            <i class="fa-solid fa-check-circle text-success me-2"></i> Reparado
+                        </button>
+                        <button class="list-group-item list-group-item-action py-3" onclick="selectState('Baja')">
+                            <i class="fa-solid fa-times-circle text-danger me-2"></i> Baja
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Checklist -->
+    <div class="modal fade" id="checklistModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-clipboard-check"></i> Checklist de Reparación</h5>
+                </div>
+                <div class="modal-body p-0" id="checklistContent">
+                    <!-- Se carga vía JS -->
+                    <div class="p-4 text-center">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                </div>
+                <div class="modal-footer d-grid">
+                    <button type="button" class="btn btn-success p-3 fw-bold" onclick="saveChecklist()">
+                        GUARDAR Y FINALIZAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentInstId = null;
+        let targetState = null;
+        const stateModal = new bootstrap.Modal(document.getElementById('stateModal'));
+        const checklistModal = new bootstrap.Modal(document.getElementById('checklistModal'));
+
+        function openStateModal(id, currentState) {
+            currentInstId = id;
+            stateModal.show();
+        }
+
+        function selectState(state) {
+            targetState = state;
+            stateModal.hide();
+
+            if (state === 'Reparado') {
+                loadChecklist(currentInstId);
+            } else {
+                updateStatus(currentInstId, state);
+            }
+        }
+
+        async function loadChecklist(id) {
+            checklistModal.show();
+            const content = document.getElementById('checklistContent');
+            content.innerHTML = '<div class="p-4 text-center"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const resp = await fetch(`/api/instrumentos/${id}/checklist`);
+                const data = await resp.json();
+
+                if (data.checklist && data.checklist.length > 0) {
+                    let html = '<div class="list-group list-group-flush">';
+                    data.checklist.forEach(item => {
+                        html += `
+                        <label class="checklist-item">
+                            <input type="checkbox" class="form-check-input flex-shrink-0" value="${item.item_id}" ${item.hecho ? 'checked' : ''}>
+                            <span class="fs-5">${item.nombre}</span>
+                        </label>
+                    `;
+                    });
+                    html += '</div>';
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = '<div class="p-4 text-center text-muted">No hay puntos de control configurados para este tipo de parte.</div>';
+                }
+            } catch (e) {
+                content.innerHTML = '<div class="alert alert-danger m-3">Error al cargar checklist</div>';
+            }
+        }
+
+        async function saveChecklist() {
+            const checkboxes = document.querySelectorAll('#checklistContent input[type="checkbox"]');
+            const items = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) items.push(parseInt(cb.value));
+            });
+
+            // Primero actualizamos el estado a Reparado
+            await updateStatus(currentInstId, 'Reparado', true);
+
+            // Luego guardamos el checklist
+            try {
+                const resp = await fetch(`/api/instrumentos/${currentInstId}/checklist`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: items })
+                });
+
+                if (resp.ok) {
+                    checklistModal.hide();
+                    window.location.reload();
+                }
+            } catch (e) {
+                alert('Error al guardar checklist');
+            }
+        }
+
+        async function updateStatus(id, state, silent = false) {
+            const formData = new FormData();
+            formData.append('estado', state);
+
+            try {
+                const resp = await fetch(`/instrumentos/${id}/estado`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (resp.ok && !silent) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                if (!silent) alert('Error al actualizar estado');
+            }
+        }
+    </script>
+</body>
+
+</html>
