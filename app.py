@@ -1548,7 +1548,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     # Texto (compacto para 70x40)
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(x0, y_top - 5 * mm, f"PARTE: {ot_num}")
+    c.drawString(x0, y_top - 6 * mm, f"OT: {ot_num}")
 
     c.setFont("Helvetica", 10)
     # Recorta cliente para que no rompa el ancho
