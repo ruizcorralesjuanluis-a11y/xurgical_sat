@@ -132,17 +132,23 @@ def _list_clientes(cur) -> list[dict]:
     Nota: en instalaciones existentes puede faltar la tabla por no haberse ejecutado
     aún init_db() sobre una BD antigua. Recuperamos automáticamente.
     """
+    # Detectar si estamos en Postgres o SQLite para capturar errores de tabla inexistente
+    import sqlite3
     try:
-        cur.execute(
-            "SELECT id, nombre, prefijo, prefijo_nombre, ultimo_numero FROM clientes ORDER BY nombre COLLATE NOCASE"
-        )
+        import psycopg2
+        PG_ERR = psycopg2.Error
+    except ImportError:
+        PG_ERR = Exception
+
+    sql = "SELECT id, nombre, prefijo, prefijo_nombre, ultimo_numero FROM clientes ORDER BY LOWER(nombre) ASC"
+    try:
+        cur.execute(sql)
         return [dict(r) for r in cur.fetchall()]
-    except sqlite3.OperationalError as e:
-        if "no such table: clientes" in str(e).lower():
+    except (sqlite3.OperationalError, PG_ERR) as e:
+        err_msg = str(e).lower()
+        if "no such table" in err_msg or "does not exist" in err_msg:
             init_db()
-            cur.execute(
-                "SELECT id, nombre, prefijo, prefijo_nombre, ultimo_numero FROM clientes ORDER BY nombre COLLATE NOCASE"
-            )
+            cur.execute(sql)
             return [dict(r) for r in cur.fetchall()]
         raise
 
