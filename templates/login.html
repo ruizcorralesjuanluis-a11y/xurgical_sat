@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Login - Xurgical SAT</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: url("/static/bg.png") no-repeat center center fixed;
+      background-size: cover;
+    }
+    .glass{
+      width: 420px;
+      background: rgba(255,255,255,0.9);
+      backdrop-filter: blur(6px);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      padding: 24px;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ height:46px; }
+  </style>
+</head>
+<body>
+  <div class="glass">
+    <div class="brand mb-3">
+      <img src="/static/logo-xurgical.png" alt="Xurgical"/>
+      <div>
+        <div class="fw-bold">Xurgical SAT</div>
+        <div class="text-muted" style="font-size:12px;">Acceso</div>
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="alert alert-danger py-2">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/login">
+      <div class="mb-2">
+        <label class="form-label">Usuario</label>
+        <input class="form-control" name="username" required />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Contraseña</label>
+        <input class="form-control" type="password" name="password" required />
+      </div>
+      <button class="btn btn-dark w-100">Entrar</button>
+    </form>
+  </div>
+</body>
+</html>

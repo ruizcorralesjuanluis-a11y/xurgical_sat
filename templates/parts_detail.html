@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <div class="h4 m-0">Parte {{ part.ot }}</div>
+    <div class="text-muted">Cliente: {{ part.client or "-" }}</div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-dark" href="/">Volver</a>
+
+    {% if user.role in ["admin", "recepcion"] %}
+      {% if part.is_closed %}
+        <form method="post" action="/parts/{{part.id}}/open" class="m-0">
+          <button class="btn btn-warning">Reabrir</button>
+        </form>
+      {% else %}
+        <form method="post" action="/parts/{{part.id}}/close" class="m-0">
+          <button class="btn btn-success">Cerrar</button>
+        </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+{% if user.role in ["admin", "recepcion"] %}
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="fw-bold mb-2">Añadir instrumento (manual)</div>
+    <form method="post" action="/parts/{{part.id}}/instruments" class="d-flex gap-2">
+      <input class="form-control" name="datamatrix" placeholder="DataMatrix (opcional)" />
+      <button class="btn btn-primary">Añadir</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-body">
+    <div class="fw-bold mb-2">Instrumentos</div>
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>DataMatrix</th>
+          <th>Estado</th>
+          <th>Fotos</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in instruments %}
+        <tr>
+          <td class="fw-bold">#{{ i.id }}</td>
+          <td>{{ i.datamatrix or "-" }}</td>
+          <td>
+            {% if i.status == "Pendiente" %}
+              <span class="badge text-bg-danger">{{ i.status }}</span>
+            {% elif i.status == "En proceso" %}
+              <span class="badge text-bg-warning text-dark">{{ i.status }}</span>
+            {% elif i.status == "Reparado" %}
+              <span class="badge text-bg-success">{{ i.status }}</span>
+            {% else %}
+              <span class="badge text-bg-secondary">{{ i.status }}</span>
+            {% endif %}
+          </td>
+          <td class="text-muted">
+            {% if i.photo1_path and i.photo2_path %}
+              ✅ 2/2
+            {% elif i.photo1_path or i.photo2_path %}
+              ⚠️ 1/2
+            {% else %}
+              ❌ 0/2
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if user.role == "grabado" %}
+              <a class="btn btn-outline-dark btn-sm" href="/instruments/{{ i.id }}/engraving">Ver</a>
+            {% else %}
+              <a class="btn btn-outline-dark btn-sm" href="/instruments/{{ i.id }}">Abrir</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

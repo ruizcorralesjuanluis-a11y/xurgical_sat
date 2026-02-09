@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Xurgical SAT - Trazabilidad Instrumento #{{ instrumento.id }}</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body{
+      min-height:100vh; margin:0; font-size:0.9rem;
+      background-image: url("/static/bg.png");
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .page-overlay{ min-height:100vh; background: rgba(245,247,250,0.86); }
+    .panel{
+      border-radius:14px;
+      box-shadow:0 6px 18px rgba(0,0,0,.06);
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #e5e7eb;
+    }
+    .thumb{
+      width:100%;
+      height:240px;
+      object-fit: cover;
+      border-radius:14px;
+      border:1px solid #e5e7eb;
+      background:#f8fafc;
+    }
+    .code-box{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .photo-box{
+      border:1px solid #e5e7eb; border-radius:12px; background:#fff; min-height:220px;
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+    }
+    .photo-box img{ width:100%; height:auto; display:block; }
+    .muted{ color:#6b7280; }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      border:1px solid #e5e7eb; border-radius:8px; padding:2px 8px; background:#fff; font-size:.85rem;
+    }
+    .pill{
+      border-radius:999px; padding:.25rem .6rem; font-weight:800; font-size:.75rem;
+      border:1px solid #e5e7eb; background:#fff;
+    }
+  </style>
+</head>
+
+<body>
+<div class="page-overlay">
+
+<nav class="navbar px-3 py-2" style="background:#ffffffcc;backdrop-filter: blur(6px); border-bottom:1px solid #e5e7eb;">
+  <div class="d-flex align-items-center gap-3">
+    <img src="/static/logo-xurgical.png" style="height:34px">
+    <div class="fw-bold">Xurgical SAT</div>
+    <span class="text-secondary">/ Trazabilidad</span>
+    <span class="fw-bold">{{ instrumento.ot_num }}</span>
+    <span class="text-secondary">· Instrumento #{{ instrumento.id }}</span>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="/envios/{{ instrumento.envio_id }}/trazabilidad">⬅ Volver al mosaico</a>
+    <a class="btn btn-outline-secondary btn-sm" href="/envios/{{ instrumento.envio_id }}">⬅ Parte</a>
+  </div>
+</nav>
+
+<main class="container-fluid px-3 px-md-4 py-3">
+
+  {% if request.query_params.get('err') == 'fotos' %}
+    <div class="alert alert-warning panel p-3">
+      Para cerrar trazabilidad, este instrumento necesita <b>2 fotos</b> (foto 1 y foto 2).
+    </div>
+  {% endif %}
+
+  <div class="row g-3">
+    <!-- ========= IZQUIERDA: FOTOS + CAMARA ========= -->
+    <div class="col-lg-6">
+      <div class="panel p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="h5 m-0">Fotos (2 obligatorias)</div>
+          {% if instrumento.trazabilidad|int == 1 %}
+            <span class="badge text-bg-success">TRAZADO</span>
+          {% else %}
+            <span class="badge text-bg-warning">PENDIENTE</span>
+          {% endif %}
+        </div>
+
+        <div class="row g-2">
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <b>Foto 1</b>
+              <button class="btn btn-outline-danger btn-sm" type="button" onclick="deletePhoto(1)">Borrar</button>
+            </div>
+            <div class="photo-box">
+              {% if instrumento.foto_entrada_1 %}
+                <img src="{{ instrumento.foto_entrada_1 }}" alt="Foto 1">
+              {% else %}
+                <span class="muted">Falta foto 1</span>
+              {% endif %}
+            </div>
+            <button class="btn btn-dark btn-sm w-100 mt-2" type="button" onclick="captureSlot(1)">
+              Capturar foto 1
+            </button>
+          </div>
+
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <b>Foto 2</b>
+              <button class="btn btn-outline-danger btn-sm" type="button" onclick="deletePhoto(2)">Borrar</button>
+            </div>
+            <div class="photo-box">
+              {% if instrumento.foto_entrada_2 %}
+                <img src="{{ instrumento.foto_entrada_2 }}" alt="Foto 2">
+              {% else %}
+                <span class="muted">Falta foto 2</span>
+              {% endif %}
+            </div>
+            <button class="btn btn-dark btn-sm w-100 mt-2" type="button" onclick="captureSlot(2)">
+              Capturar foto 2
+            </button>
+          </div>
+        </div>
+
+        <div class="small text-secondary mt-2">
+          En trazabilidad: puedes capturar aquí las 2 fotos y luego pegar la secuencia de códigos.
+          Atajo: <span class="kbd">Espacio</span> captura la foto que toque (1→2 automático).
+          <span class="pill ms-2">Siguiente: <b id="nextSlot">1</b></span>
+        </div>
+
+        <hr class="my-3"/>
+
+        <div class="fw-bold mb-2">Cámara</div>
+        <select id="cameraSelect" class="form-select form-select-sm mb-2"></select>
+        <video id="video" autoplay playsinline class="w-100"
+               style="max-height:320px;border-radius:12px;border:1px solid #e5e7eb;background:#000"></video>
+        <canvas id="canvas" style="display:none"></canvas>
+
+        <div class="d-flex gap-2 mt-2">
+          <button class="btn btn-outline-secondary btn-sm" type="button" onclick="loadCameras()">Recargar cámaras</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========= DERECHA: SECUENCIA CÓDIGOS ========= -->
+    <div class="col-lg-6">
+      <div class="panel p-3">
+        <div class="h5 mb-2">Secuencia de códigos DataMatrix</div>
+
+        <form method="post" action="/instrumentos/{{ instrumento.id }}/trazabilidad">
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">Prefijo</label>
+              <input class="form-control code-box" name="prefijo" value="{{ prefijo }}" placeholder="Ej: AS-" />
+              <div class="form-text">Si el código no empieza por el prefijo, se añadirá automáticamente.</div>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Pegar / Escanear (una línea por código)</label>
+              <textarea class="form-control code-box" name="codigos_raw" rows="6" placeholder="12345&#10;12346&#10;12347"></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-outline-dark" type="submit">Añadir a la lista</button>
+            <button class="btn btn-dark" type="submit" name="finalizar" value="1">Finalizar y marcar TRAZADO</button>
+          </div>
+        </form>
+
+        <hr/>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="fw-bold">Códigos guardados ({{ codigos|length }})</div>
+          <span class="text-secondary small">Se evitan duplicados automáticamente</span>
+        </div>
+
+        <div class="table-responsive mt-2">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th style="width:70px">#</th>
+                <th>Código</th>
+                <th style="width:170px" class="text-secondary">Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in codigos %}
+                <tr>
+                  <td class="text-secondary">{{ c.orden }}</td>
+                  <td class="code-box">{{ c.codigo }}</td>
+                  <td class="text-secondary small">{{ c.creado_en }}</td>
+                </tr>
+              {% endfor %}
+              {% if codigos|length == 0 %}
+                <tr><td colspan="3" class="text-secondary">Aún no hay códigos guardados.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</main>
+
+</div>
+
+<script>
+  // ======= COPIADO DE instrumento_nuevo.html (adaptado a "instrumento") =======
+  const instId = {{ instrumento.id }};
+  const hasFoto1 = {{ 1 if instrumento.foto_entrada_1 else 0 }};
+  const hasFoto2 = {{ 1 if instrumento.foto_entrada_2 else 0 }};
+  let busy = false;
+
+  let currentStream = null;
+
+  async function startCamera(deviceId){
+    const v = document.getElementById("video");
+
+    // parar stream anterior
+    if(currentStream){
+      try{ currentStream.getTracks().forEach(t => t.stop()); }catch(e){}
+      currentStream = null;
+    }
+
+    const constraints = deviceId
+      ? { video: { deviceId: { exact: deviceId } }, audio: false }
+      : { video: true, audio: false };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    currentStream = stream;
+    v.srcObject = stream;
+  }
+
+  async function loadCameras(){
+    // pedir permisos para que aparezcan labels
+    try{ await navigator.mediaDevices.getUserMedia({video:true, audio:false}); }catch(e){}
+
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams = devices.filter(d => d.kind === "videoinput");
+
+    const sel = document.getElementById("cameraSelect");
+    if(!sel) {
+      await startCamera();
+      return;
+    }
+
+    sel.innerHTML = "";
+    cams.forEach((c,i)=>{
+      const opt = document.createElement("option");
+      opt.value = c.deviceId;
+      opt.text = c.label || ("Cámara " + (i+1));
+      sel.appendChild(opt);
+    });
+
+    const saved = localStorage.getItem("xurgical_camera_id");
+    const initial = cams.find(c => c.deviceId === saved)?.deviceId || cams[0]?.deviceId;
+
+    if(initial){
+      sel.value = initial;
+      await startCamera(initial);
+    }else{
+      await startCamera();
+    }
+
+    sel.onchange = async () => {
+      localStorage.setItem("xurgical_camera_id", sel.value);
+      await startCamera(sel.value);
+    };
+  }
+
+  function getNextSlot(){
+    if(!hasFoto1) return 1;
+    if(!hasFoto2) return 2;
+    const key = "xurgical_last_slot_" + instId;
+    const last = parseInt(localStorage.getItem(key) || "2", 10);
+    return (last === 1) ? 2 : 1;
+  }
+  function setLastSlot(slot){
+    localStorage.setItem("xurgical_last_slot_" + instId, String(slot));
+  }
+  function updateLabels(){
+    const s = String(getNextSlot());
+    const a = document.getElementById("nextSlot");
+    if(a) a.innerText = s;
+  }
+
+  function captureToDataUrl(){
+    const v = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
+    if(vw === 0 || vh === 0) throw new Error("Cámara no lista todavía");
+
+    // tamaño “taller”
+    const MAX_W = 960, MAX_H = 540;
+    const scale = Math.min(MAX_W / vw, MAX_H / vh, 1);
+    const w = Math.round(vw * scale);
+    const h = Math.round(vh * scale);
+
+    canvas.width = w; canvas.height = h;
+    canvas.getContext("2d").drawImage(v, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", 0.65);
+  }
+
+  async function uploadToSlot(slot){
+    const dataUrl = captureToDataUrl();
+    const r = await fetch(`/instrumentos/${instId}/foto_webcam/${slot}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: dataUrl })
+    });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || "Error subiendo foto");
+    setLastSlot(slot);
+  }
+
+  async function captureSlot(slot){
+    if(busy) return;
+    busy = true;
+    try{
+      await uploadToSlot(slot);
+      location.reload();
+    }catch(e){
+      alert(e.message || String(e));
+      busy = false;
+    }
+  }
+
+  async function captureSpace(){
+    if(busy) return;
+    busy = true;
+    try{
+      const slot = getNextSlot();
+      await uploadToSlot(slot);
+      location.reload();
+    }catch(e){
+      alert(e.message || String(e));
+      busy = false;
+    }
+  }
+
+  async function deletePhoto(slot){
+    if(busy) return;
+    busy = true;
+    try{
+      const r = await fetch(`/instrumentos/${instId}/foto_borrar/${slot}`, { method: "POST" });
+      const j = await r.json();
+      if(!j.ok) throw new Error(j.error || "Error borrando foto");
+      location.reload();
+    }catch(e){
+      alert(e.message || String(e));
+      busy = false;
+    }
+  }
+
+  // Barra espaciadora: capturar SOLO cuando no estás escribiendo en un campo.
+  document.addEventListener("keydown", (ev) => {
+    if(ev.code !== "Space") return;
+
+    const el = document.activeElement;
+    const typing = el && (
+      el.tagName === "INPUT" ||
+      el.tagName === "TEXTAREA" ||
+      el.tagName === "SELECT" ||
+      el.isContentEditable
+    );
+    if(typing) return;
+
+    const v = document.getElementById("video");
+    if(!v) return;
+    const visible = !!(v.offsetWidth || v.offsetHeight || v.getClientRects().length);
+    if(!visible) return;
+
+    ev.preventDefault();
+    captureSpace();
+  });
+
+  // Init
+  loadCameras();
+  updateLabels();
+</script>
+
+</body>
+</html>

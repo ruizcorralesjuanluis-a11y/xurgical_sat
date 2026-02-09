@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <div class="h4 m-0">Grabado · Instrumento #{{ instrument.id }}</div>
+    <div class="text-muted">Parte: <a href="/parts/{{part.id}}">{{ part.ot }}</a></div>
+  </div>
+  <a class="btn btn-outline-dark" href="/parts/{{part.id}}">Volver</a>
+</div>
+
+<div class="card"><div class="card-body">
+  <div class="fw-bold mb-2">DataMatrix</div>
+  {% if instrument.datamatrix %}
+    <span class="badge text-bg-dark">{{ instrument.datamatrix }}</span>
+  {% else %}
+    <span class="text-muted">No hay DataMatrix registrado.</span>
+  {% endif %}
+
+  <hr/>
+
+  <div class="fw-bold mb-2">Fotos</div>
+  <div class="row g-2">
+    <div class="col-md-6">
+      <div class="border rounded p-2">
+        <div class="fw-bold mb-2">Foto 1</div>
+        {% if instrument.photo1_path %}
+          <img src="{{ instrument.photo1_path }}" class="img-fluid rounded"/>
+        {% else %}
+          <div class="text-muted">No hay foto.</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="border rounded p-2">
+        <div class="fw-bold mb-2">Foto 2</div>
+        {% if instrument.photo2_path %}
+          <img src="{{ instrument.photo2_path }}" class="img-fluid rounded"/>
+        {% else %}
+          <div class="text-muted">No hay foto.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div></div>
+
+{% endblock %}

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Xurgical SAT - Clientes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+  <nav class="navbar bg-white border-bottom px-3">
+    <div class="d-flex align-items-center gap-3">
+      <a href="/" class="btn btn-outline-secondary btn-sm">⬅ Dashboard</a>
+      <span class="fw-bold">Clientes</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      {% if user %}
+        <span class="badge text-bg-dark">{{ user.username }}</span>
+        <span class="badge text-bg-secondary">{{ user.role }}</span>
+        <form method="post" action="/logout" class="m-0">
+          <button class="btn btn-danger btn-sm">Salir</button>
+        </form>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h1 class="h5 mb-1">Registro de clientes</h1>
+        <div class="text-secondary small">Prefijo + contador (últimos 5 dígitos) por cliente.</div>
+      </div>
+      <a href="/clientes/nuevo" class="btn btn-success">➕ Nuevo cliente</a>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Cliente</th>
+              <th>Prefijo</th>
+              <th class="text-end">Último número</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in clientes %}
+              <tr>
+                <td class="fw-semibold">{{ c.nombre }}</td>
+                <td><code>{{ c.prefijo or '' }}</code></td>
+                <td class="text-end">{{ c.ultimo_numero }}</td>
+                <td class="text-end">
+                  <a class="btn btn-outline-primary btn-sm" href="/clientes/{{ c.id }}/editar">Editar</a>
+                </td>
+              </tr>
+            {% endfor %}
+
+            {% if not clientes %}
+              <tr>
+                <td colspan="4" class="text-center text-secondary py-4">No hay clientes registrados todavía.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

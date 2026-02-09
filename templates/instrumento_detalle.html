@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Instrumento #{{ inst.id }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .hint { font-size: .9rem; color: #6c757d; }
+    .badge-state { font-size: .95rem; }
+    .card { border-radius: 16px; }
+    .photo-box { border: 1px solid #ddd; border-radius: 12px; padding: 12px; background: #fff; }
+    .photo-img { width: 100%; height: 260px; object-fit: cover; border-radius: 10px; background: #f4f4f4; }
+  </style>
+</head>
+
+<body class="bg-light">
+<div class="container py-4">
+
+  {% set tipo_ot = (envio.tipo_trabajo if envio else 'REPARACION') %}
+  {% set tipo_upper = (tipo_ot|default('REPARACION')|upper) %}
+
+  <!-- HEADER -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <h3 class="mb-1">
+        Instrumento #{{ inst.id }}
+        {% set st = (inst.estado or 'Pendiente') %}
+        <span class="badge badge-state
+          {% if st == 'Pendiente' %}bg-danger
+          {% elif st == 'En proceso' %}bg-warning text-dark
+          {% elif st == 'Reparado' %}bg-success
+          {% elif st == 'Baja' %}bg-secondary
+          {% else %}bg-dark{% endif %}">
+          {{ st }}
+        </span>
+      </h3>
+
+      <div class="hint">
+        OT:
+        {% if envio %}
+          <strong>{{ envio.ot_num or envio.id }}</strong>
+          · Tipo: <strong>{{ tipo_upper }}</strong>
+          {% if cliente and cliente.nombre %} · Cliente: <strong>{{ cliente.nombre }}</strong>{% endif %}
+        {% else %}
+          <span class="text-muted">-</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      {% if inst.envio_id %}
+        <a class="btn btn-outline-secondary" href="/envios/{{ inst.envio_id }}">← Volver al parte</a>
+      {% else %}
+        <a class="btn btn-outline-secondary" href="/">← Dashboard</a>
+      {% endif %}
+      <!-- Captura/cámara SOLO en EDITAR -->
+      <a class="btn btn-outline-primary" href="/instrumentos/{{ inst.id }}/editar">Editar</a>
+    </div>
+  </div>
+
+  <!-- DATOS -->
+  <div class="card mb-3">
+    <div class="card-header"><strong>Datos del instrumento</strong></div>
+    <div class="card-body">
+      <div class="row g-2">
+        <div class="col-md-4"><strong>Fabricante:</strong> {{ inst.fabricante or "-" }}</div>
+        <div class="col-md-4"><strong>Producto:</strong> {{ inst.codigo_producto or "-" }}</div>
+        <div class="col-md-4"><strong>Nº Serie:</strong> {{ inst.num_serie or "-" }}</div>
+
+        <div class="col-md-6"><strong>Denominación:</strong> {{ inst.denominacion or "-" }}</div>
+        <div class="col-md-6"><strong>DataMatrix:</strong> {{ inst.codigo_datamatrix or "-" }}</div>
+
+        {% if inst.nombre_trazabilidad %}
+          <div class="col-12"><strong>Nombre trazabilidad:</strong> {{ inst.nombre_trazabilidad }}</div>
+        {% endif %}
+
+        {% if inst.observaciones %}
+          <div class="col-12">
+            <strong>Observaciones:</strong><br>
+            <div class="p-2 rounded bg-white border">{{ inst.observaciones }}</div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- CAMBIAR ESTADO (si no es trazabilidad) -->
+      {% if tipo_upper != 'TRAZABILIDAD' %}
+      <form class="mt-3 d-flex flex-wrap gap-2 align-items-center" method="post" action="/instrumentos/{{ inst.id }}/estado">
+        <label class="form-label m-0"><strong>Estado:</strong></label>
+        <select class="form-select" style="max-width:220px" name="estado">
+          <option value="Pendiente" {% if st=='Pendiente' %}selected{% endif %}>Pendiente</option>
+          <option value="En proceso" {% if st=='En proceso' %}selected{% endif %}>En proceso</option>
+          <option value="Reparado" {% if st=='Reparado' %}selected{% endif %}>Reparado</option>
+          <option value="Baja" {% if st=='Baja' %}selected{% endif %}>Baja</option>
+        </select>
+        <button class="btn btn-primary" type="submit">Guardar estado</button>
+      </form>
+      {% endif %}
+
+      <div class="hint mt-2">
+        En esta vista solo se muestran las fotos existentes. Para capturar/borrar fotos, entra en <strong>Editar</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- FOTOS (solo VER en abrir; sin capturar) -->
+  {% if tipo_upper != 'OPTICA_RIGIDA' %}
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong>Fotos de entrada</strong>
+      <span class="hint">Vista solo lectura</span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="photo-box">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong>Foto 1</strong>
+              {% if inst.foto_entrada_1 %}
+                <a class="btn btn-sm btn-outline-primary" href="{{ inst.foto_entrada_1 }}" target="_blank">Abrir</a>
+              {% endif %}
+            </div>
+            <img class="photo-img" src="{{ inst.foto_entrada_1 or '' }}" alt="Foto 1">
+            <div class="hint mt-2">
+              {% if inst.foto_entrada_1 %}OK{% else %}Pendiente{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="photo-box">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong>Foto 2</strong>
+              {% if inst.foto_entrada_2 %}
+                <a class="btn btn-sm btn-outline-primary" href="{{ inst.foto_entrada_2 }}" target="_blank">Abrir</a>
+              {% endif %}
+            </div>
+            <img class="photo-img" src="{{ inst.foto_entrada_2 or '' }}" alt="Foto 2">
+            <div class="hint mt-2">
+              {% if inst.foto_entrada_2 %}OK{% else %}Pendiente{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CHECKLIST (sin que la pantalla suba al marcar OK) -->
+  <div class="card mb-3" id="checklist-card">
+    <div class="card-header"><strong>Checklist técnico</strong></div>
+    <div class="card-body">
+      {% if checklist and checklist|length > 0 %}
+        <div class="list-group">
+          {% for item in checklist %}
+            <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"
+                 id="chk-{{ item.item_id }}"
+                 data-hecho="{{ 1 if item.hecho else 0 }}">
+              <div>
+                <span class="badge me-2 {% if item.hecho %}bg-success{% else %}bg-secondary{% endif %}"
+                      data-role="badge">
+                  {% if item.hecho %}OK{% else %}Pend.{% endif %}
+                </span>
+
+                <strong>{{ item.nombre }}</strong>
+
+                <div class="hint mt-1" data-role="meta" {% if not (item.hecho and item.hecho_en) %}style="display:none"{% endif %}>
+                  Hecho: <span data-role="hecho-en">{{ item.hecho_en or '' }}</span>{% if item.hecho_por %} · <span data-role="hecho-por">{{ item.hecho_por }}</span>{% endif %}
+                </div>
+              </div>
+
+              <form method="post"
+                    action="/instrumentos/{{ inst.id }}/check/{{ item.item_id }}"
+                    class="check-form m-0">
+                <button class="btn {% if item.hecho %}btn-outline-secondary{% else %}btn-success{% endif %}"
+                        type="submit"
+                        data-role="btn">
+                  {% if item.hecho %}Desmarcar{% else %}Marcar OK{% endif %}
+                </button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted">No hay checklist configurado para este tipo de parte.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- INFORME PDF SOLO PARA OPTICA_RIGIDA -->
+  {% if envio and tipo_upper == 'OPTICA_RIGIDA' %}
+  <div class="card mb-3">
+    <div class="card-header"><strong>Informe PDF (Óptica rígida)</strong></div>
+    <div class="card-body">
+
+      {% if informe %}
+        <div class="alert alert-success d-flex justify-content-between align-items-center">
+          <div>
+            <div><strong>{{ informe.filename }}</strong></div>
+            <small class="text-muted">
+              {% if informe.uploaded_at %}Subido: {{ informe.uploaded_at }}{% endif %}
+              {% if informe.uploaded_by %} · Por: {{ informe.uploaded_by }}{% endif %}
+            </small>
+          </div>
+          <a class="btn btn-outline-primary" href="/instrumentos/{{ inst.id }}/informe" target="_blank">
+            Ver / Descargar
+          </a>
+        </div>
+      {% else %}
+        <div class="alert alert-warning mb-2">No hay informe PDF cargado para este instrumento.</div>
+      {% endif %}
+
+      <form action="/instrumentos/{{ inst.id }}/informe/upload"
+            method="post"
+            enctype="multipart/form-data"
+            class="mt-2">
+
+        <div class="row g-2 align-items-center">
+          <div class="col-md-8">
+            <input class="form-control"
+                   type="file"
+                   name="file"
+                   accept="application/pdf"
+                   required>
+          </div>
+          <div class="col-md-4 d-grid">
+            <button class="btn btn-primary" type="submit">Subir PDF</button>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="pb-4"></div>
+</div>
+
+<script>
+  // ===== Checklist AJAX (evita que la pantalla "suba") =====
+  (function() {
+    const forms = document.querySelectorAll("form.check-form");
+    forms.forEach((form) => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const row = form.closest("[id^='chk-']");
+        const btn = form.querySelector("[data-role='btn']");
+        const badge = row ? row.querySelector("[data-role='badge']") : null;
+        const meta = row ? row.querySelector("[data-role='meta']") : null;
+        if (!row || !btn || !badge) return;
+
+        const wasDone = row.getAttribute("data-hecho") === "1";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(form.action, { method: "POST" });
+          if (!res.ok && res.status !== 303) {
+            alert("No se pudo actualizar el checklist (HTTP " + res.status + ")");
+            return;
+          }
+
+          const now = new Date();
+          const nowStr = now.getFullYear() + "-" +
+                         String(now.getMonth()+1).padStart(2,'0') + "-" +
+                         String(now.getDate()).padStart(2,'0') + " " +
+                         String(now.getHours()).padStart(2,'0') + ":" +
+                         String(now.getMinutes()).padStart(2,'0');
+
+          if (wasDone) {
+            row.setAttribute("data-hecho", "0");
+            badge.classList.remove("bg-success");
+            badge.classList.add("bg-secondary");
+            badge.textContent = "Pend.";
+            btn.classList.remove("btn-outline-secondary");
+            btn.classList.add("btn-success");
+            btn.textContent = "Marcar OK";
+            if (meta) meta.style.display = "none";
+          } else {
+            row.setAttribute("data-hecho", "1");
+            badge.classList.remove("bg-secondary");
+            badge.classList.add("bg-success");
+            badge.textContent = "OK";
+            btn.classList.remove("btn-success");
+            btn.classList.add("btn-outline-secondary");
+            btn.textContent = "Desmarcar";
+            if (meta) {
+              meta.style.display = "";
+              const he = meta.querySelector("[data-role='hecho-en']");
+              if (he) he.textContent = nowStr;
+            }
+          }
+        } catch (err) {
+          alert("Error actualizando checklist: " + err);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

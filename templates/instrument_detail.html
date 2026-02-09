@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <div class="h4 m-0">Instrumento #{{ instrument.id }}</div>
+    <div class="text-muted">Parte: <a href="/parts/{{part.id}}">{{ part.ot }}</a></div>
+  </div>
+  <a class="btn btn-outline-dark" href="/parts/{{part.id}}">Volver</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="fw-bold">Estado</div>
+        <span class="badge {{ status_badge }}">{{ instrument.status }}</span>
+      </div>
+
+      {% if user.role in ["admin", "tecnico"] %}
+      <form method="post" action="/instruments/{{instrument.id}}/status" class="d-flex gap-2">
+        <select class="form-select" name="status">
+          {% for s in ["Pendiente","En proceso","Reparado","Baja"] %}
+            <option value="{{s}}" {% if instrument.status==s %}selected{% endif %}>{{s}}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-dark">Guardar</button>
+      </form>
+      {% else %}
+        <div class="text-muted">Solo lectura para tu rol.</div>
+      {% endif %}
+
+      <hr/>
+
+      <div class="fw-bold mb-2">Checklist técnico</div>
+      <div class="d-flex flex-column gap-1">
+        <span class="badge text-bg-success">Recepción</span>
+        <span class="badge text-bg-success">Limpieza</span>
+        <span class="badge text-bg-success">Lubricación</span>
+        <span class="badge text-bg-success">Control final</span>
+      </div>
+
+      <div class="mt-3">
+        <div class="fw-bold mb-1">Soldadura láser</div>
+        {% if user.role in ["admin", "tecnico"] %}
+        <form method="post" action="/instruments/{{instrument.id}}/laser">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" name="laser_weld" value="on" id="laser"
+                   {% if instrument.laser_weld %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <label class="form-check-label" for="laser">Marcable</label>
+          </div>
+        </form>
+        {% else %}
+          <span class="badge text-bg-secondary">{{ "Sí" if instrument.laser_weld else "No" }}</span>
+        {% endif %}
+      </div>
+
+      <hr/>
+      <div class="fw-bold mb-2">DataMatrix</div>
+      <div class="mb-2">
+        <span class="badge text-bg-dark">{{ instrument.datamatrix or "—" }}</span>
+      </div>
+
+      {% if user.role in ["admin", "recepcion"] %}
+      <form method="post" action="/instruments/{{instrument.id}}/datamatrix" class="d-flex gap-2">
+        <input class="form-control" name="datamatrix" placeholder="Actualizar DataMatrix" />
+        <button class="btn btn-outline-dark">Guardar</button>
+      </form>
+      {% endif %}
+    </div></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <div class="fw-bold mb-2">Fotos (2 obligatorias)</div>
+
+      <div class="border rounded p-2 mb-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-bold">Foto 1</div>
+          {% if user.role in ["admin","recepcion"] and instrument.photo1_path %}
+          <form method="post" action="/instruments/{{instrument.id}}/photos/1/delete" class="m-0">
+            <button class="btn btn-sm btn-outline-danger">Borrar</button>
+          </form>
+          {% endif %}
+        </div>
+        {% if instrument.photo1_path %}
+          <img src="{{ instrument.photo1_path }}" class="img-fluid rounded"/>
+        {% else %}
+          <div class="text-muted">No hay foto.</div>
+        {% endif %}
+        {% if user.role in ["admin","recepcion"] %}
+        <form method="post" enctype="multipart/form-data" action="/instruments/{{instrument.id}}/photos/1" class="mt-2">
+          <input class="form-control" type="file" name="photo" accept="image/*" required />
+          <button class="btn btn-primary btn-sm mt-2">Subir Foto 1</button>
+        </form>
+        {% endif %}
+      </div>
+
+      <div class="border rounded p-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="fw-bold">Foto 2</div>
+          {% if user.role in ["admin","recepcion"] and instrument.photo2_path %}
+          <form method="post" action="/instruments/{{instrument.id}}/photos/2/delete" class="m-0">
+            <button class="btn btn-sm btn-outline-danger">Borrar</button>
+          </form>
+          {% endif %}
+        </div>
+        {% if instrument.photo2_path %}
+          <img src="{{ instrument.photo2_path }}" class="img-fluid rounded"/>
+        {% else %}
+          <div class="text-muted">No hay foto.</div>
+        {% endif %}
+        {% if user.role in ["admin","recepcion"] %}
+        <form method="post" enctype="multipart/form-data" action="/instruments/{{instrument.id}}/photos/2" class="mt-2">
+          <input class="form-control" type="file" name="photo" accept="image/*" required />
+          <button class="btn btn-primary btn-sm mt-2">Subir Foto 2</button>
+        </form>
+        {% endif %}
+      </div>
+
+      <div class="alert alert-info mt-3 mb-0">
+        Captura con barra espaciadora: lo integramos después con cámara/lector.
+      </div>
+    </div></div>
+  </div>
+</div>
+
+{% endblock %}
