@@ -2553,6 +2553,7 @@ async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user))
 # -----------------------------
 # INFORME PDF (óptica rígida)
 # -----------------------------
+@app.get("/instrumentos/{instrumento_id}/informe.pdf", response_class=FileResponse)
 @app.get("/instrumentos/{instrumento_id}/informe", response_class=FileResponse)
 def instrumento_informe_download(instrumento_id: int, user=Depends(get_current_user)):
     conn = get_conn()

@@ -226,8 +226,14 @@
                     </div>
                     {% if envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
                     <div class="col-12 mt-2">
+                        {% if inst.has_informe %}
+                        <a href="/instrumentos/{{ inst.id }}/informe.pdf" target="_blank"
+                            class="btn btn-success w-100 btn-status mb-1">
+                            <i class="fa-solid fa-file-pdf"></i> Ver Informe Control de Calidad
+                        </a>
+                        {% endif %}
                         <a href="/instrumentos/{{ inst.id }}/qc_optica" class="btn btn-danger w-100 btn-status">
-                            <i class="fa-solid fa-file-medical"></i> Informe Control de Calidad
+                            <i class="fa-solid fa-file-medical"></i> Rellenar/Editar Control de Calidad
                         </a>
                     </div>
                     {% endif %}
@@ -366,6 +372,13 @@
             stateModal.hide();
 
             if (state === 'Reparado') {
+                const tipoTrabajo = '{{ envio.tipo_trabajo }}';
+                if (tipoTrabajo === 'OPTICA_RIGIDA') {
+                    if (confirm('¿Necesitas hacer un control de calidad?')) {
+                        window.location.href = `/instrumentos/${currentInstId}/qc_optica`;
+                        return;
+                    }
+                }
                 loadChecklist(currentInstId);
             } else {
                 updateStatus(currentInstId, state);

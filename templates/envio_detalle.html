@@ -679,7 +679,7 @@
   <script>
     function handleStateChange(select, instId, tipoTrabajo) {
       if (select.value === 'Reparado' && tipoTrabajo === 'OPTICA_RIGIDA') {
-        if (confirm('¿Desea abrir el Control de Calidad para este instrumento?')) {
+        if (confirm('¿Necesitas hacer un control de calidad?')) {
           // Redirigir al formulario QC
           window.location.href = '/instrumentos/' + instId + '/qc_optica';
           return;
