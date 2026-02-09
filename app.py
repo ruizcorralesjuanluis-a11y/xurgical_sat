@@ -2258,136 +2258,193 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     if not qc:
         return None, None
 
-    # Generación PDF
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, HRFlowable
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    
+    from reportlab.lib.units import cm
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=1.5*cm, leftMargin=1.5*cm, topMargin=1.5*cm, bottomMargin=1.5*cm)
     styles = getSampleStyleSheet()
+    
+    # Colores Corporativos
+    c_navy = colors.HexColor('#002D62')
+    c_light_bg = colors.HexColor('#F4F7F9')
+    c_border = colors.HexColor('#D1D5DB')
+    
+    # Estilos Personalizados
+    style_h1 = ParagraphStyle('H1', parent=styles['Heading1'], fontSize=16, textColor=c_navy, alignment=TA_CENTER, spaceAfter=20, fontName='Helvetica-Bold')
+    style_sec = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=11, textColor=colors.black, fontName='Helvetica-Bold', spaceBefore=10, spaceAfter=8, borderPadding=2)
+    style_normal = ParagraphStyle('NormalSmall', parent=styles['Normal'], fontSize=9, leading=11)
+    style_cell_label = ParagraphStyle('CellLabel', parent=styles['Normal'], fontSize=8, fontName='Helvetica-Bold', textColor=c_navy)
+
     elements = []
 
-    # Logo y Cabecera
+    # --- CABECERA ---
     logo_path = os.path.join("static", "logo-xurgical.png")
-    header_data = [
-        [Image(logo_path, width=150, height=45) if os.path.exists(logo_path) else "", 
-         Paragraph(f"<b>Nº C.C.</b> {24000 + instrumento_id}", styles["Normal"])]
-    ]
-    header_tab = Table(header_data, colWidths=[400, 100])
-    header_tab.setStyle(TableStyle([('ALIGN', (1,0), (1,0), 'RIGHT')]))
-    elements.append(header_tab)
-    elements.append(Spacer(1, 10))
+    logo = Image(logo_path, width=4.5*cm, height=1.35*cm) if os.path.exists(logo_path) else Paragraph("XURGICAL", styles["Normal"])
     
-    elements.append(Paragraph("<font size=16 color='#000000'><b>INFORME CONTROL DE CALIDAD ÓPTICAS RÍGIDAS</b></font>", 
-                              ParagraphStyle('Title', alignment=1, spaceAfter=20)))
-
-    # Datos Generales
-    elements.append(Paragraph("<b>DATOS GENERALES</b>", styles["Normal"]))
-    dg_data = [
-        ["CLIENTE:", str(cliente["nombre"] if cliente else envio["cliente"])[:40], "EQUIPO:", str(inst["denominacion"])[:40]],
-        ["PARTE TRABAJO:", str(qc["parte_trabajo_cliente"])[:20], "MODELO:", str(inst["codigo_producto"])[:20]],
-        ["CODIGO OT:", str(envio["ot_num"]), "N/SERIE:", str(inst["num_serie"])[:20]],
+    header_right = [
+        [Paragraph("<b>CERTIFICADO DE CONTROL DE CALIDAD</b>", ParagraphStyle('cc', fontSize=12, alignment=TA_RIGHT, textColor=c_navy))],
+        [Paragraph(f"Informe Nº: CC-{24000 + instrumento_id}", ParagraphStyle('id', fontSize=10, alignment=TA_RIGHT))],
+        [Paragraph(f"Fecha: {qc['fecha_salida'] or datetime.now().strftime('%d/%m/%Y')}", ParagraphStyle('dt', fontSize=10, alignment=TA_RIGHT))]
     ]
-    dg_tab = Table(dg_data, colWidths=[80, 170, 80, 170])
+    header_tab = Table([[logo, Table(header_right, colWidths=[8*cm])]], colWidths=[8*cm, 10*cm])
+    header_tab.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'RIGHT')]))
+    elements.append(header_tab)
+    elements.append(HRFlowable(width="100%", thickness=1, color=c_navy, spaceBefore=4, spaceAfter=15))
+
+    # --- DATOS GENERALES ---
+    elements.append(Paragraph("DATOS DEL EQUIPO Y CLIENTE", style_sec))
+    
+    dg_data = [
+        [Paragraph("CLIENTE", style_cell_label), str(cliente["nombre"] if cliente else envio["cliente"])[:50]],
+        [Paragraph("DENOMINACIÓN", style_cell_label), str(inst["denominacion"])[:50]],
+        [Paragraph("MODELO / REF", style_cell_label), str(inst["codigo_producto"])[:30]],
+        [Paragraph("Nº DE SERIE", style_cell_label), str(inst["num_serie"])[:30]],
+        [Paragraph("ORDEN TRABAJO", style_cell_label), str(envio["ot_num"])[:20]]
+    ]
+    # Reorganizar en 2 columnas para que ocupe menos espacio vertical
+    dg_tab_inner = [
+        [dg_data[0][0], dg_data[0][1], dg_data[1][0], dg_data[1][1]],
+        [dg_data[2][0], dg_data[2][1], dg_data[3][0], dg_data[3][1]],
+        [dg_data[4][0], dg_data[4][1], "", ""]
+    ]
+    dg_tab = Table(dg_tab_inner, colWidths=[3.5*cm, 5.5*cm, 3.5*cm, 5.5*cm])
     dg_tab.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-        ('BACKGROUND', (0,0), (0,-1), colors.lightgrey),
-        ('BACKGROUND', (2,0), (2,-1), colors.lightgrey),
-        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('GRID', (0,0), (-1,-1), 0.5, c_border),
+        ('BACKGROUND', (0,0), (0,-1), c_light_bg),
+        ('BACKGROUND', (2,0), (2,-1), c_light_bg),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('LEFTPADDING', (0,0), (-1,-1), 6),
     ]))
     elements.append(dg_tab)
-    elements.append(Spacer(1, 10))
-    
-    elements.append(Paragraph(f"<b>OBSERVACIONES DEL CLIENTE:</b> {qc['observaciones_cliente'] or '-'}", styles["Normal"]))
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 15))
 
-    # Fotos Entrada/Salida
-    elements.append(Paragraph("<b>FOTOS DEL EQUIPO</b>", styles["Normal"]))
+    # --- FOTOS ---
+    elements.append(Paragraph("REGISTRO FOTOGRÁFICO DE DIAGNÓSTICO Y REPARACIÓN", style_sec))
+    
     def _get_pdf_img(p):
-        if not p: return ""
-        # "/static/fotos/xxx.jpg" -> "static/fotos/xxx.jpg"
+        if not p: return Paragraph("<br/><br/><i>Sin imagen</i>", ParagraphStyle('si', alignment=TA_CENTER, fontSize=8, textColor=colors.grey))
         loc = p.lstrip("/")
         if os.path.exists(loc):
             try:
-                return Image(loc, width=120, height=90)
+                # Calculamos aspect ratio para que quepan bien
+                return Image(loc, width=7.5*cm, height=5.5*cm, kind='proportional')
             except:
-                return ""
-        return ""
+                return "Error carga"
+        return "N/A"
 
     foto_data = [
-        ["ENTRADA", "SALIDA"],
+        [Paragraph("<b>ESTADO INICIAL / ENTRADA</b>", style_normal), Paragraph("<b>ESTADO FINAL / SALIDA</b>", style_normal)],
         [_get_pdf_img(qc["qc_foto_entrada_1"] or inst["foto_entrada_1"]), _get_pdf_img(qc["qc_foto_salida_1"] or inst["foto_salida_1"])],
         [_get_pdf_img(qc["qc_foto_entrada_2"] or inst["foto_entrada_2"]), _get_pdf_img(qc["qc_foto_salida_2"] or inst["foto_salida_2"])]
     ]
-    foto_tab = Table(foto_data, colWidths=[250, 250])
+    foto_tab = Table(foto_data, colWidths=[9*cm, 9*cm])
     foto_tab.setStyle(TableStyle([
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('FONTSIZE', (0,0), (-1,0), 10),
+        ('GRID', (0,1), (-1,-1), 0.5, c_border), # Solo rejilla para fotos
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
     ]))
     elements.append(foto_tab)
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 15))
 
-    # Diagnóstico (En página 2 si hace falta, pero Reportlab lo gestiona)
-    elements.append(Paragraph("<b>DIAGNÓSTICO</b>", styles["Normal"]))
-    diag_rows = [["ELEMENTO", "CORRECTO", "INCORRECTO", "SUSTITUCIÓN", "REPARACIÓN"]]
+    # --- DIAGNÓSTICO TÉCNICO ---
+    elements.append(Paragraph("INSPECCIÓN Y DIAGNÓSTICO DE COMPONENTES", style_sec))
+    diag_rows = [[
+        Paragraph("ELEMENTO ÓPTICO / MECÁNICO", style_cell_label),
+        Paragraph("RESULTADO", style_cell_label),
+        Paragraph("TIPO DE INTERVENCIÓN", style_cell_label)
+    ]]
+    
     elementos_qc = [
-        ('diag_ventana', 'VENTANA'), ('diag_fibra', 'FIBRA ILUMINACIÓN'), ('diag_objetivo', 'OBJETIVO'),
-        ('diag_lentes', 'LENTES'), ('diag_camisa', 'CAMISA EXTERIOR'), ('diag_ocular', 'OCULAR'),
-        ('diag_pieza_ojo', 'PIEZA DE OJO'), ('diag_contaminacion', 'CONTAMINACIÓN')
+        ('diag_ventana', 'VENTANA DE PROTECCIÓN'), ('diag_fibra', 'FIBRA DE ILUMINACIÓN'), ('diag_objetivo', 'SISTEMA DE OBJETIVO'),
+        ('diag_lentes', 'TREN DE LENTES (ROD LENSES)'), ('diag_camisa', 'CAMISA EXTERIOR / TUBO'), ('diag_ocular', 'SISTEMA OCULAR'),
+        ('diag_pieza_ojo', 'PIEZA DE OJO (EYEPIECE)'), ('diag_contaminacion', 'LIMPIEZA / CONTAMINACIÓN INT.')
     ]
+    
     for key, label in elementos_qc:
         v = qc[key]
-        row = [label, "X" if v=="CORRECTO" else "", "X" if v=="INCORRECTO" else "", 
-               "X" if v=="SUSTITUCION" else "", "X" if v=="REPARACION" else ""]
-        diag_rows.append(row)
-    
-    diag_tab = Table(diag_rows, colWidths=[150, 80, 80, 90, 80])
+        status = "CORRECTO" if v == "CORRECTO" else "FUERA RANGO"
+        if not v: status = "-"
+        
+        intervention = "NINGUNA"
+        if v == "REPARACION": intervention = "REPARACIÓN"
+        elif v == "SUSTITUCION": intervention = "SUSTITUCIÓN"
+        elif v == "INCORRECTO": intervention = "REEMPLAZO RECOMENDADO"
+        
+        diag_rows.append([label, status, intervention])
+        
+    diag_tab = Table(diag_rows, colWidths=[8*cm, 4*cm, 6*cm])
     diag_tab.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
-        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+        ('GRID', (0,0), (-1,-1), 0.5, c_border),
+        ('BACKGROUND', (0,0), (-1,0), c_light_bg),
         ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('ALIGN', (1,1), (2,-1), 'CENTER'),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
     ]))
     elements.append(diag_tab)
     elements.append(Spacer(1, 15))
 
-    # Resultados Técnicos
-    elements.append(Paragraph(f"<b>RESULTADO: EQUIPO REPARABLE: {'SI' if qc['reparable'] else 'NO'}</b>", styles["Normal"]))
-    elements.append(Spacer(1, 10))
-    
-    tec_rows = [["PARÁMETRO", "VALOR", "VALIDO SI", "VALIDO NO"]]
+    # --- VERIFICACIÓN DE PARÁMETROS ---
+    elements.append(Paragraph("VERIFICACIÓN DE ESPECIFICACIONES TÉCNICAS", style_sec))
+    tec_rows = [[
+        Paragraph("PARÁMETRO VERIFICADO", style_cell_label),
+        Paragraph("VALOR MEDIDO", style_cell_label),
+        Paragraph("CONFORMIDAD", style_cell_label)
+    ]]
     for key, label in [('campo_vision', 'CAMPO DE VISIÓN'), ('direccion_vision', 'DIRECCIÓN DE VISIÓN'), 
-                       ('resolucion', 'RESOLUCIÓN'), ('desviacion', 'DESVIACIÓN'), ('luz', 'LUZ')]:
+                       ('resolucion', 'RESOLUCIÓN ÓPTICA'), ('desviacion', 'DESVIACIÓN / CENTRADO'), ('luz', 'TRANSMISIÓN DE LUZ')]:
         ok = qc[key+"_ok"]
-        tec_rows.append([label, qc[key+"_val"] or "-", "X" if ok==1 else "", "X" if ok==0 else ""])
+        conf = "CUMPLE" if ok==1 else ("NO CUMPLE" if ok==0 else "-")
+        tec_rows.append([label, qc[key+"_val"] or "Verificado", conf])
         
-    tec_tab = Table(tec_rows, colWidths=[150, 100, 100, 100])
+    tec_tab = Table(tec_rows, colWidths=[8*cm, 6*cm, 4*cm])
     tec_tab.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
-        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
-        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+        ('GRID', (0,0), (-1,-1), 0.5, c_border),
+        ('BACKGROUND', (0,0), (-1,0), c_light_bg),
         ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('ALIGN', (1,1), (2,-1), 'CENTER'),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
     ]))
     elements.append(tec_tab)
     elements.append(Spacer(1, 15))
 
-    elements.append(Paragraph(f"<b>OBSERVACIONES:</b> {qc['observaciones_finales'] or '-'}", styles["Normal"]))
+    # --- CIERRE ---
+    elements.append(Paragraph("CONCLUSIONES Y OBSERVACIONES FINALES", style_sec))
+    obs = qc["observaciones_finales"] or "El equipo ha sido sometido a las pruebas de control de calidad indicadas, resultando apto para su uso clínico tras la intervención realizada."
+    elements.append(Paragraph(obs, style_normal))
+    
     elements.append(Spacer(1, 20))
     
     # Firmas
     firma_data = [
-        [f"FECHA DE SALIDA: {qc['fecha_salida']}", f"FIRMA TÉCNICO: {qc['firma_tecnico']}", f"RESPONSABLE: {qc['firma_responsable']}"]
+        [Paragraph(f"<b>CONTROL DE CALIDAD</b><br/><br/><br/>{qc['firma_tecnico'] or 'Técnico Especialista'}", style_normal), 
+         Paragraph(f"<b>RESPONSABLE TÉCNICO</b><br/><br/><br/>{qc['firma_responsable'] or 'Director Técnico'}", style_normal)]
     ]
-    firma_tab = Table(firma_data, colWidths=[160, 170, 170])
-    firma_tab.setStyle(TableStyle([('FONTSIZE', (0,0), (-1,-1), 8)]))
+    firma_tab = Table(firma_data, colWidths=[9*cm, 9*cm])
+    firma_tab.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER')]))
     elements.append(firma_tab)
 
-    doc.build(elements)
+    # --- FOOTER (Se genera en cada página) ---
+    def static_footer(canvas, doc):
+        canvas.saveState()
+        canvas.setFont('Helvetica', 8)
+        canvas.setStrokeColor(c_navy)
+        canvas.line(1.5*cm, 1.2*cm, 19.5*cm, 1.2*cm)
+        footer_text = "XURGICAL - Soluciones en Instrumentación Quirúrgica | www.xurgical.com"
+        canvas.drawCentredString(10.5*cm, 0.8*cm, footer_text)
+        canvas.restoreState()
+
+    doc.build(elements, onFirstPage=static_footer, onLaterPages=static_footer)
     pdf_bytes = buf.getvalue()
-    filename = f"QC_OPTICA_{instrumento_id}_{inst['codigo_producto']}.pdf"
+    clean_code = str(inst['codigo_producto']).replace("/", "_").replace("\\", "_")
+    filename = f"QC_OPTICA_{instrumento_id}_{clean_code}.pdf"
     return pdf_bytes, filename
 
 @app.get("/instrumentos/{instrumento_id}/qc_optica/pdf")
