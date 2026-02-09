@@ -318,6 +318,7 @@
             <thead class="table-light">
               <tr>
                 <th>OT</th>
+                <th>Tipo</th>
                 <th>Cliente</th>
                 <th>Fecha</th>
                 <th>Instrumentos</th>
@@ -331,19 +332,19 @@
               {% for e in envios %}
               <tr>
                 <td>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <strong>{{ e.ot_num }}</strong>
-                    <div class="d-flex align-items-center gap-2">
-                      {% if e.tipo_trabajo == 'TRAZABILIDAD' %}
-                      <span class="badge text-bg-primary">TRAZABILIDAD</span>
-                      {% elif e.tipo_trabajo == 'OPTICA_RIGIDA' %}
-                      <span class="badge text-bg-warning text-dark">ÓPTICA RÍGIDA</span>
-                      {% endif %}
-                      {% if e.is_closed %}
-                      <span class="badge text-bg-success">CERRADO</span>
-                      {% endif %}
-                    </div>
-                  </div>
+                  <strong>{{ e.ot_num }}</strong>
+                  {% if e.is_closed %}
+                  <div class="mt-1"><span class="badge text-bg-success">CERRADO</span></div>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if e.tipo_trabajo == 'TRAZABILIDAD' %}
+                  <span class="badge text-bg-primary">TRAZABILIDAD</span>
+                  {% elif e.tipo_trabajo == 'OPTICA_RIGIDA' %}
+                  <span class="badge text-bg-warning text-dark">ÓPTICA RÍGIDA</span>
+                  {% else %}
+                  <span class="badge text-bg-success">REPARACIÓN</span>
+                  {% endif %}
                 </td>
                 <td>{{ e.cliente or "-" }}</td>
                 <td>{{ e.fecha|fecha }}</td>
