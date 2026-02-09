@@ -2389,9 +2389,10 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
         [Paragraph("DENOMINACIÓN", style_cell_label), str(inst["denominacion"])[:50]],
         [Paragraph("MODELO / REF", style_cell_label), str(inst["codigo_producto"])[:30]],
         [Paragraph("Nº DE SERIE", style_cell_label), str(inst["num_serie"])[:30]],
-        [Paragraph("ORDEN TRABAJO", style_cell_label), str(envio["ot_num"])[:20]]
+        [Paragraph("ORDEN TRABAJO", style_cell_label), str(envio["ot_num"])[:20]],
+        ["", ""] # Celda vacía para completar el grid si es necesario
     ]
-    # Reorganizar en 2 columnas para que ocupe menos espacio vertical
+    # Reorganizar en 2 columnas
     dg_tab_inner = [
         [dg_data[0][0], dg_data[0][1], dg_data[1][0], dg_data[1][1]],
         [dg_data[2][0], dg_data[2][1], dg_data[3][0], dg_data[3][1]],
@@ -2407,6 +2408,21 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
         ('LEFTPADDING', (0,0), (-1,-1), 6),
     ]))
     elements.append(dg_tab)
+    
+    # Observaciones adicionales
+    obs_extra_data = [
+        [Paragraph("OBS. CLIENTE", style_cell_label), Paragraph(qc["observaciones_cliente"] or "-", style_normal)],
+        [Paragraph("OBS. PREVIAS", style_cell_label), Paragraph(qc["observaciones_previas"] or "-", style_normal)]
+    ]
+    obs_extra_tab = Table(obs_extra_data, colWidths=[3.5*cm, 14.5*cm])
+    obs_extra_tab.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, c_border),
+        ('BACKGROUND', (0,0), (0,-1), c_light_bg),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+    elements.append(obs_extra_tab)
     elements.append(Spacer(1, 15))
 
     # --- FOTOS ---
