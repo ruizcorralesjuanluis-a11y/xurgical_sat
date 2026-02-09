@@ -3753,18 +3753,3 @@ def borrar_envio(
     conn.close()
 
     return RedirectResponse(url="/?ok=borrado", status_code=303)
-
-
-from datetime import datetime
-
-def format_date(value):
-    if value is None:
-        return ""
-    if isinstance(value, str):
-        try:
-            value = datetime.fromisoformat(value)
-        except ValueError:
-            return value
-    return value.strftime("%d/%m/%Y")
-
-templates.env.filters["fecha"] = format_date
