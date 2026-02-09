@@ -39,9 +39,9 @@ import io
 import csv
 from datetime import datetime
 
-# Etiquetas (PDF) + código de barras
+# Etiquetas (PDF) + código de barras / QR
 from reportlab.pdfgen import canvas
-from reportlab.graphics.barcode import code128
+from reportlab.graphics.barcode import code128, qr
 from reportlab.lib.units import mm
 
 # Para autocompletar artículos (Articulos.xlsx)
@@ -1572,19 +1572,19 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     # Payload solo con el OT para que el código de barras sea más sencillo y legible
     payload = str(ot_num)
 
-    # Barcode (Code128) ajustado para que entre en 70x40.
-    bar_w = 0.4
-    bc = code128.Code128(payload, barHeight=12 * mm, barWidth=bar_w, humanReadable=False)
-    max_w = w - (2 * x0)
-    if getattr(bc, "width", 0) > max_w:
-        bar_w = 0.28
-        bc = code128.Code128(payload, barHeight=12 * mm, barWidth=bar_w, humanReadable=False)
-
-    # Centrado horizontal
-    bc_x = x0 + max(0, (max_w - getattr(bc, "width", 0)) / 2)
-    bc_y = 3 * mm
-    bc.drawOn(c, bc_x, bc_y)
-
+    # QR Code ajustado para que entre en 70x40.
+    # El QR es mucho más fácil de leer con móviles (iPhone) que el Barcode 1D.
+    qr_code = qr.QrCodeWidget(payload)
+    qr_code.barWidth = 22 * mm
+    qr_code.barHeight = 22 * mm
+    
+    from reportlab.graphics.shapes import Drawing, renderPDF
+    d = Drawing(22 * mm, 22 * mm)
+    d.add(qr_code)
+    
+    # Posicionamos el QR a la derecha
+    renderPDF.draw(d, c, w - 25 * mm, 5 * mm)
+    
     c.showPage()
     c.save()
     return buf.getvalue()
