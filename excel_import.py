@@ -78,11 +78,20 @@ def leer_excel_envio(path_excel: str):
             break
 
     if header_row is None:
-        preview = raw.head(15).fillna("").astype(str).values.tolist()
-        raise ValueError(
-            "No encuentro la fila de cabecera (CODIGO PRODUCTO / DENOMINACION).\n"
-            f"Vista previa (15 primeras filas): {preview}"
-        )
+        # Fallback: Check if row 0 has the columns directly (simple table)
+        row0 = raw.iloc[0].tolist()
+        row0_norm = {_norm(v) for v in row0 if v is not None}
+        has_code_0 = any(k in row0_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA"])
+        has_desc_0 = any(k in row0_norm for k in ["DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO"])
+        
+        if has_code_0 and has_desc_0:
+            header_row = 0
+        else:
+            preview = raw.head(15).fillna("").astype(str).values.tolist()
+            raise ValueError(
+                "No encuentro la fila de cabecera (CODIGO PRODUCTO / DENOMINACION).\n"
+                f"Vista previa (15 primeras filas): {preview}"
+            )
 
     # 3) leer con cabecera correcta
     df = pd.read_excel(path_excel, header=header_row, dtype=str)
