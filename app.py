@@ -1468,28 +1468,24 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     y_top = h - 3 * mm
 
     # Texto (compacto para 70x40)
-    c.setFont("Helvetica-Bold", 11)
-    c.drawString(x0, y_top - 4 * mm, f"OT: {ot_num}")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(x0, y_top - 5 * mm, f"PARTE: {ot_num}")
 
-    c.setFont("Helvetica", 9)
+    c.setFont("Helvetica", 10)
     # Recorta cliente para que no rompa el ancho
     cli = (cliente or "").strip()
-    if len(cli) > 30:
-        cli = cli[:30] + "…"
-    c.drawString(x0, y_top - 9 * mm, f"Cliente: {cli}")
-    c.drawString(x0, y_top - 14 * mm, f"Fecha: {fecha}")
-    c.drawString(x0, y_top - 19 * mm, f"Instrumentos: {n_instrumentos}")
+    if len(cli) > 35:
+        cli = cli[:32] + "…"
+    c.drawString(x0, y_top - 11 * mm, f"Cliente: {cli}")
+    c.drawString(x0, y_top - 16 * mm, f"Fecha: {fecha}")
+    c.drawString(x0, y_top - 21 * mm, f"Nº Instrumentos: {n_instrumentos}")
 
     # Barcode
-    # Payload compacto para que el Code128 quepa en 70x40mm.
-    # Incluye todos los campos: OT, Cliente, Fecha, Nº instrumentos.
-    cli_bc = (cliente or "").strip()
-    if len(cli_bc) > 22:
-        cli_bc = cli_bc[:22]  # recorte para evitar códigos demasiado anchos
-    payload = f"OT:{ot_num}|CLI:{cli_bc}|F:{fecha}|N:{n_instrumentos}"
+    # Payload solo con el OT para que el código de barras sea más sencillo y legible
+    payload = str(ot_num)
 
     # Barcode (Code128) ajustado para que entre en 70x40.
-    bar_w = 0.33
+    bar_w = 0.4
     bc = code128.Code128(payload, barHeight=12 * mm, barWidth=bar_w, humanReadable=False)
     max_w = w - (2 * x0)
     if getattr(bc, "width", 0) > max_w:
