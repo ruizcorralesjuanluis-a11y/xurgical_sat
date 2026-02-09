@@ -69,7 +69,11 @@ def leer_excel_envio(path_excel: str):
     for i in range(min(80, len(raw))):
         row = raw.iloc[i].tolist()
         row_norm = {_norm(v) for v in row if v is not None and str(v).strip() != ""}
-        if "CODIGO PRODUCTO" in row_norm and "DENOMINACION" in row_norm:
+        # Buscamos columnas clave
+        has_code = any(k in row_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA"])
+        has_desc = any(k in row_norm for k in ["DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO"])
+        
+        if has_code and has_desc:
             header_row = i
             break
 
