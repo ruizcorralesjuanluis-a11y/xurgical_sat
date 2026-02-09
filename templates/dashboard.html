@@ -674,12 +674,8 @@
         try {
           html5QrCode = new Html5Qrcode("reader");
           const config = {
-            fps: 15,
-            qrbox: function (viewfinderWidth, viewfinderHeight) {
-              let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-              let edgeSize = Math.floor(minEdge * 0.7);
-              return { width: edgeSize, height: edgeSize * 0.6 };
-            },
+            fps: 20,
+            qrbox: { width: 280, height: 280 },
             aspectRatio: 1.0
           };
 
@@ -687,10 +683,13 @@
             { facingMode: "environment" },
             config,
             (decodedText) => {
-              stopScanner();
-              scannerModal.hide();
-              if (window.navigator.vibrate) window.navigator.vibrate(100);
-              window.location.href = `/ot/${encodeURIComponent(decodedText)}`;
+              if (decodedText) {
+                const cleanText = decodedText.trim();
+                stopScanner();
+                scannerModal.hide();
+                if (window.navigator.vibrate) window.navigator.vibrate(100);
+                window.location.href = `/ot/${encodeURIComponent(cleanText)}`;
+              }
             },
             (errorMessage) => { /* ignore */ }
           );
