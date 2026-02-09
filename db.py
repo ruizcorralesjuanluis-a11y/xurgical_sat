@@ -86,8 +86,18 @@ class PGConnWrapper:
 def get_connection():
     if DATABASE_URL:
         import psycopg2
-        conn = psycopg2.connect(DATABASE_URL)
-        return PGConnWrapper(conn)
+        # Limpieza de la URL para evitar errores comunes
+        url = DATABASE_URL.strip()
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        
+        try:
+            conn = psycopg2.connect(url)
+            return PGConnWrapper(conn)
+        except Exception as e:
+            # Si falla, imprimimos el error para depurar en logs de Render
+            print(f"Error conectando a Postgres: {e}")
+            raise
     
     # Fallback a SQLite
     try:
