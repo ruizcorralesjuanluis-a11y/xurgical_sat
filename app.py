@@ -1574,16 +1574,21 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     # QR Code ajustado para que entre en 70x40.
     # El QR es mucho más fácil de leer con móviles (iPhone) que el Barcode 1D.
-    qr_code = qr.QrCodeWidget(payload)
-    qr_code.barWidth = 22 * mm
-    qr_code.barHeight = 22 * mm
+    from reportlab.graphics.shapes import Drawing
+    from reportlab.graphics import renderPDF
     
-    from reportlab.graphics.shapes import Drawing, renderPDF
-    d = Drawing(22 * mm, 22 * mm)
+    qr_code = qr.QrCodeWidget(payload)
+    bounds = qr_code.getBounds()
+    qr_w = bounds[2] - bounds[0]
+    qr_h = bounds[3] - bounds[1]
+    
+    # Queremos que mida unos 25mm de lado
+    size = 25 * mm
+    d = Drawing(size, size, transform=[size/qr_w, 0, 0, size/qr_h, 0, 0])
     d.add(qr_code)
     
-    # Posicionamos el QR a la derecha
-    renderPDF.draw(d, c, w - 25 * mm, 5 * mm)
+    # Posicionamos el QR a la derecha (ajustando coordenadas)
+    renderPDF.draw(d, c, w - size - 2*mm, 5 * mm)
     
     c.showPage()
     c.save()
