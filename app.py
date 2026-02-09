@@ -2195,29 +2195,36 @@ async def qc_optica_save(
                 _try_delete_public_photo(old[key])
 
     # Guardar/Actualizar QC
+    # Leemos todos los campos del form para manejar los dinámicos (split diagnosis)
+    form_data = await request.form()
+    
     cur.execute("SELECT 1 FROM instrumento_qc_optica WHERE instrumento_id=?", (instrumento_id,))
     exists = cur.fetchone()
     
+    diag_items = ['ventana', 'fibra', 'objetivo', 'lentes', 'camisa', 'ocular', 'pieza_ojo', 'contaminacion']
+    
     if exists:
-        # Build dynamic update for photos to not clear them if not uploaded
         update_cols = [
             "parte_trabajo_cliente=?", "observaciones_cliente=?", "observaciones_previas=?",
-            "diag_ventana=?", "diag_fibra=?", "diag_objetivo=?", "diag_lentes=?", "diag_camisa=?",
-            "diag_ocular=?", "diag_pieza_ojo=?", "diag_contaminacion=?", "reparable=?",
-            "campo_vision_val=?", "campo_vision_ok=?", "direccion_vision_val=?", "direccion_vision_ok=?",
-            "resolucion_val=?", "resolucion_ok=?", "desviacion_val=?", "desviacion_ok=?",
-            "luz_val=?", "luz_ok=?", "observaciones_finales=?", "fecha_salida=?",
+            "reparable=?", "campo_vision_val=?", "campo_vision_ok=?", "direccion_vision_val=?", 
+            "direccion_vision_ok=?", "resolucion_val=?", "resolucion_ok=?", "desviacion_val=?", 
+            "desviacion_ok=?", "luz_val=?", "luz_ok=?", "observaciones_finales=?", "fecha_salida=?",
             "firma_tecnico=?", "firma_responsable=?"
         ]
         params = [
             parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
-            diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
-            diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
-            campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
-            resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
-            luz_val, luz_ok, observaciones_finales, fecha_salida,
+            reparable, campo_vision_val, campo_vision_ok, direccion_vision_val, 
+            direccion_vision_ok, resolucion_val, resolucion_ok, desviacion_val, 
+            desviacion_ok, luz_val, luz_ok, observaciones_finales, fecha_salida,
             firma_tecnico, firma_responsable
         ]
+        
+        # Nuevas columnas de diagnóstico split
+        for item in diag_items:
+            update_cols.append(f"diag_{item}_estado=?")
+            params.append(form_data.get(f"diag_{item}_estado", "CORRECTO"))
+            update_cols.append(f"diag_{item}_accion=?")
+            params.append(form_data.get(f"diag_{item}_accion", ""))
         
         for k, v in qc_fotos_vals.items():
             update_cols.append(f"{k}=?")
@@ -2229,22 +2236,25 @@ async def qc_optica_save(
     else:
         insert_cols = [
             "instrumento_id", "parte_trabajo_cliente", "observaciones_cliente", "observaciones_previas",
-            "diag_ventana", "diag_fibra", "diag_objetivo", "diag_lentes", "diag_camisa",
-            "diag_ocular", "diag_pieza_ojo", "diag_contaminacion", "reparable",
-            "campo_vision_val", "campo_vision_ok", "direccion_vision_val", "direccion_vision_ok",
+            "reparable", "campo_vision_val", "campo_vision_ok", "direccion_vision_val", "direccion_vision_ok",
             "resolucion_val", "resolucion_ok", "desviacion_val", "desviacion_ok",
             "luz_val", "luz_ok", "observaciones_finales", "fecha_salida",
             "firma_tecnico", "firma_responsable"
         ]
         params = [
             instrumento_id, parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
-            diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
-            diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
-            campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
+            reparable, campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
             resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
             luz_val, luz_ok, observaciones_finales, fecha_salida,
             firma_tecnico, firma_responsable
         ]
+        
+        for item in diag_items:
+            insert_cols.append(f"diag_{item}_estado")
+            params.append(form_data.get(f"diag_{item}_estado", "CORRECTO"))
+            insert_cols.append(f"diag_{item}_accion")
+            params.append(form_data.get(f"diag_{item}_accion", ""))
+
         for k, v in qc_fotos_vals.items():
             insert_cols.append(k)
             params.append(v)
@@ -2345,10 +2355,10 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
 
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, HRFlowable
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, HRFlowable, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=1.5*cm, leftMargin=1.5*cm, topMargin=1.5*cm, bottomMargin=1.5*cm)
@@ -2390,7 +2400,7 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
         [Paragraph("MODELO / REF", style_cell_label), str(inst["codigo_producto"])[:30]],
         [Paragraph("Nº DE SERIE", style_cell_label), str(inst["num_serie"])[:30]],
         [Paragraph("ORDEN TRABAJO", style_cell_label), str(envio["ot_num"])[:20]],
-        ["", ""] # Celda vacía para completar el grid si es necesario
+        ["", ""]
     ]
     # Reorganizar en 2 columnas
     dg_tab_inner = [
@@ -2425,6 +2435,60 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     elements.append(obs_extra_tab)
     elements.append(Spacer(1, 15))
 
+    # --- DIAGNÓSTICO TÉCNICO ---
+    elements.append(Paragraph("INSPECCIÓN Y DIAGNÓSTICO DE COMPONENTES", style_sec))
+    diag_rows = [
+        [
+            Paragraph("ELEMENTO", style_cell_label),
+            Paragraph("EVALUACIÓN", style_cell_label),
+            "",
+            Paragraph("ACCIÓN (SI INCORRECTO)", style_cell_label),
+            ""
+        ],
+        [
+            "",
+            Paragraph("CORR.", style_cell_label),
+            Paragraph("INCOR.", style_cell_label),
+            Paragraph("SUST.", style_cell_label),
+            Paragraph("REPAR.", style_cell_label)
+        ]
+    ]
+    
+    elementos_qc = [
+        ('ventana', 'VENTANA'), ('fibra', 'FIBRA ILUMINACIÓN'), ('objetivo', 'OBJETIVO'),
+        ('lentes', 'LENTES'), ('camisa', 'CAMISA EXTERIOR'), ('ocular', 'OCULAR'),
+        ('pieza_ojo', 'PIEZA DE OJO'), ('contaminacion', 'CONTAMINACIÓN')
+    ]
+    
+    for item, label in elementos_qc:
+        est = qc.get(f"diag_{item}_estado", "CORRECTO")
+        acc = qc.get(f"diag_{item}_accion", "")
+        diag_rows.append([
+            label, 
+            "X" if est=="CORRECTO" else "", 
+            "X" if est=="INCORRECTO" else "", 
+            "X" if acc=="SUSTITUCION" else "", 
+            "X" if acc=="REPARACION" else ""
+        ])
+        
+    diag_tab = Table(diag_rows, colWidths=[6*cm, 3*cm, 3*cm, 3*cm, 3*cm])
+    diag_tab.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, c_border),
+        ('SPAN', (1,0), (2,0)), # Span Evaluación
+        ('SPAN', (3,0), (4,0)), # Span Acción
+        ('SPAN', (0,0), (0,1)), # Span Elemento header
+        ('BACKGROUND', (0,0), (-1,1), c_light_bg),
+        ('BACKGROUND', (3,0), (4,-1), colors.HexColor('#F9FAFB')), # Fondo sutil para acción
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 8),
+    ]))
+    elements.append(diag_tab)
+    
+    # Salto de página para que las fotos y lo demás vayan a la pág 2
+    elements.append(PageBreak())
+
     # --- FOTOS ---
     elements.append(Paragraph("REGISTRO FOTOGRÁFICO DE DIAGNÓSTICO Y REPARACIÓN", style_sec))
     
@@ -2453,44 +2517,6 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
         ('BOTTOMPADDING', (0,0), (-1,-1), 5),
     ]))
     elements.append(foto_tab)
-    elements.append(Spacer(1, 15))
-
-    # --- DIAGNÓSTICO TÉCNICO ---
-    elements.append(Paragraph("INSPECCIÓN Y DIAGNÓSTICO DE COMPONENTES", style_sec))
-    diag_rows = [[
-        Paragraph("ELEMENTO", style_cell_label),
-        Paragraph("CORR.", style_cell_label),
-        Paragraph("INCOR.", style_cell_label),
-        Paragraph("SUST.", style_cell_label),
-        Paragraph("REPAR.", style_cell_label)
-    ]]
-    
-    elementos_qc = [
-        ('diag_ventana', 'VENTANA'), ('diag_fibra', 'FIBRA ILUMINACIÓN'), ('diag_objetivo', 'OBJETIVO'),
-        ('diag_lentes', 'LENTES'), ('diag_camisa', 'CAMISA EXTERIOR'), ('diag_ocular', 'OCULAR'),
-        ('diag_pieza_ojo', 'PIEZA DE OJO'), ('diag_contaminacion', 'CONTAMINACIÓN')
-    ]
-    
-    for key, label in elementos_qc:
-        v = qc[key]
-        diag_rows.append([
-            label, 
-            "X" if v=="CORRECTO" else "", 
-            "X" if v=="INCORRECTO" else "", 
-            "X" if v=="SUSTITUCION" else "", 
-            "X" if v=="REPARACION" else ""
-        ])
-        
-    diag_tab = Table(diag_rows, colWidths=[6.5*cm, 2.5*cm, 3*cm, 3*cm, 3*cm])
-    diag_tab.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.5, c_border),
-        ('BACKGROUND', (0,0), (-1,0), c_light_bg),
-        ('FONTSIZE', (0,0), (-1,-1), 8),
-        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
-        ('LEFTPADDING', (0,0), (-1,-1), 8),
-    ]))
-    elements.append(diag_tab)
-    elements.append(Spacer(1, 15))
 
     # --- VERIFICACIÓN DE PARÁMETROS ---
     elements.append(Paragraph("VERIFICACIÓN DE ESPECIFICACIONES TÉCNICAS", style_sec))

@@ -59,6 +59,19 @@
             font-weight: 700;
             border-radius: 8px;
         }
+
+        .sep-col {
+            border-left: 3px solid #0d6efd !important;
+            background-color: #f1f3f5;
+        }
+
+        .action-cell {
+            background-color: #f8f9fa;
+        }
+
+        .diag-table thead th {
+            border-bottom: 2px solid #dee2e6;
+        }
     </style>
 </head>
 
@@ -115,16 +128,20 @@
                 </div>
 
                 <!-- DIAGNÓSTICO -->
-                <div class="section-title">DIAGNÓSTICO</div>
+                <div class="section-title">DIAGNÓSTICO TÉCNICO</div>
                 <div class="table-responsive">
                     <table class="table table-bordered diag-table align-middle text-center">
                         <thead>
                             <tr class="table-light">
-                                <th class="text-start">ELEMENTO</th>
-                                <th>CORRECTO</th>
-                                <th>INCORRECTO</th>
-                                <th>SUSTITUCIÓN</th>
-                                <th>REPARACIÓN</th>
+                                <th rowspan="2" class="text-start align-middle">ELEMENTO</th>
+                                <th colspan="2">EVALUACIÓN</th>
+                                <th colspan="2" class="sep-col">ACCIÓN (SI ES INCORRECTO)</th>
+                            </tr>
+                            <tr class="table-light">
+                                <th style="width: 100px;">CORRECTO</th>
+                                <th style="width: 100px;">INCORRECTO</th>
+                                <th style="width: 110px;" class="sep-col">SUSTITUCIÓN</th>
+                                <th style="width: 110px;">REPARACIÓN</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -138,15 +155,32 @@
                             ('diag_pieza_ojo', 'PIEZA DE OJO'),
                             ('diag_contaminacion', 'CONTAMINACIÓN')
                             ] %}
-                            <tr class="diag-row">
+                            <tr class="diag-row" data-row="{{ key }}">
                                 <td class="text-start fw-semibold">{{ label }}</td>
-                                {% for val in ['CORRECTO', 'INCORRECTO', 'SUSTITUCION', 'REPARACION'] %}
+
+                                <!-- Evaluación -->
                                 <td>
-                                    <input type="radio" class="form-check-input" name="{{ key }}" value="{{ val }}" {%
-                                        if qc and qc[key]==val %}checked{% elif not qc and val=='CORRECTO' %}checked{%
+                                    <input type="radio" class="form-check-input estado-radio" name="{{ key }}_estado"
+                                        value="CORRECTO" onclick="checkLogic('{{ key }}')" {% if qc and
+                                        qc[key+'_estado']=='CORRECTO' %}checked{% elif not qc %}checked{% endif %}>
+                                </td>
+                                <td>
+                                    <input type="radio" class="form-check-input estado-radio" name="{{ key }}_estado"
+                                        value="INCORRECTO" onclick="checkLogic('{{ key }}')" {% if qc and
+                                        qc[key+'_estado']=='INCORRECTO' %}checked{% endif %}>
+                                </td>
+
+                                <!-- Acción (Separada) -->
+                                <td class="sep-col action-cell">
+                                    <input type="radio" class="form-check-input accion-radio" name="{{ key }}_accion"
+                                        value="SUSTITUCION" {% if qc and qc[key+'_accion']=='SUSTITUCION' %}checked{%
                                         endif %}>
                                 </td>
-                                {% endfor %}
+                                <td class="action-cell">
+                                    <input type="radio" class="form-check-input accion-radio" name="{{ key }}_accion"
+                                        value="REPARACION" {% if qc and qc[key+'_accion']=='REPARACION' %}checked{%
+                                        endif %}>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -300,6 +334,33 @@
             {% endif %}
         </div>
     </div>
+    <script>
+        function checkLogic(key) {
+            const isCorrecto = document.querySelector(`input[name="${key}_estado"][value="CORRECTO"]`).checked;
+            const radiosAccion = document.querySelectorAll(`input[name="${key}_accion"]`);
+
+            if (isCorrecto) {
+                // Si es correcto, desmarcamos y deshabilitamos las acciones
+                radiosAccion.forEach(r => {
+                    r.checked = false;
+                    r.disabled = true;
+                    r.parentElement.classList.add('opacity-50');
+                });
+            } else {
+                // Si es incorrecto, habilitamos las acciones para elegir una
+                radiosAccion.forEach(r => {
+                    r.disabled = false;
+                    r.parentElement.classList.remove('opacity-50');
+                });
+            }
+        }
+
+        // Ejecutar al cargar para inicializar estados
+        window.addEventListener('load', () => {
+            const items = ['diag_ventana', 'diag_fibra', 'diag_objetivo', 'diag_lentes', 'diag_camisa', 'diag_ocular', 'diag_pieza_ojo', 'diag_contaminacion'];
+            items.forEach(checkLogic);
+        });
+    </script>
 </body>
 
 </html>

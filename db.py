@@ -291,6 +291,13 @@ def init_db():
 
     # Migración: asegurar columnas en instrumento_qc_optica
     cols_qc = get_table_columns(cur, "instrumento_qc_optica")
+    diag_items = ['ventana', 'fibra', 'objetivo', 'lentes', 'camisa', 'ocular', 'pieza_ojo', 'contaminacion']
+    for item in diag_items:
+        if f"diag_{item}_estado" not in cols_qc:
+            cur.execute(f"ALTER TABLE instrumento_qc_optica ADD COLUMN diag_{item}_estado TEXT")
+        if f"diag_{item}_accion" not in cols_qc:
+            cur.execute(f"ALTER TABLE instrumento_qc_optica ADD COLUMN diag_{item}_accion TEXT")
+
     for col in ["qc_foto_entrada_1", "qc_foto_entrada_2", "qc_foto_salida_1", "qc_foto_salida_2"]:
         if col not in cols_qc:
             cur.execute(f"ALTER TABLE instrumento_qc_optica ADD COLUMN {col} TEXT")
