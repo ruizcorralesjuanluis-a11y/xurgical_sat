@@ -14,7 +14,8 @@
     body {
       width: 100%;
       max-width: 100vw;
-      overflow-x: hidden;
+      overflow-x: hidden !important;
+      position: relative;
       min-height: 100vh;
       margin: 0;
       font-size: 0.9rem;
@@ -84,11 +85,12 @@
       transition: all 0.3s ease;
       cursor: pointer;
       border: 1px solid transparent;
-      width: 100%;
-      max-width: 200px;
-      height: 80px;
+      min-width: 160px;
+      max-width: 220px;
+      height: 75px;
       justify-content: flex-start;
-      flex-shrink: 0;
+      flex-shrink: 1;
+      flex-grow: 1;
     }
 
     .action-form {
@@ -346,7 +348,7 @@
       </div>
     </nav>
 
-    <main class="container-fluid px-3 px-md-4 py-3">
+    <main class="container-fluid py-3" style="max-width: 100vw; overflow-x: hidden;">
 
       {% set ok = request.query_params.get('ok') %}
       {% if ok == '1' %}
@@ -383,8 +385,10 @@
           </div>
 
           {% if user and user.role in ["admin","recepcion"] %}
-          <div class="d-flex gap-3 mt-2 mt-md-0">
-            <button class="btn btn-success px-4 py-3 action-card shadow-sm" type="button" data-bs-toggle="collapse"
+          <div
+            class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end align-items-center mt-2 mt-md-0"
+            style="flex: 1;">
+            <button class="btn btn-success p-3 action-card shadow-sm" type="button" data-bs-toggle="collapse"
               data-bs-target="#addInst">
               <i class="fa-solid fa-plus fa-lg"></i>
               <div class="text-start">
