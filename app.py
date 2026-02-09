@@ -2267,14 +2267,19 @@ async def qc_optica_save(
         # Continuamos con el resto (marcar reparado etc)
         
     # Marcar instrumento como REPARADO al guardar el QC
-    cur = conn.cursor()
-    cur.execute("UPDATE instrumentos SET estado='Reparado' WHERE id=?", (instrumento_id,))
-    conn.commit()
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE instrumentos SET estado='Reparado' WHERE id=?", (instrumento_id,))
+        conn.commit()
 
-    # Redirigir de vuelta al listado del parte (envio_id)
-    cur.execute("SELECT envio_id FROM instrumentos WHERE id=?", (instrumento_id,))
-    row_e = cur.fetchone()
-    conn.close()
+        # Redirigir de vuelta al listado del parte (envio_id)
+        cur.execute("SELECT envio_id FROM instrumentos WHERE id=?", (instrumento_id,))
+        row_e = cur.fetchone()
+    except Exception as e:
+        print(f"Error actualizando estado o redireccionando: {e}")
+        row_e = None
+    finally:
+        conn.close()
     
     dest_url = f"/envios/{row_e['envio_id']}" if row_e else "/"
     return RedirectResponse(url=dest_url, status_code=303)
