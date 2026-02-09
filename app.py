@@ -825,8 +825,15 @@ def logout():
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, user=Depends(get_current_user)):
     # Comprobamos el entorno en tiempo real para el indicador
-    is_pro = bool(os.environ.get("DATABASE_URL"))
-    db_type = "PRO" if is_pro else "TEMP"
+    is_pg = bool(os.environ.get("DATABASE_URL"))
+    is_disk = bool(os.environ.get("XURGICAL_DB_PATH"))
+    
+    if is_pg:
+        db_type = "PRO PG" 
+    elif is_disk:
+        db_type = "PRO DISK"
+    else:
+        db_type = "TEMP"
     conn = get_conn()
     cur = conn.cursor()
 
@@ -3367,8 +3374,19 @@ def dash_users_nuevo(
             vals.append(_now_str())
 
         sql = f"INSERT INTO users ({', '.join(cols)}) VALUES ({', '.join(['?']*len(cols))})"
-        cur.execute(sql, tuple(vals))
-        new_id = int(cur.lastrowid)
+        
+        # Postgres necesita RETURNING id porque cursor.lastrowid no es estándar
+        is_pg = bool(os.environ.get("DATABASE_URL"))
+        if is_pg:
+            sql += " RETURNING id"
+            cur.execute(sql, tuple(vals))
+            row = cur.fetchone()
+            if not row:
+                raise Exception("No se obtuvo ID del nuevo usuario (Postgres)")
+            new_id = int(row["id"])
+        else:
+            cur.execute(sql, tuple(vals))
+            new_id = int(cur.lastrowid)
 
         for action, _label in ACTIONS:
             allowed = _default_allowed_by_role(role, action)
@@ -3378,7 +3396,8 @@ def dash_users_nuevo(
             )
 
         conn.commit()
-    except Exception:
+    except Exception as e:
+        print(f"ERROR creando usuario: {e}")
         conn.close()
         return RedirectResponse(url="/?users=1&uerr=db", status_code=303)
 
@@ -3522,70 +3541,7 @@ def dash_users_delete(
 # USUARIOS desde MODAL en DASHBOARD (solo admin)
 # No toca tu gestor /usuarios existente.
 # -----------------------------
-@app.post("/dash_users/nuevo")
-def dash_users_nuevo(
-    username: str = Form(...),
-    password: str = Form(...),
-    role: str = Form(...),
-    user=Depends(require_roles("admin")),
-):
-    username = (username or "").strip()
-    if not username:
-        return RedirectResponse(url="/?users=1&uerr=username", status_code=303)
 
-    if role not in ("admin", "recepcion", "tecnico", "grabado"):
-        return RedirectResponse(url="/?users=1&uerr=role", status_code=303)
-
-    if not (password or "").strip():
-        return RedirectResponse(url="/?users=1&uerr=pw", status_code=303)
-
-    conn = get_conn()
-    cur = conn.cursor()
-
-    cur.execute("SELECT id FROM users WHERE username=?", (username,))
-    if cur.fetchone():
-        conn.close()
-        return RedirectResponse(url="/?users=1&uerr=exists", status_code=303)
-
-    schema = _users_schema(cur)
-    pw_col = schema.get("password_col")
-    if not pw_col:
-        conn.close()
-        return RedirectResponse(url="/?users=1&uerr=db", status_code=303)
-
-    try:
-        cols = ["username", pw_col, "role"]
-        vals = [username, hash_password(password), role]
-
-        if schema.get("has_is_active"):
-            cols.append("is_active")
-            vals.append(1)
-
-        if schema.get("has_created_at"):
-            cols.append("created_at")
-            vals.append(_now_str())
-        elif schema.get("has_created_at_at"):
-            cols.append("created_at_at")
-            vals.append(_now_str())
-
-        sql = f"INSERT INTO users ({', '.join(cols)}) VALUES ({', '.join(['?']*len(cols))})"
-        cur.execute(sql, tuple(vals))
-        new_id = int(cur.lastrowid)
-
-        for action, _label in ACTIONS:
-            allowed = _default_allowed_by_role(role, action)
-            cur.execute(
-                "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
-                (new_id, action, int(allowed)),
-            )
-
-        conn.commit()
-    except Exception:
-        conn.close()
-        return RedirectResponse(url="/?users=1&uerr=db", status_code=303)
-
-    conn.close()
-    return RedirectResponse(url="/?users=1&uok=created", status_code=303)
 
 
 
