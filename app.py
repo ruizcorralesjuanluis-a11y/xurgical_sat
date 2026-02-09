@@ -3105,7 +3105,10 @@ async def envio_importar_excel(
         f.write(await file.read())
 
     # Reutilizamos la lógica de lectura existente
-    _, _, df = leer_excel_envio(path)
+    try:
+        _, _, df = leer_excel_envio(path)
+    except Exception as e:
+        return RedirectResponse(url=f"/envios/{envio_id}?err=excel&msg={str(e)}", status_code=303)
 
     conn = get_conn()
     cur = conn.cursor()
@@ -3160,7 +3163,10 @@ async def importar_excel(
     with open(path, "wb") as f:
         f.write(await file.read())
 
-    cliente, fecha, df = leer_excel_envio(path)
+    try:
+        cliente, fecha, df = leer_excel_envio(path)
+    except Exception as e:
+        return RedirectResponse(url=f"/importar?err=excel&msg={str(e)}", status_code=303)
 
     if not cliente or not str(cliente).strip():
         return RedirectResponse(url="/importar?err=cliente", status_code=303)
