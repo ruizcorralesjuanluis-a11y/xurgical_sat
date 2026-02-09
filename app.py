@@ -1341,73 +1341,79 @@ def nuevo_envio_crear(
     fecha: str = Form(""),
     user=Depends(require_roles("admin", "recepcion")),
 ):
-    # Validación de fecha obligatoria
-    fecha = (fecha or "").strip()
-    if not fecha:
-        return RedirectResponse(url="/envios/nuevo?err=fecha", status_code=303)
+    try:
+        # Validación de fecha obligatoria
+        fecha = (fecha or "").strip()
+        if not fecha:
+            return RedirectResponse(url="/envios/nuevo?err=fecha", status_code=303)
 
-    # Permiso granular (además del rol)
-    conn_perm = get_conn()
-    cur_perm = conn_perm.cursor()
-    if not can_action(user, "envio_crear", cur_perm):
+        # Permiso granular (además del rol)
+        conn_perm = get_conn()
+        cur_perm = conn_perm.cursor()
+        if not can_action(user, "envio_crear", cur_perm):
+            conn_perm.close()
+            return RedirectResponse(url="/?err=perm", status_code=303)
         conn_perm.close()
-        return RedirectResponse(url="/?err=perm", status_code=303)
-    conn_perm.close()
 
-    conn = get_conn()
-    cur = conn.cursor()
+        conn = get_conn()
+        cur = conn.cursor()
 
-    ot_num = _next_ot_num(cur)
+        ot_num = _next_ot_num(cur)
 
-    tipo_trabajo = (tipo_trabajo or "REPARACION").strip().upper()
-    if tipo_trabajo not in ("REPARACION", "TRAZABILIDAD", "OPTICA_RIGIDA"):
-        tipo_trabajo = "REPARACION"
+        tipo_trabajo = (tipo_trabajo or "REPARACION").strip().upper()
+        if tipo_trabajo not in ("REPARACION", "TRAZABILIDAD", "OPTICA_RIGIDA"):
+            tipo_trabajo = "REPARACION"
 
-    cli_id_val = None
-    cli_nombre = (cliente or "").strip()
-    if cliente_id:
-        try:
-            cli_id_val = int(cliente_id)
-        except Exception:
-            cli_id_val = None
+        cli_id_val = None
+        cli_nombre = (cliente or "").strip()
+        if cliente_id:
+            try:
+                cli_id_val = int(cliente_id)
+            except Exception:
+                cli_id_val = None
 
-    # Si viene un cliente_id, lo resolvemos a nombre (y garantizamos que existe)
-    if cli_id_val:
-        cli = _get_cliente(cur, cli_id_val)
-        if not cli:
-            conn.close()
-            return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
-        cli_nombre = cli["nombre"]
-    else:
-        # Si no hay ID, debe haber un nombre manual
-        if not cli_nombre:
-            conn.close()
-            return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
-        
-        # Si es trazabilidad, requerimos cliente registrado (ID).
-        if tipo_trabajo == "TRAZABILIDAD":
-            conn.close()
-            return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
+        # Si viene un cliente_id, lo resolvemos a nombre (y garantizamos que existe)
+        if cli_id_val:
+            cli = _get_cliente(cur, cli_id_val)
+            if not cli:
+                conn.close()
+                return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
+            cli_nombre = cli["nombre"]
+        else:
+            # Si no hay ID, debe haber un nombre manual
+            if not cli_nombre:
+                conn.close()
+                return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
+            
+            # Si es trazabilidad, requerimos cliente registrado (ID).
+            if tipo_trabajo == "TRAZABILIDAD":
+                conn.close()
+                return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
 
-    cur.execute(
-        """
-        INSERT INTO envios (ot_num, nombre_archivo, cliente, cliente_id, tipo_trabajo, fecha)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            ot_num,
-            (referencia or "").strip(),
-            cli_nombre,
-            cli_id_val,
-            tipo_trabajo,
-            (fecha or "").strip(),
-        ),
-    )
-    envio_id = cur.lastrowid
+        cur.execute(
+            """
+            INSERT INTO envios (ot_num, nombre_archivo, cliente, cliente_id, tipo_trabajo, fecha)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                ot_num,
+                (referencia or "").strip(),
+                cli_nombre,
+                cli_id_val,
+                tipo_trabajo,
+                (fecha or "").strip(),
+            ),
+        )
+        envio_id = cur.lastrowid
 
-    conn.commit()
-    conn.close()
-    # Al crear una OT, vamos al detalle para añadir instrumentos.
+        conn.commit()
+        conn.close()
+        # Al crear una OT, vamos al detalle para añadir instrumentos.
+        return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
+
+    except Exception as e:
+        import traceback
+        return HTMLResponse(f"<h1>Error al crear envio</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
     return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
 
 
