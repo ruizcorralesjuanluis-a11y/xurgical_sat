@@ -231,7 +231,7 @@
                             <i class="fa-solid fa-file-pdf"></i> Ver Informe Control de Calidad
                         </a>
                         {% endif %}
-                        {% if envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
+                        {% if envio.tipo_trabajo == 'OPTICA_RIGIDA' or envio.tipo_trabajo == 'REPARACION' %}
                         <a href="/instrumentos/{{ inst.id }}/qc_optica" class="btn btn-danger w-100 btn-status">
                             <i class="fa-solid fa-file-medical"></i> Rellenar/Editar Control de Calidad
                         </a>
@@ -373,8 +373,9 @@
 
             if (state === 'Reparado') {
                 const tipoTrabajo = '{{ envio.tipo_trabajo }}';
-                if (tipoTrabajo === 'OPTICA_RIGIDA') {
-                    if (confirm('¿Necesitas hacer un control de calidad?')) {
+                // Si es óptica rígida o una reparación general, preguntamos por el QC
+                if (tipoTrabajo === 'OPTICA_RIGIDA' || tipoTrabajo === 'REPARACION') {
+                    if (confirm('¿Deseas rellenar el Informe de Control de Calidad ahora?')) {
                         window.location.href = `/instrumentos/${currentInstId}/qc_optica`;
                         return;
                     }
