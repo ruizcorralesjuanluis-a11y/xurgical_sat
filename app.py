@@ -2362,35 +2362,35 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     # --- DIAGNÓSTICO TÉCNICO ---
     elements.append(Paragraph("INSPECCIÓN Y DIAGNÓSTICO DE COMPONENTES", style_sec))
     diag_rows = [[
-        Paragraph("ELEMENTO ÓPTICO / MECÁNICO", style_cell_label),
-        Paragraph("RESULTADO", style_cell_label),
-        Paragraph("TIPO DE INTERVENCIÓN", style_cell_label)
+        Paragraph("ELEMENTO", style_cell_label),
+        Paragraph("CORR.", style_cell_label),
+        Paragraph("INCOR.", style_cell_label),
+        Paragraph("SUST.", style_cell_label),
+        Paragraph("REPAR.", style_cell_label)
     ]]
     
     elementos_qc = [
-        ('diag_ventana', 'VENTANA DE PROTECCIÓN'), ('diag_fibra', 'FIBRA DE ILUMINACIÓN'), ('diag_objetivo', 'SISTEMA DE OBJETIVO'),
-        ('diag_lentes', 'TREN DE LENTES (ROD LENSES)'), ('diag_camisa', 'CAMISA EXTERIOR / TUBO'), ('diag_ocular', 'SISTEMA OCULAR'),
-        ('diag_pieza_ojo', 'PIEZA DE OJO (EYEPIECE)'), ('diag_contaminacion', 'LIMPIEZA / CONTAMINACIÓN INT.')
+        ('diag_ventana', 'VENTANA'), ('diag_fibra', 'FIBRA ILUMINACIÓN'), ('diag_objetivo', 'OBJETIVO'),
+        ('diag_lentes', 'LENTES'), ('diag_camisa', 'CAMISA EXTERIOR'), ('diag_ocular', 'OCULAR'),
+        ('diag_pieza_ojo', 'PIEZA DE OJO'), ('diag_contaminacion', 'CONTAMINACIÓN')
     ]
     
     for key, label in elementos_qc:
         v = qc[key]
-        status = "CORRECTO" if v == "CORRECTO" else "FUERA RANGO"
-        if not v: status = "-"
+        diag_rows.append([
+            label, 
+            "X" if v=="CORRECTO" else "", 
+            "X" if v=="INCORRECTO" else "", 
+            "X" if v=="SUSTITUCION" else "", 
+            "X" if v=="REPARACION" else ""
+        ])
         
-        intervention = "NINGUNA"
-        if v == "REPARACION": intervention = "REPARACIÓN"
-        elif v == "SUSTITUCION": intervention = "SUSTITUCIÓN"
-        elif v == "INCORRECTO": intervention = "REEMPLAZO RECOMENDADO"
-        
-        diag_rows.append([label, status, intervention])
-        
-    diag_tab = Table(diag_rows, colWidths=[8*cm, 4*cm, 6*cm])
+    diag_tab = Table(diag_rows, colWidths=[6.5*cm, 2.5*cm, 3*cm, 3*cm, 3*cm])
     diag_tab.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, c_border),
         ('BACKGROUND', (0,0), (-1,0), c_light_bg),
         ('FONTSIZE', (0,0), (-1,-1), 8),
-        ('ALIGN', (1,1), (2,-1), 'CENTER'),
+        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
     ]))
     elements.append(diag_tab)
@@ -2399,22 +2399,22 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     # --- VERIFICACIÓN DE PARÁMETROS ---
     elements.append(Paragraph("VERIFICACIÓN DE ESPECIFICACIONES TÉCNICAS", style_sec))
     tec_rows = [[
-        Paragraph("PARÁMETRO VERIFICADO", style_cell_label),
-        Paragraph("VALOR MEDIDO", style_cell_label),
-        Paragraph("CONFORMIDAD", style_cell_label)
+        Paragraph("PARÁMETRO", style_cell_label),
+        Paragraph("VALOR", style_cell_label),
+        Paragraph("VÁLIDO (SÍ)", style_cell_label),
+        Paragraph("VÁLIDO (NO)", style_cell_label)
     ]]
     for key, label in [('campo_vision', 'CAMPO DE VISIÓN'), ('direccion_vision', 'DIRECCIÓN DE VISIÓN'), 
-                       ('resolucion', 'RESOLUCIÓN ÓPTICA'), ('desviacion', 'DESVIACIÓN / CENTRADO'), ('luz', 'TRANSMISIÓN DE LUZ')]:
+                       ('resolucion', 'RESOLUCIÓN'), ('desviacion', 'DESVIACIÓN'), ('luz', 'LUZ')]:
         ok = qc[key+"_ok"]
-        conf = "CUMPLE" if ok==1 else ("NO CUMPLE" if ok==0 else "-")
-        tec_rows.append([label, qc[key+"_val"] or "Verificado", conf])
+        tec_rows.append([label, qc[key+"_val"] or "-", "X" if ok==1 else "", "X" if ok==0 else ""])
         
-    tec_tab = Table(tec_rows, colWidths=[8*cm, 6*cm, 4*cm])
+    tec_tab = Table(tec_rows, colWidths=[6.5*cm, 4.5*cm, 3.5*cm, 3.5*cm])
     tec_tab.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, c_border),
         ('BACKGROUND', (0,0), (-1,0), c_light_bg),
         ('FONTSIZE', (0,0), (-1,-1), 8),
-        ('ALIGN', (1,1), (2,-1), 'CENTER'),
+        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
         ('LEFTPADDING', (0,0), (-1,-1), 8),
     ]))
     elements.append(tec_tab)
