@@ -2350,11 +2350,17 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     cliente = cur.fetchone()
     
     cur.execute("SELECT * FROM instrumento_qc_optica WHERE instrumento_id=?", (instrumento_id,))
-    qc = cur.fetchone()
+    qc_row = cur.fetchone()
     conn.close()
     
-    if not qc:
+    if not qc_row:
         return None, None
+
+    # Convertir a dict para poder usar .get() y evitar errores de sqlite3.Row
+    inst = dict(inst)
+    envio = dict(envio)
+    cliente = dict(cliente) if cliente else None
+    qc = dict(qc_row)
 
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
