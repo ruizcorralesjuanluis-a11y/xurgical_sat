@@ -92,6 +92,35 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+def format_fecha(value):
+    if not value or value == "-":
+        return "-"
+    try:
+        # Detectar si es un string y tratar de parsearlo
+        s = str(value).strip()
+        if not s: return "-"
+        
+        # Intentar varios formatos comunes
+        dt = None
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                dt = datetime.strptime(s, fmt)
+                break
+            except:
+                continue
+        
+        if not dt:
+            try:
+                dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+            except:
+                return s # Si falla todo, devuelve el original
+        
+        return dt.strftime("%d-%m-%Y")
+    except:
+        return value
+
+templates.env.filters["fecha"] = format_fecha
+
 
 
 # -----------------------------

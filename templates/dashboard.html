@@ -325,7 +325,7 @@
                   </div>
                 </td>
                 <td>{{ e.cliente or "-" }}</td>
-                <td>{{ e.fecha or "-" }}</td>
+                <td>{{ e.fecha|fecha }}</td>
                 <td>{{ e.n_instrumentos }}</td>
                 <td>{{ e.n_pendientes }}</td>
                 <td><span class="dot {{ e.foto_dot }}"></span></td>
@@ -522,7 +522,7 @@
 
                         <td class="text-end">
                           <div class="d-flex justify-content-end gap-2 flex-wrap">
-                            <span class="text-secondary small align-self-center">{{ u.created_at or "" }}</span>
+                            <span class="text-secondary small align-self-center">{{ u.created_at|fecha }}</span>
                             <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal"
                               data-bs-target="#delUser{{ u.id }}">Borrar</button>
                           </div>

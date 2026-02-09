@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,101 +9,149 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    body{
-      min-height:100vh; margin:0; font-size:0.9rem;
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-size: 0.9rem;
       background-image: url("/static/bg.png");
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
       background-attachment: fixed;
     }
-    .page-overlay{ min-height:100vh; background: rgba(245,247,250,0.86); }
 
-    .topbar{
-      background:#ffffffcc;
+    .page-overlay {
+      min-height: 100vh;
+      background: rgba(245, 247, 250, 0.86);
+    }
+
+    .topbar {
+      background: #ffffffcc;
       backdrop-filter: blur(6px);
-      border-bottom:1px solid #e5e7eb;
-      padding:.6rem 1rem;
-    }
-    .logo{ height:34px }
-    .brand{ font-weight:700 }
-
-    .panel{
-      border-radius:14px;
-      box-shadow:0 6px 18px rgba(0,0,0,.06);
-      background: rgba(255,255,255,0.95);
+      border-bottom: 1px solid #e5e7eb;
+      padding: .6rem 1rem;
     }
 
-    .table thead th{
-      font-size:.72rem;
-      text-transform:uppercase;
-      color:#6b7280;
+    .logo {
+      height: 34px
+    }
+
+    .brand {
+      font-weight: 700
+    }
+
+    .panel {
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .table thead th {
+      font-size: .72rem;
+      text-transform: uppercase;
+      color: #6b7280;
       white-space: nowrap;
     }
-    .muted{ color:#6b7280; }
+
+    .muted {
+      color: #6b7280;
+    }
 
     /* FILA REPARADO */
-    .row-reparado td{
-      background:#ecfdf5 !important;
-      font-weight:600;
+    .row-reparado td {
+      background: #ecfdf5 !important;
+      font-weight: 600;
     }
-    .row-reparado td:first-child{
-      border-left:5px solid #16a34a;
+
+    .row-reparado td:first-child {
+      border-left: 5px solid #16a34a;
     }
 
     /* FILA BAJA */
-    .row-baja td{
-      background:#fef2f2 !important;
-      font-weight:600;
+    .row-baja td {
+      background: #fef2f2 !important;
+      font-weight: 600;
     }
-    .row-baja td:first-child{
-      border-left:5px solid #dc2626;
+
+    .row-baja td:first-child {
+      border-left: 5px solid #dc2626;
     }
 
     /* BADGES FOTOS */
-    .badge-ok{
-      background:#dcfce7;
-      color:#166534;
-      border:1px solid #bbf7d0;
-      font-weight:800;
-      font-size:.72rem;
-      border-radius:999px;
-      padding:.25rem .6rem;
+    .badge-ok {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      font-weight: 800;
+      font-size: .72rem;
+      border-radius: 999px;
+      padding: .25rem .6rem;
       white-space: nowrap;
     }
-    .badge-pend{
-      background:#fef3c7;
-      color:#92400e;
-      border:1px solid #fde68a;
-      font-weight:800;
-      font-size:.72rem;
-      border-radius:999px;
-      padding:.25rem .6rem;
+
+    .badge-pend {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+      font-weight: 800;
+      font-size: .72rem;
+      border-radius: 999px;
+      padding: .25rem .6rem;
       white-space: nowrap;
     }
 
     /* Columnas con ancho razonable */
-    .col-id{ width:70px; }
-    .col-modelo{ min-width:140px; }
-    .col-denom{ min-width:220px; }
-    .col-fab{ min-width:140px; }
-    .col-serie{ min-width:120px; }
-    .col-dm{ min-width:160px; }
-    .col-fotos{ width:130px; }
-    .col-estado{ min-width:170px; }
-    .col-actions{ min-width:220px; } /* un poco más para botones */
+    .col-id {
+      width: 70px;
+    }
+
+    .col-modelo {
+      min-width: 140px;
+    }
+
+    .col-denom {
+      min-width: 220px;
+    }
+
+    .col-fab {
+      min-width: 140px;
+    }
+
+    .col-serie {
+      min-width: 120px;
+    }
+
+    .col-dm {
+      min-width: 160px;
+    }
+
+    .col-fotos {
+      width: 130px;
+    }
+
+    .col-estado {
+      min-width: 170px;
+    }
+
+    .col-actions {
+      min-width: 220px;
+    }
+
+    /* un poco más para botones */
 
     /* Bloque observaciones legible */
-    .obs-row td{
-      background: rgba(255,255,255,0.75);
+    .obs-row td {
+      background: rgba(255, 255, 255, 0.75);
     }
-    .obs-box{
+
+    .obs-box {
       background: #f8fafc;
       border: 1px solid #e5e7eb;
       border-radius: 12px;
       padding: .75rem .9rem;
     }
-    .obs-text{
+
+    .obs-text {
       white-space: pre-wrap;
       word-break: break-word;
       margin: 0;
@@ -111,477 +160,472 @@
 </head>
 
 <body>
-<div class="page-overlay">
+  <div class="page-overlay">
 
-<!-- TOPBAR -->
-<nav class="navbar topbar d-flex justify-content-between align-items-center">
-  <div class="d-flex align-items-center gap-3">
-    <img src="/static/logo-xurgical.png" class="logo">
-    <span class="brand">Xurgical SAT</span>
-    <span class="text-secondary">/ Parte</span>
-    <span class="fw-bold">{{ envio.ot_num }}</span>
-  </div>
-
-  <div class="d-flex align-items-center gap-2">
-    <a href="/" class="btn btn-outline-secondary btn-sm">⬅ Dashboard</a>
-    {% if user %}
-      <a class="btn btn-outline-success btn-sm" href="/envios/{{ envio.id }}/etiqueta.pdf" target="_blank">🏷️ Etiqueta</a>
-    {% endif %}
-    {% if user and user.role in ["admin","recepcion"] %}
-      <a class="btn btn-outline-primary btn-sm" href="/export/download?scope=parte&envio_id={{ envio.id }}&fmt=xlsx">📤 Exportar OT</a>
-    {% endif %}
-    {% if user and user.role in ["admin","grabado"] %}
-      <a class="btn btn-outline-dark btn-sm" href="/envios/{{ envio.id }}/grabacion">🖋️ Grabación (mosaico)</a>
-    {% endif %}
-    {% if user %}
-      <span class="badge text-bg-dark">{{ user.username }}</span>
-      <span class="badge text-bg-secondary">{{ user.role }}</span>
-      <form method="post" action="/logout" class="m-0">
-        <button class="btn btn-danger btn-sm">Salir</button>
-      </form>
-    {% endif %}
-  </div>
-</nav>
-
-<main class="container-fluid px-3 px-md-4 py-3">
-
-<!-- CABECERA PARTE -->
-<div class="panel p-3 mb-3">
-  <div class="d-flex justify-content-between flex-wrap gap-2">
-    <div>
-      <div class="h5 mb-1">Parte {{ envio.ot_num }}</div>
-      <div class="muted">
-        <div><b>Referencia:</b> {{ envio.nombre_archivo or "-" }}</div>
-        <div><b>Cliente:</b> {{ envio.cliente or "-" }}</div>
-        <div><b>Tipo OT:</b>
-          {% if envio.tipo_trabajo == 'TRAZABILIDAD' %}
-            <span class="badge text-bg-primary">Trazabilidad</span>
-          {% elif envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
-            <span class="badge text-bg-dark">Óptica rígida</span>
-          {% else %}
-            <span class="badge text-bg-success">Reparación</span>
-          {% endif %}
-        </div>
-        <div><b>Fecha:</b> {{ envio.fecha or "-" }}</div>
+    <!-- TOPBAR -->
+    <nav class="navbar topbar d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <img src="/static/logo-xurgical.png" class="logo">
+        <span class="brand">Xurgical SAT</span>
+        <span class="text-secondary">/ Parte</span>
+        <span class="fw-bold">{{ envio.ot_num }}</span>
       </div>
-    </div>
 
-    {% if user and user.role in ["admin","recepcion"] %}
-    <button class="btn btn-success btn-sm" type="button"
-            data-bs-toggle="collapse" data-bs-target="#addInst">
-      ➕ Añadir instrumento
-    </button>
-    {% endif %}
-  </div>
-
-  {% if envio.tipo_trabajo == 'TRAZABILIDAD' %}
-    <div class="alert alert-info mt-3 mb-0">
-      <div class="fw-semibold mb-1">Modo trazabilidad</div>
-      Cada instrumento se numerará automáticamente con el DataMatrix del cliente (prefijo + 5 dígitos). Solo necesitas hacer las 2 fotos.
-    </div>
-  {% endif %}
-
-  {% if user and user.role in ["admin","recepcion"] %}
-  <div class="collapse mt-3" id="addInst">
-    <div class="panel p-3" style="background: rgba(255,255,255,0.85);">
-      <form method="post" action="/envios/{{ envio.id }}/instrumentos/nuevo">
-        <div class="row g-2">
-          <div class="col-md-3">
-            <label class="form-label">Modelo / Código producto</label>
-            <input class="form-control" name="codigo_producto">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Fabricante</label>
-            <input class="form-control" name="fabricante">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Nº serie</label>
-            <input class="form-control" name="num_serie">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">DataMatrix</label>
-            {% if envio.tipo_trabajo == 'TRAZABILIDAD' %}
-              <input class="form-control" value="(se asigna automáticamente)" disabled>
-              <input type="hidden" name="codigo_datamatrix" value="">
-            {% else %}
-              <input class="form-control" name="codigo_datamatrix">
-            {% endif %}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Denominación</label>
-            <input class="form-control" name="denominacion">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Observaciones</label>
-            <input class="form-control" name="observaciones">
-          </div>
-        </div>
-
-        <div class="mt-3 d-flex gap-2">
-          <button class="btn btn-primary">Guardar instrumento</button>
-          <button class="btn btn-outline-secondary" type="button"
-                  data-bs-toggle="collapse" data-bs-target="#addInst">
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-  {% endif %}
-</div>
-
-<!-- LISTADO INSTRUMENTOS -->
-<div class="panel p-2">
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead class="table-light">
-        <tr>
-          <th class="col-id">ID</th>
-          <th class="col-modelo">Modelo</th>
-          <th class="col-denom">Denominación</th>
-          <th class="col-fab">Fabricante</th>
-          <th class="col-serie">Nº serie</th>
-          <th class="col-dm">DataMatrix</th>
-          <th class="col-fotos">Fotos</th>
-          {% if envio and (envio.tipo_trabajo|default('REPARACION') == 'TRAZABILIDAD') %}
-            <th class="col-estado">Grabado</th>
-          {% else %}
-            <th class="col-estado">Estado</th>
-          {% endif %}
-          <th class="col-actions"></th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {% for inst in instrumentos %}
-        {% set has_obs = (inst.observaciones or "")|trim %}
-
-        <!-- FILA PRINCIPAL -->
-        <tr class="{% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}{% if inst.estado and inst.estado|lower|trim == 'reparado' %}row-reparado{% endif %}{% if inst.estado and inst.estado|lower|trim == 'baja' %} row-baja{% endif %}{% endif %}">
-          <td>{{ inst.id }}</td>
-
-          <td class="col-modelo">
-            <strong>{{ inst.codigo_producto or "-" }}</strong>
-          </td>
-
-          <td class="col-denom">
-            {{ inst.denominacion or "-" }}
-          </td>
-
-          <td class="col-fab">
-            {{ inst.fabricante or "-" }}
-          </td>
-
-          <td class="col-serie">
-            {{ inst.num_serie or "-" }}
-          </td>
-
-          <td class="col-dm muted">
-            {{ inst.codigo_datamatrix or "-" }}
-          </td>
-
-          <!-- Indicador fotos -->
-          <td class="col-fotos">
-            {% if inst.foto_entrada_1 and inst.foto_entrada_2 %}
-              <span class="badge-ok">COMPLETADO</span>
-            {% else %}
-              <span class="badge-pend">PENDIENTE</span>
-            {% endif %}
-          </td>
-
-          <!-- Estado -->
-          <td class="col-estado">
-            {% if envio and (envio.tipo_trabajo|default('REPARACION') == 'TRAZABILIDAD') %}
-              {% if inst.grabado %}
-                <span class="badge-ok">OK</span>
-              {% else %}
-                <span class="badge-pend">PENDIENTE</span>
-              {% endif %}
-            {% else %}
-              {% if user and user.role in ["admin","tecnico"] %}
-              <form method="post" action="/instrumentos/{{ inst.id }}/estado" class="m-0">
-                <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
-                  {% for e in ["Pendiente","En proceso","Reparado","Baja"] %}
-                    <option value="{{ e }}" {% if inst.estado == e %}selected{% endif %}>{{ e }}</option>
-                  {% endfor %}
-                </select>
-              </form>
-              {% else %}
-                {{ inst.estado or "Pendiente" }}
-              {% endif %}
-            {% endif %}
-          </td>
-
-          <!-- Acciones -->
-          <td class="text-end col-actions">
-            <!-- ✅ Obs: solo si hay observaciones, y en rojo -->
-            {% if has_obs %}
-            <button class="btn btn-outline-danger btn-sm"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#obs{{ inst.id }}">
-              Obs
-            </button>
-            {% endif %}
-
-
-            {% if envio and envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
-              {% if inst.has_informe %}
-                <a class="btn btn-outline-dark btn-sm"
-                   href="/instrumentos/{{ inst.id }}/informe.pdf"
-                   target="_blank"
-                   title="Ver informe PDF">
-                  Informe
-                </a>
-              {% endif %}
-
-              {% if user and user.role in ["admin","tecnico"] %}
-                <button class="btn btn-outline-success btn-sm"
-                        type="button"
-                        data-bs-toggle="modal"
-                        data-bs-target="#upInforme{{ inst.id }}">
-                  Subir PDF
-                </button>
-              {% endif %}
-            {% endif %}
-
-            <a class="btn btn-outline-secondary btn-sm"
-               href="/instrumentos/{{ inst.id }}">Abrir</a>
-
-            {% if user and user.role in ["admin","recepcion"] %}
-            <a class="btn btn-outline-primary btn-sm"
-               href="/instrumentos/{{ inst.id }}/editar">Editar</a>
-
-            <!-- ✅ Borrar instrumento (con confirmación) -->
-            <button class="btn btn-outline-danger btn-sm"
-                    type="button"
-                    data-bs-toggle="modal"
-                    data-bs-target="#delInst{{ inst.id }}">
-              Borrar
-            </button>
-            {% endif %}
-          </td>
-        </tr>
-
-        <!-- FILA OBSERVACIONES (solo útil si hay texto) -->
-        <tr class="obs-row">
-          <td colspan="9" class="p-2">
-            <div class="collapse" id="obs{{ inst.id }}">
-              <div class="obs-box">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <div class="fw-bold">Observaciones</div>
-                  <span class="badge text-bg-light">Instrumento #{{ inst.id }}</span>
-                </div>
-                <p class="obs-text">{{ inst.observaciones or "-" }}</p>
-              </div>
-            </div>
-          </td>
-        </tr>
-
-
-        {% if envio and envio.tipo_trabajo == 'OPTICA_RIGIDA' and user and user.role in ["admin","tecnico"] %}
-        <div class="modal fade" id="upInforme{{ inst.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">📄 Subir informe PDF (Instrumento #{{ inst.id }})</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <div class="text-secondary small mb-2">
-                  El informe es opcional. Si ya existe uno, se reemplazará.
-                </div>
-                <form method="post" action="/instrumentos/{{ inst.id }}/informe/upload" enctype="multipart/form-data">
-                  <input class="form-control" type="file" name="file" accept="application/pdf" required>
-                  <div class="d-flex justify-content-end gap-2 mt-3">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button class="btn btn-success">Subir PDF</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/" class="btn btn-outline-secondary btn-sm">⬅ Dashboard</a>
+        {% if user %}
+        <a class="btn btn-outline-success btn-sm" href="/envios/{{ envio.id }}/etiqueta.pdf" target="_blank">🏷️
+          Etiqueta</a>
         {% endif %}
-
-        <!-- MODAL BORRAR INSTRUMENTO -->
         {% if user and user.role in ["admin","recepcion"] %}
-        <div class="modal fade" id="delInst{{ inst.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title text-danger">⚠️ Borrar instrumento #{{ inst.id }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <a class="btn btn-outline-primary btn-sm"
+          href="/export/download?scope=parte&envio_id={{ envio.id }}&fmt=xlsx">📤 Exportar OT</a>
+        {% endif %}
+        {% if user and user.role in ["admin","grabado"] %}
+        <a class="btn btn-outline-dark btn-sm" href="/envios/{{ envio.id }}/grabacion">🖋️ Grabación (mosaico)</a>
+        {% endif %}
+        {% if user %}
+        <span class="badge text-bg-dark">{{ user.username }}</span>
+        <span class="badge text-bg-secondary">{{ user.role }}</span>
+        <form method="post" action="/logout" class="m-0">
+          <button class="btn btn-danger btn-sm">Salir</button>
+        </form>
+        {% endif %}
+      </div>
+    </nav>
+
+    <main class="container-fluid px-3 px-md-4 py-3">
+
+      <!-- CABECERA PARTE -->
+      <div class="panel p-3 mb-3">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+          <div>
+            <div class="h5 mb-1">Parte {{ envio.ot_num }}</div>
+            <div class="muted">
+              <div><b>Referencia:</b> {{ envio.nombre_archivo or "-" }}</div>
+              <div><b>Cliente:</b> {{ envio.cliente or "-" }}</div>
+              <div><b>Tipo OT:</b>
+                {% if envio.tipo_trabajo == 'TRAZABILIDAD' %}
+                <span class="badge text-bg-primary">Trazabilidad</span>
+                {% elif envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
+                <span class="badge text-bg-dark">Óptica rígida</span>
+                {% else %}
+                <span class="badge text-bg-success">Reparación</span>
+                {% endif %}
               </div>
-              <div class="modal-body">
-                <p><strong>Esta acción no se puede deshacer.</strong></p>
-                <p>Se borrará este instrumento y sus fotos asociadas.</p>
-                <div class="small text-secondary">
-                  <div><b>Modelo:</b> {{ inst.codigo_producto or "-" }}</div>
-                  <div><b>Denominación:</b> {{ inst.denominacion or "-" }}</div>
-                  <div><b>DataMatrix:</b> {{ inst.codigo_datamatrix or "-" }}</div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form method="post" action="/instrumentos/{{ inst.id }}/borrar" class="m-0">
-                  <button class="btn btn-danger">Sí, borrar instrumento</button>
-                </form>
-              </div>
+              <div><b>Fecha:</b> {{ envio.fecha|fecha }}</div>
             </div>
           </div>
+
+          {% if user and user.role in ["admin","recepcion"] %}
+          <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addInst">
+            ➕ Añadir instrumento
+          </button>
+          {% endif %}
+        </div>
+
+        {% if envio.tipo_trabajo == 'TRAZABILIDAD' %}
+        <div class="alert alert-info mt-3 mb-0">
+          <div class="fw-semibold mb-1">Modo trazabilidad</div>
+          Cada instrumento se numerará automáticamente con el DataMatrix del cliente (prefijo + 5 dígitos). Solo
+          necesitas hacer las 2 fotos.
         </div>
         {% endif %}
 
-        {% endfor %}
+        {% if user and user.role in ["admin","recepcion"] %}
+        <div class="collapse mt-3" id="addInst">
+          <div class="panel p-3" style="background: rgba(255,255,255,0.85);">
+            <form method="post" action="/envios/{{ envio.id }}/instrumentos/nuevo">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label">Modelo / Código producto</label>
+                  <input class="form-control" name="codigo_producto">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Fabricante</label>
+                  <input class="form-control" name="fabricante">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Nº serie</label>
+                  <input class="form-control" name="num_serie">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">DataMatrix</label>
+                  {% if envio.tipo_trabajo == 'TRAZABILIDAD' %}
+                  <input class="form-control" value="(se asigna automáticamente)" disabled>
+                  <input type="hidden" name="codigo_datamatrix" value="">
+                  {% else %}
+                  <input class="form-control" name="codigo_datamatrix">
+                  {% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Denominación</label>
+                  <input class="form-control" name="denominacion">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Observaciones</label>
+                  <input class="form-control" name="observaciones">
+                </div>
+              </div>
 
-        {% if instrumentos|length == 0 %}
-        <tr>
-          <td colspan="9" class="text-center text-secondary py-3">
-            Este parte no tiene instrumentos todavía.
-          </td>
-        </tr>
+              <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-primary">Guardar instrumento</button>
+                <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#addInst">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
         {% endif %}
-      </tbody>
-    </table>
+      </div>
+
+      <!-- LISTADO INSTRUMENTOS -->
+      <div class="panel p-2">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-modelo">Modelo</th>
+                <th class="col-denom">Denominación</th>
+                <th class="col-fab">Fabricante</th>
+                <th class="col-serie">Nº serie</th>
+                <th class="col-dm">DataMatrix</th>
+                <th class="col-fotos">Fotos</th>
+                {% if envio and (envio.tipo_trabajo|default('REPARACION') == 'TRAZABILIDAD') %}
+                <th class="col-estado">Grabado</th>
+                {% else %}
+                <th class="col-estado">Estado</th>
+                {% endif %}
+                <th class="col-actions"></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for inst in instrumentos %}
+              {% set has_obs = (inst.observaciones or "")|trim %}
+
+              <!-- FILA PRINCIPAL -->
+              <tr
+                class="{% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}{% if inst.estado and inst.estado|lower|trim == 'reparado' %}row-reparado{% endif %}{% if inst.estado and inst.estado|lower|trim == 'baja' %} row-baja{% endif %}{% endif %}">
+                <td>{{ inst.id }}</td>
+
+                <td class="col-modelo">
+                  <strong>{{ inst.codigo_producto or "-" }}</strong>
+                </td>
+
+                <td class="col-denom">
+                  {{ inst.denominacion or "-" }}
+                </td>
+
+                <td class="col-fab">
+                  {{ inst.fabricante or "-" }}
+                </td>
+
+                <td class="col-serie">
+                  {{ inst.num_serie or "-" }}
+                </td>
+
+                <td class="col-dm muted">
+                  {{ inst.codigo_datamatrix or "-" }}
+                </td>
+
+                <!-- Indicador fotos -->
+                <td class="col-fotos">
+                  {% if inst.foto_entrada_1 and inst.foto_entrada_2 %}
+                  <span class="badge-ok">COMPLETADO</span>
+                  {% else %}
+                  <span class="badge-pend">PENDIENTE</span>
+                  {% endif %}
+                </td>
+
+                <!-- Estado -->
+                <td class="col-estado">
+                  {% if envio and (envio.tipo_trabajo|default('REPARACION') == 'TRAZABILIDAD') %}
+                  {% if inst.grabado %}
+                  <span class="badge-ok">OK</span>
+                  {% else %}
+                  <span class="badge-pend">PENDIENTE</span>
+                  {% endif %}
+                  {% else %}
+                  {% if user and user.role in ["admin","tecnico"] %}
+                  <form method="post" action="/instrumentos/{{ inst.id }}/estado" class="m-0">
+                    <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
+                      {% for e in ["Pendiente","En proceso","Reparado","Baja"] %}
+                      <option value="{{ e }}" {% if inst.estado==e %}selected{% endif %}>{{ e }}</option>
+                      {% endfor %}
+                    </select>
+                  </form>
+                  {% else %}
+                  {{ inst.estado or "Pendiente" }}
+                  {% endif %}
+                  {% endif %}
+                </td>
+
+                <!-- Acciones -->
+                <td class="text-end col-actions">
+                  <!-- ✅ Obs: solo si hay observaciones, y en rojo -->
+                  {% if has_obs %}
+                  <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#obs{{ inst.id }}">
+                    Obs
+                  </button>
+                  {% endif %}
+
+
+                  {% if envio and envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
+                  {% if inst.has_informe %}
+                  <a class="btn btn-outline-dark btn-sm" href="/instrumentos/{{ inst.id }}/informe.pdf" target="_blank"
+                    title="Ver informe PDF">
+                    Informe
+                  </a>
+                  {% endif %}
+
+                  {% if user and user.role in ["admin","tecnico"] %}
+                  <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="modal"
+                    data-bs-target="#upInforme{{ inst.id }}">
+                    Subir PDF
+                  </button>
+                  {% endif %}
+                  {% endif %}
+
+                  <a class="btn btn-outline-secondary btn-sm" href="/instrumentos/{{ inst.id }}">Abrir</a>
+
+                  {% if user and user.role in ["admin","recepcion"] %}
+                  <a class="btn btn-outline-primary btn-sm" href="/instrumentos/{{ inst.id }}/editar">Editar</a>
+
+                  <!-- ✅ Borrar instrumento (con confirmación) -->
+                  <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal"
+                    data-bs-target="#delInst{{ inst.id }}">
+                    Borrar
+                  </button>
+                  {% endif %}
+                </td>
+              </tr>
+
+              <!-- FILA OBSERVACIONES (solo útil si hay texto) -->
+              <tr class="obs-row">
+                <td colspan="9" class="p-2">
+                  <div class="collapse" id="obs{{ inst.id }}">
+                    <div class="obs-box">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="fw-bold">Observaciones</div>
+                        <span class="badge text-bg-light">Instrumento #{{ inst.id }}</span>
+                      </div>
+                      <p class="obs-text">{{ inst.observaciones or "-" }}</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+
+
+              {% if envio and envio.tipo_trabajo == 'OPTICA_RIGIDA' and user and user.role in ["admin","tecnico"] %}
+              <div class="modal fade" id="upInforme{{ inst.id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">📄 Subir informe PDF (Instrumento #{{ inst.id }})</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="text-secondary small mb-2">
+                        El informe es opcional. Si ya existe uno, se reemplazará.
+                      </div>
+                      <form method="post" action="/instrumentos/{{ inst.id }}/informe/upload"
+                        enctype="multipart/form-data">
+                        <input class="form-control" type="file" name="file" accept="application/pdf" required>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                          <button class="btn btn-success">Subir PDF</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- MODAL BORRAR INSTRUMENTO -->
+              {% if user and user.role in ["admin","recepcion"] %}
+              <div class="modal fade" id="delInst{{ inst.id }}" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title text-danger">⚠️ Borrar instrumento #{{ inst.id }}</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p><strong>Esta acción no se puede deshacer.</strong></p>
+                      <p>Se borrará este instrumento y sus fotos asociadas.</p>
+                      <div class="small text-secondary">
+                        <div><b>Modelo:</b> {{ inst.codigo_producto or "-" }}</div>
+                        <div><b>Denominación:</b> {{ inst.denominacion or "-" }}</div>
+                        <div><b>DataMatrix:</b> {{ inst.codigo_datamatrix or "-" }}</div>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                      <form method="post" action="/instrumentos/{{ inst.id }}/borrar" class="m-0">
+                        <button class="btn btn-danger">Sí, borrar instrumento</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+
+              {% endfor %}
+
+              {% if instrumentos|length == 0 %}
+              <tr>
+                <td colspan="9" class="text-center text-secondary py-3">
+                  Este parte no tiene instrumentos todavía.
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
   </div>
-</div>
 
-</main>
-</div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Autorrelleno desde Articulos.xlsx (Modelo/Código -> Denominación + Fabricante) -->
+  <script>
+    (function () {
+      // Form de "Añadir instrumento" (sirve tanto para Reparación como para Trazabilidad)
+      const form = document.querySelector('form[action*="/envios/"][action$="/instrumentos/nuevo"]') ||
+        document.querySelector('form[action*="/instrumentos/nuevo"]');
+      if (!form) return;
 
-<!-- Autorrelleno desde Articulos.xlsx (Modelo/Código -> Denominación + Fabricante) -->
-<script>
-(function(){
-  // Form de "Añadir instrumento" (sirve tanto para Reparación como para Trazabilidad)
-  const form = document.querySelector('form[action*="/envios/"][action$="/instrumentos/nuevo"]') ||
-               document.querySelector('form[action*="/instrumentos/nuevo"]');
-  if(!form) return;
+      const inpCodigo = form.querySelector('input[name="codigo_producto"]');
+      const inpDenom = form.querySelector('input[name="denominacion"]');
+      const inpFab = form.querySelector('input[name="fabricante"]');
+      if (!inpCodigo || !inpDenom) return;
 
-  const inpCodigo = form.querySelector('input[name="codigo_producto"]');
-  const inpDenom  = form.querySelector('input[name="denominacion"]');
-  const inpFab    = form.querySelector('input[name="fabricante"]');
-  if(!inpCodigo || !inpDenom) return;
+      let lastQ = "";
+      let lastAutoCode = "";
+      let timer = null;
 
-  let lastQ = "";
-  let lastAutoCode = "";
-  let timer = null;
-
-  function normCode(s){
-    if(!s) return "";
-    let t = String(s).trim();
-    // quita prefijos rp/mt (insensible a mayúsculas)
-    t = t.replace(/^(rp|mt)\s*/i, "");
-    t = t.replace(/^[\s\-_]+/, "");
-    return t.toUpperCase();
-  }
-
-  async function lookupNow(){
-    const q = normCode(inpCodigo.value || "");
-    if(!q){
-      // si se borra el código, limpia solo lo que vino del catálogo
-      if(inpDenom.dataset.autofill === "1"){ inpDenom.value = ""; }
-      if(inpFab && inpFab.dataset.autofill === "1"){ inpFab.value = ""; }
-      lastQ = "";
-      lastAutoCode = "";
-      return;
-    }
-    if(q === lastQ) return;
-    lastQ = q;
-
-    try{
-      const resp = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, {
-        headers: {"Accept":"application/json"},
-        cache: "no-store"
-      });
-      if(!resp.ok) return;
-      const data = await resp.json();
-      if(!data || !data.found) return;
-
-      // Denominación: solo pisa si está vacía o venía del autofill
-      const canOverwriteDenom = (!inpDenom.value.trim() || inpDenom.dataset.autofill === "1");
-      if(canOverwriteDenom && data.descripcion){
-        inpDenom.value = data.descripcion;
-        inpDenom.dataset.autofill = "1";
+      function normCode(s) {
+        if (!s) return "";
+        let t = String(s).trim();
+        // quita prefijos rp/mt (insensible a mayúsculas)
+        t = t.replace(/^(rp|mt)\s*/i, "");
+        t = t.replace(/^[\s\-_]+/, "");
+        return t.toUpperCase();
       }
 
-      // Fabricante: igual, solo pisa si está vacío o venía del autofill
-      if(inpFab){
-        const canOverwriteFab = (!inpFab.value.trim() || inpFab.dataset.autofill === "1");
-        if(canOverwriteFab && data.fabricante){
-          inpFab.value = data.fabricante;
-          inpFab.dataset.autofill = "1";
+      async function lookupNow() {
+        const q = normCode(inpCodigo.value || "");
+        if (!q) {
+          // si se borra el código, limpia solo lo que vino del catálogo
+          if (inpDenom.dataset.autofill === "1") { inpDenom.value = ""; }
+          if (inpFab && inpFab.dataset.autofill === "1") { inpFab.value = ""; }
+          lastQ = "";
+          lastAutoCode = "";
+          return;
+        }
+        if (q === lastQ) return;
+        lastQ = q;
+
+        try {
+          const resp = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, {
+            headers: { "Accept": "application/json" },
+            cache: "no-store"
+          });
+          if (!resp.ok) return;
+          const data = await resp.json();
+          if (!data || !data.found) return;
+
+          // Denominación: solo pisa si está vacía o venía del autofill
+          const canOverwriteDenom = (!inpDenom.value.trim() || inpDenom.dataset.autofill === "1");
+          if (canOverwriteDenom && data.descripcion) {
+            inpDenom.value = data.descripcion;
+            inpDenom.dataset.autofill = "1";
+          }
+
+          // Fabricante: igual, solo pisa si está vacío o venía del autofill
+          if (inpFab) {
+            const canOverwriteFab = (!inpFab.value.trim() || inpFab.dataset.autofill === "1");
+            if (canOverwriteFab && data.fabricante) {
+              inpFab.value = data.fabricante;
+              inpFab.dataset.autofill = "1";
+            }
+          }
+
+          // Guarda el último código resuelto (para saber cuándo limpiar al cambiar)
+          lastAutoCode = normCode(data.codigo || q);
+
+          // Si backend devuelve el código normalizado, lo ponemos
+          if (data.codigo) {
+            inpCodigo.value = data.codigo;
+          }
+        } catch (e) {
+          // silencioso
         }
       }
 
-      // Guarda el último código resuelto (para saber cuándo limpiar al cambiar)
-      lastAutoCode = normCode(data.codigo || q);
-
-      // Si backend devuelve el código normalizado, lo ponemos
-      if(data.codigo){
-        inpCodigo.value = data.codigo;
+      function scheduleLookup() {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(lookupNow, 200);
       }
-    }catch(e){
-      // silencioso
-    }
-  }
 
-  function scheduleLookup(){
-    if(timer) clearTimeout(timer);
-    timer = setTimeout(lookupNow, 200);
-  }
+      // Si usuario escribe a mano, ya no se pisa
+      inpDenom.addEventListener("input", () => { inpDenom.dataset.autofill = "0"; });
+      if (inpFab) { inpFab.addEventListener("input", () => { inpFab.dataset.autofill = "0"; }); }
 
-  // Si usuario escribe a mano, ya no se pisa
-  inpDenom.addEventListener("input", ()=>{ inpDenom.dataset.autofill = "0"; });
-  if(inpFab){ inpFab.addEventListener("input", ()=>{ inpFab.dataset.autofill = "0"; }); }
+      // Si cambia el código y los campos venían del catálogo, los limpiamos para permitir el nuevo autofill
+      inpCodigo.addEventListener("input", () => {
+        const now = normCode(inpCodigo.value || "");
+        if (!now) return;
 
-  // Si cambia el código y los campos venían del catálogo, los limpiamos para permitir el nuevo autofill
-  inpCodigo.addEventListener("input", ()=>{
-    const now = normCode(inpCodigo.value || "");
-    if(!now) return;
+        if (lastAutoCode && now !== lastAutoCode) {
+          if (inpDenom.dataset.autofill === "1") { inpDenom.value = ""; inpDenom.dataset.autofill = "1"; }
+          if (inpFab && inpFab.dataset.autofill === "1") { inpFab.value = ""; inpFab.dataset.autofill = "1"; }
+        }
+        scheduleLookup();
+      });
 
-    if(lastAutoCode && now !== lastAutoCode){
-      if(inpDenom.dataset.autofill === "1"){ inpDenom.value = ""; inpDenom.dataset.autofill = "1"; }
-      if(inpFab && inpFab.dataset.autofill === "1"){ inpFab.value = ""; inpFab.dataset.autofill = "1"; }
-    }
-    scheduleLookup();
-  });
+      // Al salir del campo o pulsar Enter, lookup inmediato
+      inpCodigo.addEventListener("blur", lookupNow);
+      inpCodigo.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          setTimeout(lookupNow, 0);
+        }
+      });
 
-  // Al salir del campo o pulsar Enter, lookup inmediato
-  inpCodigo.addEventListener("blur", lookupNow);
-  inpCodigo.addEventListener("keydown", (e)=>{
-    if(e.key === "Enter"){
-      setTimeout(lookupNow, 0);
-    }
-  });
-
-  // Si ya viene un código precargado, intenta lookup al cargar
-  window.addEventListener("load", ()=>{ try{ lookupNow(); }catch(e){} });
-})();
-</script>
+      // Si ya viene un código precargado, intenta lookup al cargar
+      window.addEventListener("load", () => { try { lookupNow(); } catch (e) { } });
+    })();
+  </script>
 
 
-{% if request and request.query_params.get('print') == '1' %}
-<script>
-  // Al crear la OT, abrimos la etiqueta automáticamente.
-  // (Si el navegador bloquea popups, el botón "Etiqueta" queda siempre disponible.)
-  window.addEventListener('load', function(){
-    try{ window.open('/envios/{{ envio.id }}/etiqueta.pdf', '_blank'); }catch(e){}
-  });
-</script>
-{% endif %}
+  {% if request and request.query_params.get('print') == '1' %}
+  <script>
+    // Al crear la OT, abrimos la etiqueta automáticamente.
+    // (Si el navegador bloquea popups, el botón "Etiqueta" queda siempre disponible.)
+    window.addEventListener('load', function () {
+      try { window.open('/envios/{{ envio.id }}/etiqueta.pdf', '_blank'); } catch (e) { }
+    });
+  </script>
+  {% endif %}
 
 </body>
+
 </html>
 
 
 <script>
-function copyToClipboard(id){
-  const el = document.getElementById(id);
-  if(!el) return;
-  const val = el.value || el.textContent || "";
-  navigator.clipboard.writeText(val);
-}
+  function copyToClipboard(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const val = el.value || el.textContent || "";
+    navigator.clipboard.writeText(val);
+  }
 </script>
