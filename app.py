@@ -2190,11 +2190,52 @@ async def qc_optica_save(
     conn.commit()
     conn.close()
     
+    # --- NUEVOS PASOS PARA ARCHIVAR EL PDF AUTOMÁTICAMENTE ---
+    conn = get_conn()
+    cur = conn.cursor()
+    # Recargar datos frescos para el generador
+    pdf_bytes, filename = _generate_qc_optica_pdf_bytes(instrumento_id)
+    if pdf_bytes:
+        informes_dir = os.path.join(UPLOAD_DIR, "informes")
+        os.makedirs(informes_dir, exist_ok=True)
+        # Nombre único con timestamp para no machacar registros históricos si se quiere
+        stored_name = f"auto_qc_{instrumento_id}_{int(time.time())}.pdf"
+        full_path = os.path.join(informes_dir, stored_name)
+        with open(full_path, "wb") as f_pdf:
+            f_pdf.write(pdf_bytes)
+            
+        # Insertar en instrumento_informes para que aparezca en el listado
+        from db import get_table_columns
+        cols = get_table_columns(cur, "instrumento_informes")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        username = (user.get("username") if isinstance(user, dict) else getattr(user, "username", "SISTEMA"))
+        
+        insert_cols = ["instrumento_id", "filename"]
+        insert_vals = [instrumento_id, filename]
+        if "path" in cols:
+            insert_cols.append("path")
+            insert_vals.append(full_path)
+        if "filepath" in cols:
+            insert_cols.append("filepath")
+            insert_vals.append(full_path)
+        if "uploaded_at" in cols:
+            insert_cols.append("uploaded_at")
+            insert_vals.append(now_str)
+        if "uploaded_by" in cols:
+            insert_cols.append("uploaded_by")
+            insert_vals.append(username)
+            
+        placeholders = ", ".join(["?"] * len(insert_cols))
+        cur.execute(f"INSERT INTO instrumento_informes ({', '.join(insert_cols)}) VALUES ({placeholders})", tuple(insert_vals))
+        conn.commit()
+        
+    conn.close()
+    
     return RedirectResponse(url=f"/instrumentos/{instrumento_id}/qc_optica", status_code=303)
 
 
-@app.get("/instrumentos/{instrumento_id}/qc_optica/pdf")
-async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user)):
+def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     conn = get_conn()
     cur = conn.cursor()
     
@@ -2202,7 +2243,7 @@ async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user))
     inst = cur.fetchone()
     if not inst:
         conn.close()
-        raise HTTPException(status_code=404, detail="No encontrado")
+        return None, None
         
     cur.execute("SELECT * FROM envios WHERE id=?", (inst["envio_id"],))
     envio = cur.fetchone()
@@ -2215,7 +2256,7 @@ async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user))
     conn.close()
     
     if not qc:
-        raise HTTPException(status_code=404, detail="No hay datos de QC para este instrumento")
+        return None, None
 
     # Generación PDF
     from reportlab.lib.pagesizes import A4
@@ -2269,7 +2310,10 @@ async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user))
         # "/static/fotos/xxx.jpg" -> "static/fotos/xxx.jpg"
         loc = p.lstrip("/")
         if os.path.exists(loc):
-            return Image(loc, width=120, height=90)
+            try:
+                return Image(loc, width=120, height=90)
+            except:
+                return ""
         return ""
 
     foto_data = [
@@ -2342,9 +2386,18 @@ async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user))
     elements.append(firma_tab)
 
     doc.build(elements)
+    pdf_bytes = buf.getvalue()
     filename = f"QC_OPTICA_{instrumento_id}_{inst['codigo_producto']}.pdf"
+    return pdf_bytes, filename
+
+@app.get("/instrumentos/{instrumento_id}/qc_optica/pdf")
+async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user)):
+    pdf_bytes, filename = _generate_qc_optica_pdf_bytes(instrumento_id)
+    if not pdf_bytes:
+        raise HTTPException(status_code=404, detail="No hay datos de QC para este instrumento")
+    
     return StreamingResponse(
-        io.BytesIO(buf.getvalue()),
+        io.BytesIO(pdf_bytes),
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename={filename}"}
     )

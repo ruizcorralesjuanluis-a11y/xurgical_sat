@@ -243,40 +243,36 @@
     </div>
 
     <!-- INFORME PDF SOLO PARA OPTICA_RIGIDA -->
+    <!-- INFORME PDF SOLO PARA OPTICA_RIGIDA -->
     {% if envio and tipo_upper == 'OPTICA_RIGIDA' %}
-    <div class="card mb-3">
-      <div class="card-header"><strong>Informe PDF (Óptica rígida)</strong></div>
+    <div class="card mb-3 shadow-sm border-danger">
+      <div class="card-header bg-danger text-white">
+        <strong><i class="fa-solid fa-file-pdf"></i> Informe Control de Calidad</strong>
+      </div>
       <div class="card-body">
+        <p class="small text-muted mb-3">
+          Este informe se genera automáticamente a partir de los datos registrados en el Control de Calidad.
+        </p>
 
         {% if informe %}
-        <div class="alert alert-success d-flex justify-content-between align-items-center">
+        <div class="alert alert-success d-flex justify-content-between align-items-center mb-3">
           <div>
             <div><strong>{{ informe.filename }}</strong></div>
             <small class="text-muted">
-              {% if informe.uploaded_at %}Subido: {{ informe.uploaded_at|fecha }}{% endif %}
-              {% if informe.uploaded_by %} · Por: {{ informe.uploaded_by }}{% endif %}
+              {% if informe.uploaded_at %}Generado: {{ informe.uploaded_at|fecha }}{% endif %}
             </small>
           </div>
-          <a class="btn btn-outline-primary" href="/instrumentos/{{ inst.id }}/informe" target="_blank">
-            Ver / Descargar
+          <a class="btn btn-primary" href="/instrumentos/{{ inst.id }}/informe" target="_blank">
+            <i class="fa-solid fa-download"></i> Ver Actual
           </a>
         </div>
-        {% else %}
-        <div class="alert alert-warning mb-2">No hay informe PDF cargado para este instrumento.</div>
         {% endif %}
 
-        <form action="/instrumentos/{{ inst.id }}/informe/upload" method="post" enctype="multipart/form-data"
-          class="mt-2">
-
-          <div class="row g-2 align-items-center">
-            <div class="col-md-8">
-              <input class="form-control" type="file" name="file" accept="application/pdf" required>
-            </div>
-            <div class="col-md-4 d-grid">
-              <button class="btn btn-primary" type="submit">Subir PDF</button>
-            </div>
-          </div>
-        </form>
+        <div class="d-grid gap-2">
+          <a href="/instrumentos/{{ inst.id }}/qc_optica" class="btn btn-outline-danger">
+            <i class="fa-solid fa-pen-to-square"></i> Editar Datos y Regenerar PDF
+          </a>
+        </div>
 
       </div>
     </div>
