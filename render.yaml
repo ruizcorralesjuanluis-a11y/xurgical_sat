@@ -1,6 +1,7 @@
 services:
   - type: web
     name: xurgical-sat
+    plan: free
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
@@ -15,4 +16,4 @@ services:
 databases:
   - name: xurgical-db
     plan: free
-    region: oregon # or your preferred region
+    region: oregon
