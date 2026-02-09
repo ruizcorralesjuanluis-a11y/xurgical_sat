@@ -514,13 +514,7 @@
                 </td>
 
                 <td class="col-denom">
-                  <div class="d-flex align-items-center gap-2">
-                    {{ inst.denominacion or "-" }}
-                    {% if has_obs %}
-                    <i class="fa-solid fa-comment-dots obs-indicator" title="Tiene observaciones"
-                      onclick="new bootstrap.Collapse(document.getElementById('obs{{ inst.id }}')).toggle()"></i>
-                    {% endif %}
-                  </div>
+                  {{ inst.denominacion or "-" }}
                 </td>
 
                 <td class="col-fab">

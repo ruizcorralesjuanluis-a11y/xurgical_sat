@@ -175,13 +175,24 @@
     <div class="container">
         {% for inst in instrumentos %}
         <div class="inst-card" id="inst-{{ inst.id }}">
-            {% if inst.foto_entrada_1 %}
-            <img src="{{ inst.foto_entrada_1 }}" class="inst-img" alt="Foto Instrumento">
-            {% else %}
-            <div class="inst-img d-flex align-items-center justify-content-center text-secondary">
-                <i class="fa-solid fa-image fa-3x"></i>
+            <div class="position-relative">
+                {% if inst.foto_entrada_1 %}
+                <img src="{{ inst.foto_entrada_1 }}" class="inst-img" alt="Foto Instrumento">
+                {% else %}
+                <div class="inst-img d-flex align-items-center justify-content-center text-secondary">
+                    <i class="fa-solid fa-image fa-3x"></i>
+                </div>
+                {% endif %}
+
+                {% if inst.observaciones %}
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge rounded-pill bg-danger shadow-sm border border-2 border-white"
+                        title="Tiene observaciones" style="padding: 0.5em 0.7em;">
+                        <i class="fa-solid fa-comment-dots"></i>
+                    </span>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
 
             <div class="inst-info">
                 <div class="d-flex justify-content-between align-items-start mb-2">
@@ -199,13 +210,6 @@
                     <span class="badge bg-secondary badge-status">PENDIENTE</span>
                     {% endif %}
                 </div>
-
-                {% if inst.observaciones %}
-                <div class="mt-2 p-2 bg-warning-subtle border border-warning rounded small text-dark mb-3">
-                    <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>
-                    <strong>OBSERVACIONES:</strong> {{ inst.observaciones }}
-                </div>
-                {% endif %}
 
                 <div class="row g-2">
                     <div class="col-6">
