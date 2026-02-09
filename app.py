@@ -1345,7 +1345,7 @@ def nuevo_envio_crear(
     # Permiso granular (además del rol)
     conn_perm = get_conn()
     cur_perm = conn_perm.cursor()
-    if not can_action(user, "envio_borrar", cur_perm):
+    if not can_action(user, "envio_crear", cur_perm):
         conn_perm.close()
         return RedirectResponse(url="/?err=perm", status_code=303)
     conn_perm.close()
@@ -1796,7 +1796,7 @@ def instrumento_nuevo_crear(
     # Permiso granular (además del rol)
     conn_perm = get_conn()
     cur_perm = conn_perm.cursor()
-    if not can_action(user, "envio_borrar", cur_perm):
+    if not can_action(user, "instrumento_crear", cur_perm):
         conn_perm.close()
         return RedirectResponse(url="/?err=perm", status_code=303)
     conn_perm.close()
