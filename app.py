@@ -1405,6 +1405,13 @@ def nuevo_envio_crear(
             ),
         )
         envio_id = cur.lastrowid
+        
+        # Si es Postgres, lastrowid es None. Lo buscamos por ot_num (que es UNIQUE)
+        if envio_id is None:
+            cur.execute("SELECT id FROM envios WHERE ot_num=?", (ot_num,))
+            row_id = cur.fetchone()
+            if row_id:
+                envio_id = row_id["id"]
 
         conn.commit()
         conn.close()
@@ -1414,7 +1421,6 @@ def nuevo_envio_crear(
     except Exception as e:
         import traceback
         return HTMLResponse(f"<h1>Error al crear envio</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
-    return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
 
 
 @app.get("/ot/{ot_num}")
@@ -1837,7 +1843,7 @@ def instrumento_nuevo_crear(
     cur.execute("""
         INSERT INTO instrumentos
         (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
     """, (
         envio_id,
         (codigo_producto or "").strip(),
@@ -1850,6 +1856,13 @@ def instrumento_nuevo_crear(
     ))
 
     inst_id = cur.lastrowid
+    # Fallback para Postgres
+    if inst_id is None:
+        cur.execute("SELECT MAX(id) as mid FROM instrumentos WHERE envio_id=?", (envio_id,))
+        row_id = cur.fetchone()
+        if row_id:
+            inst_id = row_id["mid"]
+
     conn.commit()
     conn.close()
 

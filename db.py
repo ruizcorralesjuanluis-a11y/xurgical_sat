@@ -47,7 +47,7 @@ class PGCursorWrapper:
     
     @property
     def lastrowid(self):
-        return self.cur.lastrowid # psycopg2 no tiene lastrowid igual, se suele usar RETURNING
+        return getattr(self.cur, "lastrowid", None) # psycopg2 no tiene lastrowid igual, se suele usar RETURNING
 
 def get_table_columns(cur, table_name: str) -> list[str]:
     """Obtiene nombres de columnas de forma compatible con SQLite y Postgres"""
