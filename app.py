@@ -1448,10 +1448,14 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
         
         # Check PDF informe
         r["has_informe"] = False
-        if envio["tipo_trabajo"] == "OPTICA_RIGIDA":
-             cur.execute("SELECT 1 FROM instrumento_informes WHERE instrumento_id=?", (r["id"],))
-             if cur.fetchone():
-                 r["has_informe"] = True
+        try:
+            if (envio["tipo_trabajo"] or "REPARACION") == "OPTICA_RIGIDA":
+                 cur.execute("SELECT 1 FROM instrumento_informes WHERE instrumento_id=?", (r["id"],))
+                 if cur.fetchone():
+                     r["has_informe"] = True
+        except Exception as e:
+            # Si falla (ej. tabla no existe), asumimos False y seguimos
+            pass
 
     # DEF_TRZ_NOMBRE_OK: prepara nombre_trazabilidad SOLO para pantalla de grabación (copiar/pegar)
     envio_dict = dict(envio)
