@@ -84,27 +84,34 @@ class PGConnWrapper:
 # CONEXIÓN
 # -------------------------------------------------
 def get_connection():
-    if DATABASE_URL:
+    # Intentamos obtener la URL del entorno de nuevo por si se cargó tarde
+    env_url = os.environ.get("DATABASE_URL")
+    
+    if env_url:
         import psycopg2
-        # Limpieza de la URL para evitar errores comunes
-        url = DATABASE_URL.strip()
+        # Limpieza de la URL
+        url = env_url.strip()
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
         
         try:
-            conn = psycopg2.connect(url)
-            print(">>> [DATABASE] ESTADO: Conectado a PostgreSQL (Neon/Producción)", flush=True)
+            # Aumentamos el timeout de conexión para evitar fallos por lentitud
+            conn = psycopg2.connect(url, connect_timeout=10)
+            # No imprimimos la URL entera por seguridad, pero sí el host
+            from urllib.parse import urlparse
+            p = urlparse(url)
+            print(f">>> [DATABASE] ÉXITO: Conectado a Postgres en {p.hostname}", flush=True)
             return PGConnWrapper(conn)
         except Exception as e:
-            # Si falla, imprimimos el error para depurar en logs de Render
-            print(f">>> [DATABASE] ESTADO: ERROR CRITICO - Falló la conexión a Postgres: {e}", flush=True)
-            raise
+            print(f">>> [DATABASE] ERROR: No se pudo conectar a Postgres. Revise si la URL es correcta y si incluye la contraseña. Error: {e}", flush=True)
+            # Si falla Postgres, no hacemos fallback silencioso a SQLite si la URL existe, 
+            # para que el usuario sepa que algo va mal y no pierda datos guardando en el sitio equivocado.
+            raise HTTPException(status_code=500, detail=f"Error de conexión a la base de datos segura: {e}")
     
-    # Fallback a SQLite
-    print(f">>> [DATABASE] ESTADO: ATENCION - Usando SQLite local. LOS DATOS SE PERDERAN al actualizar.", flush=True)
+    # Fallback a SQLite (solo si NO hay DATABASE_URL configurada)
+    print(">>> [DATABASE] AVISO: Usando SQLite (Temporal). Configure DATABASE_URL en Render para persistencia.", flush=True)
     try:
-        if not str(DB_PATH).startswith("\\\\"):
-            DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
         pass
     

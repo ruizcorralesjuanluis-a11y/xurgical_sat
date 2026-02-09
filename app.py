@@ -818,8 +818,9 @@ def logout():
 # -----------------------------
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, user=Depends(get_current_user)):
-    from db import DATABASE_URL
-    db_type = "PRO" if DATABASE_URL else "TEMP"
+    # Comprobamos el entorno en tiempo real para el indicador
+    is_pro = bool(os.environ.get("DATABASE_URL"))
+    db_type = "PRO" if is_pro else "TEMP"
     conn = get_conn()
     cur = conn.cursor()
 
