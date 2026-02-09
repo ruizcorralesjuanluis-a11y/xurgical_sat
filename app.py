@@ -487,11 +487,15 @@ def can_action(user, action: str, cur=None) -> bool:
     role = _user_role(user) or ""
     if cur is None or user is None:
         return _default_allowed_by_role(role, action) == 1
-    cur.execute("SELECT allowed FROM user_permissions WHERE user_id=? AND action=?", (int(_user_id(user)), action))
-    row = cur.fetchone()
-    if row is None:
+    try:
+        cur.execute("SELECT allowed FROM user_permissions WHERE user_id=? AND action=?", (int(_user_id(user)), action))
+        row = cur.fetchone()
+        if row is None:
+            return _default_allowed_by_role(role, action) == 1
+        return int(row["allowed"] or 0) == 1
+    except Exception:
+        # Fallback to default if table missing or other DB error
         return _default_allowed_by_role(role, action) == 1
-    return int(row["allowed"] or 0) == 1
 
 
 @app.on_event("startup")
