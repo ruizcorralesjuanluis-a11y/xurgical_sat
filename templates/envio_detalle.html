@@ -582,14 +582,11 @@
                     </button>
                     {% endif %}
 
-                    {% if envio and envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
                     {% if inst.has_informe %}
                     <a class="btn btn-outline-dark btn-sm" href="/instrumentos/{{ inst.id }}/informe.pdf"
-                      target="_blank" title="Ver informe">
-                      <i class="fa-solid fa-file-pdf"></i>
+                      target="_blank" title="Ver informe PDF">
+                      <i class="fa-solid fa-file-pdf text-danger"></i>
                     </a>
-                    {% endif %}
-
                     {% endif %}
 
                     <a class="btn btn-outline-dark btn-sm" href="/instrumentos/{{ inst.id }}" title="Abrir">

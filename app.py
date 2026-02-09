@@ -1458,28 +1458,27 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
         conn.close()
         return HTMLResponse("Envío no encontrado", status_code=404)
 
-    cur.execute("SELECT * FROM instrumentos WHERE envio_id=? ORDER BY id DESC", (envio_id,))
+    cur.execute("""
+        SELECT i.*, 
+               (SELECT 1 FROM instrumento_informes ii WHERE ii.instrumento_id = i.id LIMIT 1) as has_report
+        FROM instrumentos i 
+        WHERE i.envio_id=? 
+        ORDER BY i.id DESC
+    """, (envio_id,))
     instrumentos = [dict(r) for r in cur.fetchall()]
 
     if _user_role(user) == "tecnico":
         # Ya no ocultamos los reparados para que puedan ver el icono del PDF/Informe
         pass
 
-    # CLEAN_TRZ_APPLIED: limpia nombre_trazabilidad para mostrar/copiar sin simbolos
     for r in instrumentos:
-        if "nombre_trazabilidad" in r:
-            r["nombre_trazabilidad"] = _clean_trz(r.get("nombre_trazabilidad"))
+        # Limpieza de trazabilidad
+        if r.get("nombre_trazabilidad"):
+            r["nombre_trazabilidad"] = _clean_trz(r["nombre_trazabilidad"])
         
-        # Check PDF informe
-        r["has_informe"] = False
-        try:
-            if (envio["tipo_trabajo"] or "REPARACION") == "OPTICA_RIGIDA":
-                 cur.execute("SELECT 1 FROM instrumento_informes WHERE instrumento_id=?", (r["id"],))
-                 if cur.fetchone():
-                     r["has_informe"] = True
-        except Exception as e:
-            # Si falla (ej. tabla no existe), asumimos False y seguimos
-            pass
+        # Bandera para mostrar icono PDF (informe)
+        # Si la subconsulta devolvió algo (1), tiene informe.
+        r["has_informe"] = bool(r.get("has_report"))
 
     # DEF_TRZ_NOMBRE_OK: prepara nombre_trazabilidad SOLO para pantalla de grabación (copiar/pegar)
     envio_dict = dict(envio)

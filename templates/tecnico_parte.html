@@ -224,7 +224,6 @@
                             <i class="fa-solid fa-eye"></i> Ver
                         </a>
                     </div>
-                    {% if envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
                     <div class="col-12 mt-2">
                         {% if inst.has_informe %}
                         <a href="/instrumentos/{{ inst.id }}/informe.pdf" target="_blank"
@@ -232,11 +231,12 @@
                             <i class="fa-solid fa-file-pdf"></i> Ver Informe Control de Calidad
                         </a>
                         {% endif %}
+                        {% if envio.tipo_trabajo == 'OPTICA_RIGIDA' %}
                         <a href="/instrumentos/{{ inst.id }}/qc_optica" class="btn btn-danger w-100 btn-status">
                             <i class="fa-solid fa-file-medical"></i> Rellenar/Editar Control de Calidad
                         </a>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
