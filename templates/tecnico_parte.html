@@ -200,6 +200,13 @@
                     {% endif %}
                 </div>
 
+                {% if inst.observaciones %}
+                <div class="mt-2 p-2 bg-warning-subtle border border-warning rounded small text-dark mb-3">
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-1"></i>
+                    <strong>OBSERVACIONES:</strong> {{ inst.observaciones }}
+                </div>
+                {% endif %}
+
                 <div class="row g-2">
                     <div class="col-6">
                         <button class="btn btn-outline-primary btn-status"
