@@ -1299,6 +1299,11 @@ def nuevo_envio_crear(
     fecha: str = Form(""),
     user=Depends(require_roles("admin", "recepcion")),
 ):
+    # Validación de fecha obligatoria
+    fecha = (fecha or "").strip()
+    if not fecha:
+        return RedirectResponse(url="/envios/nuevo?err=fecha", status_code=303)
+
     # Permiso granular (además del rol)
     conn_perm = get_conn()
     cur_perm = conn_perm.cursor()
