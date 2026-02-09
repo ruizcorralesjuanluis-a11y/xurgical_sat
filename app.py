@@ -1419,28 +1419,37 @@ def nuevo_envio_crear(
                 conn.close()
                 return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
 
-        cur.execute(
-            """
+        sql = """
             INSERT INTO envios (ot_num, nombre_archivo, cliente, cliente_id, tipo_trabajo, fecha)
             VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                ot_num,
-                (referencia or "").strip(),
-                cli_nombre,
-                cli_id_val,
-                tipo_trabajo,
-                (fecha or "").strip(),
-            ),
-        )
-        envio_id = cur.lastrowid
-        
-        # Si es Postgres, lastrowid es None. Lo buscamos por ot_num (que es UNIQUE)
-        if envio_id is None:
-            cur.execute("SELECT id FROM envios WHERE ot_num=?", (ot_num,))
-            row_id = cur.fetchone()
-            if row_id:
-                envio_id = row_id["id"]
+        """
+        vals = [
+            ot_num,
+            (referencia or "").strip(),
+            cli_nombre,
+            cli_id_val,
+            tipo_trabajo,
+            (fecha or "").strip(),
+        ]
+
+        is_pg = bool(os.environ.get("DATABASE_URL"))
+        if is_pg:
+            sql += " RETURNING id"
+            cur.execute(sql, tuple(vals))
+            row = cur.fetchone()
+            if row:
+                envio_id = int(row["id"])
+            else:
+                # Fallback extremo: buscar por OT exacta que acabamos de meter
+                cur.execute("SELECT id FROM envios WHERE ot_num=?", (ot_num,))
+                row_f = cur.fetchone()
+                if row_f:
+                    envio_id = int(row_f["id"])
+                else:
+                     raise Exception("No se pudo obtener el ID del nuevo envío en Postgres")
+        else:
+            cur.execute(sql, tuple(vals))
+            envio_id = cur.lastrowid
 
         conn.commit()
         conn.close()
