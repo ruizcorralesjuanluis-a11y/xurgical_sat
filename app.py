@@ -710,6 +710,14 @@ def articulos_lookup(codigo: str, user=Depends(get_current_user)):
     return {'found': False}
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    return HTMLResponse(
+        f"<h1>Error Global del Servidor</h1><pre>{traceback.format_exc()}</pre>",
+        status_code=500
+    )
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:
