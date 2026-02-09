@@ -87,9 +87,31 @@ def leer_excel_envio(path_excel: str):
         if has_code_0 and has_desc_0:
             header_row = 0
         else:
+            # Fallback EXTREMO: Si no encuentro cabeceras, asumo que es una tabla plana donde:
+            # Columna 0 = Código
+            # Columna 1 = Descripción
+            # (Y si hay más de 2 columnas, la 2 sea num serie, etc. pero vamos a lo mínimo)
+            if len(raw.columns) >= 2:
+                # Forzamos cabecera manual
+                raw.columns = ["CODIGO", "DESCRIPCION"] + [f"COL_{i}" for i in range(2, len(raw.columns))]
+                # Devolvemos esto procesado directamtente (saltándonos el paso 3 y 4 de lectura con header)
+                df = raw.copy()
+                # Limpieza básica
+                df["CODIGO"] = df["CODIGO"].astype(str).str.strip().replace("nan", "")
+                df = df[df["CODIGO"] != ""]
+                
+                df_final = pd.DataFrame()
+                df_final["codigo_producto"] = df["CODIGO"]
+                df_final["denominacion"] = df["DESCRIPCION"].astype(str).str.strip()
+                df_final["fabricante"] = ""
+                df_final["num_serie"] = ""
+                df_final["observaciones"] = ""
+                df_final["codigo_datamatrix"] = ""
+                return cliente, fecha, df_final
+            
             preview = raw.head(15).fillna("").astype(str).values.tolist()
             raise ValueError(
-                "No encuentro la fila de cabecera (CODIGO PRODUCTO / DENOMINACION).\n"
+                "No encuentro la fila de cabecera ni estructura válida.\n"
                 f"Vista previa (15 primeras filas): {preview}"
             )
 
