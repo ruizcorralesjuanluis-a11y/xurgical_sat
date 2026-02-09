@@ -575,6 +575,15 @@ def on_startup():
     conn.close()
 
 
+@app.get("/init_db")
+def manual_init_db():
+    try:
+        on_startup()
+        return {"ok": True, "message": "Base de datos inicializada y admin creado (admin/admin123)"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 # -----------------------------
 # CATÁLOGO ARTÍCULOS (autorrelleno al crear instrumento)
 # Lee Articulos.xlsx (preferido) o Articulos.xls (si tu entorno soporta .xls)
