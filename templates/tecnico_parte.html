@@ -186,8 +186,7 @@
 
                 {% if inst.observaciones %}
                 <div class="position-absolute top-0 end-0 m-2"
-                    onclick="alert('OBSERVACIONES:\n\n{{ inst.observaciones|replace(" \'", "\\\'" )|replace("\n", " " )
-                    }}'); event.stopPropagation();">
+                    onclick="alert('OBSERVACIONES:\n\n{{ (inst.observaciones or '')|replace('\'', '\\\'')|replace('\n', ' ')|replace('\r', '') }}'); event.stopPropagation();">
                     <span class="badge rounded-pill bg-danger shadow-sm border border-2 border-white"
                         style="padding: 0.5em 0.7em; cursor: pointer;">
                         <i class="fa-solid fa-comment-dots"></i>

@@ -2123,25 +2123,32 @@ async def qc_optica_save(
             prefix = key.replace("qc_", "") # entrada_1, etc.
             fname = f"inst_{instrumento_id}_qc_{prefix}_{int(time.time())}_{safe_name}"
             path = os.path.join(FOTOS_DIR, fname)
-            # Optimización de imagen al vuelo con Pillow
-            from PIL import Image as PILImage
-            import io
-            
             content = await f.read()
-            img = PILImage.open(io.BytesIO(content))
             
-            # Reducir si es muy grande (máx 1280px)
-            max_size = 1290
-            if img.width > max_size or img.height > max_size:
-                img.thumbnail((max_size, max_size), PILImage.LANCZOS)
+            # Intentar optimizar con Pillow, si falla guardar original
+            try:
+                from PIL import Image as PILImage
+                import io
                 
-            # Convertir a RGB si es necesario (por si suben PNG con transp)
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
+                img = PILImage.open(io.BytesIO(content))
                 
-            # Guardar optimizada
-            with open(path, "wb") as out:
-                img.save(out, format="JPEG", quality=85, optimize=True)
+                # Reducir si es muy grande (máx 1280px)
+                max_size = 1290
+                if img.width > max_size or img.height > max_size:
+                    img.thumbnail((max_size, max_size), PILImage.LANCZOS)
+                    
+                # Convertir a RGB si es necesario (por si suben PNG con transp)
+                if img.mode in ("RGBA", "P"):
+                    img = img.convert("RGB")
+                    
+                # Guardar optimizada
+                with open(path, "wb") as out:
+                    img.save(out, format="JPEG", quality=85, optimize=True)
+            except Exception as e:
+                print(f"Error optimizando imagen {fname}: {e}")
+                # Fallback: guardar tal cual
+                with open(path, "wb") as out:
+                    out.write(content)
             
             public_url = f"/static/fotos/{fname}"
             qc_fotos_vals[key] = public_url
@@ -2216,43 +2223,48 @@ async def qc_optica_save(
     
     # --- NUEVOS PASOS PARA ARCHIVAR EL PDF AUTOMÁTICAMENTE ---
     conn = get_conn()
-    cur = conn.cursor()
-    # Recargar datos frescos para el generador
-    pdf_bytes, filename = _generate_qc_optica_pdf_bytes(instrumento_id)
-    if pdf_bytes:
-        informes_dir = os.path.join(UPLOAD_DIR, "informes")
-        os.makedirs(informes_dir, exist_ok=True)
-        # Nombre único con timestamp para no machacar registros históricos si se quiere
-        stored_name = f"auto_qc_{instrumento_id}_{int(time.time())}.pdf"
-        full_path = os.path.join(informes_dir, stored_name)
-        with open(full_path, "wb") as f_pdf:
-            f_pdf.write(pdf_bytes)
+    
+    try:
+        cur = conn.cursor()
+        # Recargar datos frescos para el generador
+        pdf_bytes, filename = _generate_qc_optica_pdf_bytes(instrumento_id)
+        if pdf_bytes:
+            informes_dir = os.path.join(UPLOAD_DIR, "informes")
+            os.makedirs(informes_dir, exist_ok=True)
+            # Nombre único con timestamp para no machacar registros históricos si se quiere
+            stored_name = f"auto_qc_{instrumento_id}_{int(time.time())}.pdf"
+            full_path = os.path.join(informes_dir, stored_name)
+            with open(full_path, "wb") as f_pdf:
+                f_pdf.write(pdf_bytes)
+                
+            # Insertar en instrumento_informes para que aparezca en el listado
+            from db import get_table_columns
+            cols = get_table_columns(cur, "instrumento_informes")
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
-        # Insertar en instrumento_informes para que aparezca en el listado
-        from db import get_table_columns
-        cols = get_table_columns(cur, "instrumento_informes")
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        username = (user.get("username") if isinstance(user, dict) else getattr(user, "username", "SISTEMA"))
-        
-        insert_cols = ["instrumento_id", "filename"]
-        insert_vals = [instrumento_id, filename]
-        if "path" in cols:
-            insert_cols.append("path")
-            insert_vals.append(full_path)
-        if "filepath" in cols:
-            insert_cols.append("filepath")
-            insert_vals.append(full_path)
-        if "uploaded_at" in cols:
-            insert_cols.append("uploaded_at")
-            insert_vals.append(now_str)
-        if "uploaded_by" in cols:
-            insert_cols.append("uploaded_by")
-            insert_vals.append(username)
+            username = (user.get("username") if isinstance(user, dict) else getattr(user, "username", "SISTEMA"))
             
-        placeholders = ", ".join(["?"] * len(insert_cols))
-        cur.execute(f"INSERT INTO instrumento_informes ({', '.join(insert_cols)}) VALUES ({placeholders})", tuple(insert_vals))
-        conn.commit()
+            insert_cols = ["instrumento_id", "filename"]
+            insert_vals = [instrumento_id, filename]
+            if "path" in cols:
+                insert_cols.append("path")
+                insert_vals.append(full_path)
+            if "filepath" in cols:
+                insert_cols.append("filepath")
+                insert_vals.append(full_path)
+            if "uploaded_at" in cols:
+                insert_cols.append("uploaded_at")
+                insert_vals.append(now_str)
+            if "uploaded_by" in cols:
+                insert_cols.append("uploaded_by")
+                insert_vals.append(username)
+                
+            placeholders = ", ".join(["?"] * len(insert_cols))
+            cur.execute(f"INSERT INTO instrumento_informes ({', '.join(insert_cols)}) VALUES ({placeholders})", tuple(insert_vals))
+            conn.commit()
+    except Exception as e:
+        print(f"Error generando PDF automatico: {e}")
+        # Continuamos con el resto (marcar reparado etc)
         
     # Marcar instrumento como REPARADO al guardar el QC
     cur = conn.cursor()
