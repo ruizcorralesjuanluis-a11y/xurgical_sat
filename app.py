@@ -2230,9 +2230,14 @@ async def qc_optica_save(
         cur.execute(f"INSERT INTO instrumento_informes ({', '.join(insert_cols)}) VALUES ({placeholders})", tuple(insert_vals))
         conn.commit()
         
+    # Redirigir de vuelta al listado del parte (envio_id)
+    cur = conn.cursor()
+    cur.execute("SELECT envio_id FROM instrumentos WHERE id=?", (instrumento_id,))
+    row_e = cur.fetchone()
     conn.close()
     
-    return RedirectResponse(url=f"/instrumentos/{instrumento_id}/qc_optica", status_code=303)
+    dest_url = f"/envios/{row_e['envio_id']}" if row_e else "/"
+    return RedirectResponse(url=dest_url, status_code=303)
 
 
 def _generate_qc_optica_pdf_bytes(instrumento_id: int):
