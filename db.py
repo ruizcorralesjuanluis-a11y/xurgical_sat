@@ -54,7 +54,7 @@ def init_db():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT NOT NULL,
+        nombre TEXT UNIQUE NOT NULL,
         prefijo TEXT,
         prefijo_nombre TEXT,
         ultimo_numero INTEGER DEFAULT 0

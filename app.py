@@ -1226,8 +1226,15 @@ def clientes_nuevo_crear(
 
     conn = get_conn()
     cur = conn.cursor()
+
+    # Prevenir duplicados (validación manual además del índice UNIQUE)
+    cur.execute("SELECT id FROM clientes WHERE nombre = ?", (nombre,))
+    if cur.fetchone():
+        conn.close()
+        return RedirectResponse(url="/clientes?err=exists", status_code=303)
+
     cur.execute(
-        "INSERT OR IGNORE INTO clientes (nombre, prefijo, prefijo_nombre, ultimo_numero) VALUES (?, ?, ?, ?)",
+        "INSERT INTO clientes (nombre, prefijo, prefijo_nombre, ultimo_numero) VALUES (?, ?, ?, ?)",
         (nombre, (prefijo or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0)),
     )
     conn.commit()
