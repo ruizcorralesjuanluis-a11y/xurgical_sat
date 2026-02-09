@@ -1460,7 +1460,8 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
 
     cur.execute("""
         SELECT i.*, 
-               (SELECT 1 FROM instrumento_informes ii WHERE ii.instrumento_id = i.id LIMIT 1) as has_report
+               (SELECT 1 FROM instrumento_informes ii WHERE ii.instrumento_id = i.id LIMIT 1) as has_archived,
+               (SELECT 1 FROM instrumento_qc_optica qc WHERE qc.instrumento_id = i.id LIMIT 1) as has_qc_data
         FROM instrumentos i 
         WHERE i.envio_id=? 
         ORDER BY i.id DESC
@@ -1468,7 +1469,7 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
     instrumentos = [dict(r) for r in cur.fetchall()]
 
     if _user_role(user) == "tecnico":
-        # Ya no ocultamos los reparados para que puedan ver el icono del PDF/Informe
+        # Aseguramos que los técnicos vean todo para poder acceder al PDF
         pass
 
     for r in instrumentos:
@@ -1477,8 +1478,8 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
             r["nombre_trazabilidad"] = _clean_trz(r["nombre_trazabilidad"])
         
         # Bandera para mostrar icono PDF (informe)
-        # Si la subconsulta devolvió algo (1), tiene informe.
-        r["has_informe"] = bool(r.get("has_report"))
+        # Se muestra si hay un archivo archivado O si al menos hay datos de QC guardados
+        r["has_informe"] = bool(r.get("has_archived") or r.get("has_qc_data"))
 
     # DEF_TRZ_NOMBRE_OK: prepara nombre_trazabilidad SOLO para pantalla de grabación (copiar/pegar)
     envio_dict = dict(envio)
@@ -2613,9 +2614,21 @@ def instrumento_informe_download(instrumento_id: int, user=Depends(get_current_u
     cur.execute("SELECT path, filename FROM instrumento_informes WHERE instrumento_id=? ORDER BY id DESC LIMIT 1", (instrumento_id,))
     row = cur.fetchone()
     conn.close()
-    if not row or not row["path"] or not os.path.exists(row["path"]):
-        raise HTTPException(status_code=404, detail="Informe no encontrado")
-    return FileResponse(row["path"], filename=row["filename"], media_type="application/pdf")
+    
+    # Si existe el registro y el archivo en disco, lo servimos directamente
+    if row and row["path"] and os.path.exists(row["path"]):
+        return FileResponse(row["path"], filename=row["filename"], media_type="application/pdf")
+    
+    # FALLBACK INMINENTE: Si no hay archivo guardado, intentamos generarlo al vuelo
+    pdf_bytes, filename = _generate_qc_optica_pdf_bytes(instrumento_id)
+    if pdf_bytes:
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"inline; filename={filename}"}
+        )
+        
+    raise HTTPException(status_code=404, detail="Informe no encontrado y no se puede generar (faltan datos QC)")
 
 
 @app.post("/instrumentos/{instrumento_id}/informe/upload")
