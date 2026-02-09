@@ -2213,7 +2213,17 @@ async def cambiar_estado(
             return HTMLResponse("En OTs de trazabilidad no se cambia el estado de reparación.", status_code=400)
 
     # Actualiza estado
-    cur.execute("UPDATE instrumentos SET estado=? WHERE id=?", (estado, instrumento_id))
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    username = user.get("username")
+
+    cur.execute("""
+        UPDATE instrumentos 
+        SET estado=?, 
+            tecnico_reparacion=?, 
+            tecnico_reparacion_en=? 
+        WHERE id=?
+    """, (estado, username, ahora, instrumento_id))
+    
     conn.commit()
     conn.close()
 

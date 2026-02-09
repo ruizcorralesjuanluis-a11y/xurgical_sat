@@ -184,6 +184,10 @@
       min-width: 150px;
     }
 
+    .col-tecnico {
+      min-width: 130px;
+    }
+
     .col-actions {
       min-width: 240px;
     }
@@ -410,6 +414,7 @@
                 <th class="col-estado">Grabado</th>
                 {% else %}
                 <th class="col-estado">Estado</th>
+                <th class="col-tecnico">Técnico</th>
                 {% endif %}
                 <th class="col-actions"></th>
               </tr>
@@ -475,6 +480,12 @@
                   {% endif %}
                   {% endif %}
                 </td>
+
+                {% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}
+                <td class="col-tecnico">
+                  <span class="text-secondary small fw-bold">{{ inst.tecnico_reparacion or "-" }}</span>
+                </td>
+                {% endif %}
 
                 <!-- Acciones -->
                 <td class="text-end col-actions">

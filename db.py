@@ -96,6 +96,8 @@ def init_db():
         actualizado_en DATETIME DEFAULT CURRENT_TIMESTAMP,
         foto_entrada_1 TEXT,
         foto_entrada_2 TEXT,
+        tecnico_reparacion TEXT,
+        tecnico_reparacion_en TEXT,
         FOREIGN KEY (envio_id) REFERENCES envios(id) ON DELETE CASCADE
     )
     """)
