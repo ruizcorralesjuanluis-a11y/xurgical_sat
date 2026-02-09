@@ -2281,6 +2281,9 @@ async def qc_optica_save(
             with open(full_path, "wb") as f_pdf:
                 f_pdf.write(pdf_bytes)
                 
+            # Almacenar la ruta relativa para que sea accesible vía web
+            db_path = f"uploads/informes/{stored_name}"
+            
             # Insertar en instrumento_informes para que aparezca en el listado
             from db import get_table_columns
             cols = get_table_columns(cur, "instrumento_informes")
@@ -2292,10 +2295,10 @@ async def qc_optica_save(
             insert_vals = [instrumento_id, filename]
             if "path" in cols:
                 insert_cols.append("path")
-                insert_vals.append(full_path)
+                insert_vals.append(db_path)
             if "filepath" in cols:
                 insert_cols.append("filepath")
-                insert_vals.append(full_path)
+                insert_vals.append(db_path)
             if "uploaded_at" in cols:
                 insert_cols.append("uploaded_at")
                 insert_vals.append(now_str)
