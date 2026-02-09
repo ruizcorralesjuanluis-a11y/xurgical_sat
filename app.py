@@ -198,8 +198,8 @@ def _reserve_numeros_cliente(cur, cliente_id: int, cantidad: int) -> tuple[str, 
 
     return prefijo_dm, prefijo_nombre, nums
 
-UPLOAD_DIR = "uploads"
-FOTOS_DIR = os.path.join("static", "fotos")
+UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
+FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join("static", "fotos"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(FOTOS_DIR, exist_ok=True)
 
