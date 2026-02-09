@@ -608,10 +608,9 @@
 
   {% if request and request.query_params.get('print') == '1' %}
   <script>
-    // Al crear la OT, abrimos la etiqueta automáticamente.
-    // (Si el navegador bloquea popups, el botón "Etiqueta" queda siempre disponible.)
+    // Al crear la OT, redirigimos a la etiqueta para asegurar que se abra (evita bloqueo de popups)
     window.addEventListener('load', function () {
-      try { window.open('/envios/{{ envio.id }}/etiqueta.pdf', '_blank'); } catch (e) { }
+      window.location.href = '/envios/{{ envio.id }}/etiqueta.pdf';
     });
   </script>
   {% endif %}
