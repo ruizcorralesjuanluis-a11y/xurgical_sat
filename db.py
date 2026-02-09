@@ -93,15 +93,15 @@ def get_connection():
         
         try:
             conn = psycopg2.connect(url)
-            print(">>> [DATABASE] Conectado exitosamente a PostgreSQL (Neon/Producción)")
+            print(">>> [DATABASE] ESTADO: Conectado a PostgreSQL (Neon/Producción)", flush=True)
             return PGConnWrapper(conn)
         except Exception as e:
             # Si falla, imprimimos el error para depurar en logs de Render
-            print(f">>> [DATABASE] ERROR CRITICO: Falló la conexión a Postgres: {e}")
+            print(f">>> [DATABASE] ESTADO: ERROR CRITICO - Falló la conexión a Postgres: {e}", flush=True)
             raise
     
     # Fallback a SQLite
-    print(f">>> [DATABASE] ATENCION: Usando SQLite local en {DB_PATH}. Los datos se perderán si no hay disco persistente.")
+    print(f">>> [DATABASE] ESTADO: ATENCION - Usando SQLite local. LOS DATOS SE PERDERAN al actualizar.", flush=True)
     try:
         if not str(DB_PATH).startswith("\\\\"):
             DB_PATH.parent.mkdir(parents=True, exist_ok=True)
