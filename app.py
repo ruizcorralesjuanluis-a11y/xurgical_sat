@@ -2123,8 +2123,25 @@ async def qc_optica_save(
             prefix = key.replace("qc_", "") # entrada_1, etc.
             fname = f"inst_{instrumento_id}_qc_{prefix}_{int(time.time())}_{safe_name}"
             path = os.path.join(FOTOS_DIR, fname)
-            with open(path, "wb") as buf:
-                buf.write(await f.read())
+            # Optimización de imagen al vuelo con Pillow
+            from PIL import Image as PILImage
+            import io
+            
+            content = await f.read()
+            img = PILImage.open(io.BytesIO(content))
+            
+            # Reducir si es muy grande (máx 1280px)
+            max_size = 1290
+            if img.width > max_size or img.height > max_size:
+                img.thumbnail((max_size, max_size), PILImage.LANCZOS)
+                
+            # Convertir a RGB si es necesario (por si suben PNG con transp)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+                
+            # Guardar optimizada
+            with open(path, "wb") as out:
+                img.save(out, format="JPEG", quality=85, optimize=True)
             
             public_url = f"/static/fotos/{fname}"
             qc_fotos_vals[key] = public_url
