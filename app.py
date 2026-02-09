@@ -88,6 +88,13 @@ except Exception:
 app.state.secret_key = os.environ.get("XURGICAL_SECRET_KEY", "dev-secret-change-me")
 app.state.serializer = make_serializer(app.state.secret_key)
 
+UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
+FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join("static", "fotos"))
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(FOTOS_DIR, exist_ok=True)
+
+# Monta FOTOS_DIR en /static/fotos PRIORITARIAMENTE para soportar discos externos
+app.mount("/static/fotos", StaticFiles(directory=FOTOS_DIR), name="fotos_externas")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -198,10 +205,7 @@ def _reserve_numeros_cliente(cur, cliente_id: int, cantidad: int) -> tuple[str, 
 
     return prefijo_dm, prefijo_nombre, nums
 
-UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
-FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join("static", "fotos"))
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(FOTOS_DIR, exist_ok=True)
+# moved to top
 
 # -----------------------------
 # ARTICULOS (catálogo para autocompletar)
