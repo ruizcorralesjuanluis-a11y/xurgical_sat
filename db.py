@@ -229,6 +229,19 @@ def init_db():
     )
     """)
 
+    # 7b. Tabla de Informes PDF general
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS instrumento_informes (
+        id {pk},
+        instrumento_id INTEGER NOT NULL,
+        filename TEXT,
+        path TEXT,
+        filepath TEXT,
+        uploaded_at TEXT,
+        uploaded_by TEXT
+    )
+    """.format(pk=pk))
+
     # 8. Control de Calidad Ópticas Rígidas
     cur.execute(f"""
     CREATE TABLE IF NOT EXISTS instrumento_qc_optica (
@@ -265,9 +278,22 @@ def init_db():
         fecha_salida TEXT,
         firma_tecnico TEXT,
         firma_responsable TEXT,
+        
+        -- Fotos específicas para el informe CC
+        qc_foto_entrada_1 TEXT,
+        qc_foto_entrada_2 TEXT,
+        qc_foto_salida_1 TEXT,
+        qc_foto_salida_2 TEXT,
+        
         creado_en {dt}
     )
     """)
+
+    # Migración: asegurar columnas en instrumento_qc_optica
+    cols_qc = get_table_columns(cur, "instrumento_qc_optica")
+    for col in ["qc_foto_entrada_1", "qc_foto_entrada_2", "qc_foto_salida_1", "qc_foto_salida_2"]:
+        if col not in cols_qc:
+            cur.execute(f"ALTER TABLE instrumento_qc_optica ADD COLUMN {col} TEXT")
 
     conn.commit()
     conn.close()

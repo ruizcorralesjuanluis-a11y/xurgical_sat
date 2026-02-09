@@ -2095,67 +2095,82 @@ async def qc_optica_save(
     fecha_salida: str = Form(""),
     firma_tecnico: str = Form(""),
     firma_responsable: str = Form(""),
-    foto_salida_1: UploadFile = File(None),
-    foto_salida_2: UploadFile = File(None),
+    qc_foto_entrada_1: UploadFile = File(None),
+    qc_foto_entrada_2: UploadFile = File(None),
+    qc_foto_salida_1: UploadFile = File(None),
+    qc_foto_salida_2: UploadFile = File(None),
 ):
     conn = get_conn()
     cur = conn.cursor()
     
-    # Manejo de fotos de salida
-    fotos = {}
-    for slot, f in [(1, foto_salida_1), (2, foto_salida_2)]:
+    # Manejo de fotos QC (entrada y salida)
+    qc_fotos_vals = {}
+    for key, f in [
+        ("qc_foto_entrada_1", qc_foto_entrada_1), 
+        ("qc_foto_entrada_2", qc_foto_entrada_2),
+        ("qc_foto_salida_1", qc_foto_salida_1),
+        ("qc_foto_salida_2", qc_foto_salida_2)
+    ]:
         if f and f.filename:
             safe_name = re.sub(r"[^a-zA-Z0-9.-]", "_", f.filename)
-            fname = f"inst_{instrumento_id}_salida_{slot}_{int(time.time())}_{safe_name}"
+            prefix = key.replace("qc_", "") # entrada_1, etc.
+            fname = f"inst_{instrumento_id}_qc_{prefix}_{int(time.time())}_{safe_name}"
             path = os.path.join(FOTOS_DIR, fname)
             with open(path, "wb") as buf:
                 buf.write(await f.read())
-            fotos[f"foto_salida_{slot}"] = f"/static/fotos/{fname}"
             
-            # Borrar anterior si existía
-            cur.execute(f"SELECT foto_salida_{slot} FROM instrumentos WHERE id=?", (instrumento_id,))
+            public_url = f"/static/fotos/{fname}"
+            qc_fotos_vals[key] = public_url
+            
+            # Borrar anterior si existía en la tabla QC
+            cur.execute(f"SELECT {key} FROM instrumento_qc_optica WHERE instrumento_id=?", (instrumento_id,))
             old = cur.fetchone()
-            if old and old[0]:
-                _try_delete_public_photo(old[0])
-            
-            cur.execute(f"UPDATE instrumentos SET foto_salida_{slot}=? WHERE id=?", (fotos[f"foto_salida_{slot}"], instrumento_id))
+            if old and old[key]:
+                _try_delete_public_photo(old[key])
 
     # Guardar/Actualizar QC
     cur.execute("SELECT 1 FROM instrumento_qc_optica WHERE instrumento_id=?", (instrumento_id,))
     exists = cur.fetchone()
     
     if exists:
-        cur.execute("""
-            UPDATE instrumento_qc_optica SET
-                parte_trabajo_cliente=?, observaciones_cliente=?, observaciones_previas=?,
-                diag_ventana=?, diag_fibra=?, diag_objetivo=?, diag_lentes=?, diag_camisa=?,
-                diag_ocular=?, diag_pieza_ojo=?, diag_contaminacion=?, reparable=?,
-                campo_vision_val=?, campo_vision_ok=?, direccion_vision_val=?, direccion_vision_ok=?,
-                resolucion_val=?, resolucion_ok=?, desviacion_val=?, desviacion_ok=?,
-                luz_val=?, luz_ok=?, observaciones_finales=?, fecha_salida=?,
-                firma_tecnico=?, firma_responsable=?
-            WHERE instrumento_id=?
-        """, (
+        # Build dynamic update for photos to not clear them if not uploaded
+        update_cols = [
+            "parte_trabajo_cliente=?", "observaciones_cliente=?", "observaciones_previas=?",
+            "diag_ventana=?", "diag_fibra=?", "diag_objetivo=?", "diag_lentes=?", "diag_camisa=?",
+            "diag_ocular=?", "diag_pieza_ojo=?", "diag_contaminacion=?", "reparable=?",
+            "campo_vision_val=?", "campo_vision_ok=?", "direccion_vision_val=?", "direccion_vision_ok=?",
+            "resolucion_val=?", "resolucion_ok=?", "desviacion_val=?", "desviacion_ok=?",
+            "luz_val=?", "luz_ok=?", "observaciones_finales=?", "fecha_salida=?",
+            "firma_tecnico=?", "firma_responsable=?"
+        ]
+        params = [
             parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
             diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
             diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
             campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
             resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
             luz_val, luz_ok, observaciones_finales, fecha_salida,
-            firma_tecnico, firma_responsable, instrumento_id
-        ))
+            firma_tecnico, firma_responsable
+        ]
+        
+        for k, v in qc_fotos_vals.items():
+            update_cols.append(f"{k}=?")
+            params.append(v)
+            
+        params.append(instrumento_id)
+        sql = f"UPDATE instrumento_qc_optica SET {', '.join(update_cols)} WHERE instrumento_id=?"
+        cur.execute(sql, tuple(params))
     else:
-        cur.execute("""
-            INSERT INTO instrumento_qc_optica (
-                instrumento_id, parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
-                diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
-                diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
-                campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
-                resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
-                luz_val, luz_ok, observaciones_finales, fecha_salida,
-                firma_tecnico, firma_responsable
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (
+        insert_cols = [
+            "instrumento_id", "parte_trabajo_cliente", "observaciones_cliente", "observaciones_previas",
+            "diag_ventana", "diag_fibra", "diag_objetivo", "diag_lentes", "diag_camisa",
+            "diag_ocular", "diag_pieza_ojo", "diag_contaminacion", "reparable",
+            "campo_vision_val", "campo_vision_ok", "direccion_vision_val", "direccion_vision_ok",
+            "resolucion_val", "resolucion_ok", "desviacion_val", "desviacion_ok",
+            "luz_val", "luz_ok", "observaciones_finales", "fecha_salida",
+            "firma_tecnico", "firma_responsable"
+        ]
+        params = [
             instrumento_id, parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
             diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
             diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
@@ -2163,7 +2178,14 @@ async def qc_optica_save(
             resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
             luz_val, luz_ok, observaciones_finales, fecha_salida,
             firma_tecnico, firma_responsable
-        ))
+        ]
+        for k, v in qc_fotos_vals.items():
+            insert_cols.append(k)
+            params.append(v)
+            
+        placeholders = ", ".join(["?"] * len(params))
+        sql = f"INSERT INTO instrumento_qc_optica ({', '.join(insert_cols)}) VALUES ({placeholders})"
+        cur.execute(sql, tuple(params))
 
     conn.commit()
     conn.close()
@@ -2252,8 +2274,8 @@ async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user))
 
     foto_data = [
         ["ENTRADA", "SALIDA"],
-        [_get_pdf_img(inst["foto_entrada_1"]), _get_pdf_img(inst["foto_salida_1"])],
-        [_get_pdf_img(inst["foto_entrada_2"]), _get_pdf_img(inst["foto_salida_2"])]
+        [_get_pdf_img(qc["qc_foto_entrada_1"] or inst["foto_entrada_1"]), _get_pdf_img(qc["qc_foto_salida_1"] or inst["foto_salida_1"])],
+        [_get_pdf_img(qc["qc_foto_entrada_2"] or inst["foto_entrada_2"]), _get_pdf_img(qc["qc_foto_salida_2"] or inst["foto_salida_2"])]
     ]
     foto_tab = Table(foto_data, colWidths=[250, 250])
     foto_tab.setStyle(TableStyle([

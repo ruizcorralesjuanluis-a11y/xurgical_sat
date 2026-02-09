@@ -210,27 +210,48 @@
                     </table>
                 </div>
 
-                <!-- FOTOS SALIDA -->
-                <div class="section-title">FOTOS DE SALIDA</div>
+                <!-- FOTOS CC -->
+                <div class="section-title">FOTOS DIAGNÓSTICO (PARA EL INFORME)</div>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-bold">Foto Salida 1</label>
-                        {% if inst.foto_salida_1 %}
+                        <label class="form-label fw-bold">QC Foto Entrada 1 (Diagnóstico)</label>
+                        {% if qc.qc_foto_entrada_1 %}
                         <div class="mb-2">
-                            <img src="{{ inst.foto_salida_1 }}" class="img-thumbnail" style="height: 100px;">
+                            <img src="{{ qc.qc_foto_entrada_1 }}" class="img-thumbnail" style="height: 100px;">
                         </div>
                         {% endif %}
-                        <input type="file" name="foto_salida_1" class="form-control" accept="image/*"
+                        <input type="file" name="qc_foto_entrada_1" class="form-control" accept="image/*"
                             capture="environment">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-bold">Foto Salida 2</label>
-                        {% if inst.foto_salida_2 %}
+                        <label class="form-label fw-bold">QC Foto Entrada 2 (Diagnóstico)</label>
+                        {% if qc.qc_foto_entrada_2 %}
                         <div class="mb-2">
-                            <img src="{{ inst.foto_salida_2 }}" class="img-thumbnail" style="height: 100px;">
+                            <img src="{{ qc.qc_foto_entrada_2 }}" class="img-thumbnail" style="height: 100px;">
                         </div>
                         {% endif %}
-                        <input type="file" name="foto_salida_2" class="form-control" accept="image/*"
+                        <input type="file" name="qc_foto_entrada_2" class="form-control" accept="image/*"
+                            capture="environment">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">QC Foto Salida 1 (Reparación)</label>
+                        {% if qc.qc_foto_salida_1 %}
+                        <div class="mb-2">
+                            <img src="{{ qc.qc_foto_salida_1 }}" class="img-thumbnail" style="height: 100px;">
+                        </div>
+                        {% endif %}
+                        <input type="file" name="qc_foto_salida_1" class="form-control" accept="image/*"
+                            capture="environment">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">QC Foto Salida 2 (Reparación)</label>
+                        {% if qc.qc_foto_salida_2 %}
+                        <div class="mb-2">
+                            <img src="{{ qc.qc_foto_salida_2 }}" class="img-thumbnail" style="height: 100px;">
+                        </div>
+                        {% endif %}
+                        <input type="file" name="qc_foto_salida_2" class="form-control" accept="image/*"
                             capture="environment">
                     </div>
                 </div>
