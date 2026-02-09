@@ -1390,9 +1390,8 @@ def nuevo_envio_crear(
 
     conn.commit()
     conn.close()
-    # Al crear una OT, abrimos automáticamente la etiqueta en una pestaña nueva
-    # (la plantilla /envios/{id} se encarga de hacer window.open si print=1).
-    return RedirectResponse(url=f"/envios/{envio_id}?print=1", status_code=303)
+    # Al crear una OT, vamos al detalle para añadir instrumentos.
+    return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
 
 
 @app.get("/envios/{envio_id}", response_class=HTMLResponse)

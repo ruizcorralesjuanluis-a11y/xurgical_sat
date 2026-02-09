@@ -218,9 +218,14 @@
           </div>
 
           {% if user and user.role in ["admin","recepcion"] %}
-          <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addInst">
-            ➕ Añadir instrumento
-          </button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#addInst">
+              ➕ Añadir instrumento
+            </button>
+            <a class="btn btn-dark btn-sm" href="/envios/{{ envio.id }}/etiqueta.pdf" target="_blank">
+              🏁 Finalizar e Imprimir Etiqueta
+            </a>
+          </div>
           {% endif %}
         </div>
 
@@ -606,14 +611,6 @@
   </script>
 
 
-  {% if request and request.query_params.get('print') == '1' %}
-  <script>
-    // Al crear la OT, redirigimos a la etiqueta para asegurar que se abra (evita bloqueo de popups)
-    window.addEventListener('load', function () {
-      window.location.href = '/envios/{{ envio.id }}/etiqueta.pdf';
-    });
-  </script>
-  {% endif %}
 
 </body>
 
