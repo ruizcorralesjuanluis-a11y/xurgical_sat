@@ -220,6 +220,16 @@
       </div>
 
       <div class="d-flex align-items-center gap-2 nav-buttons">
+        {% if db_type == "PRO" %}
+        <span class="badge bg-success" title="Base de Datos Segura (Neon)">
+          <i class="fa-solid fa-shield-halved"></i> DB PRO
+        </span>
+        {% else %}
+        <span class="badge bg-warning text-dark" title="Base de Datos Temporal (SQLite)">
+          <i class="fa-solid fa-triangle-exclamation"></i> DB TEMP
+        </span>
+        {% endif %}
+
         {% if user %}
         {% if user.role == "admin" %}
         <a href="/?users=1" class="btn btn-outline-primary btn-sm">

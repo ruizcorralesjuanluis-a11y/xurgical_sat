@@ -818,6 +818,8 @@ def logout():
 # -----------------------------
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, user=Depends(get_current_user)):
+    from db import DATABASE_URL
+    db_type = "PRO" if DATABASE_URL else "TEMP"
     conn = get_conn()
     cur = conn.cursor()
 
@@ -1008,6 +1010,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         "users_list": users_list,
         "actions": ACTIONS,
         "perms_by_user": perms_by_user,
+        "db_type": db_type,
     }
 
     return templates.TemplateResponse(
