@@ -588,53 +588,46 @@
                               data-bs-target="#delUser{{ u.id }}">Borrar</button>
                           </div>
                         </td>
-
-                        <div class="modal fade" id="delUser{{ u.id }}" tabindex="-1">
-                          <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                              <div class="modal-header">
-                                <h5 class="modal-title text-danger">⚠️ Borrar usuario {{ u.username }}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                              </div>
-                              <div class="modal-body">
-                                <p><strong>Esta acción no se puede deshacer.</strong></p>
-                                <p>Se eliminará el usuario y sus permisos.</p>
-                              </div>
-                              <div class="modal-footer">
-                                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                <form method="post" action="/dash_users/{{ u.id }}/delete" class="m-0">
-                                  <button class="btn btn-danger">Sí, borrar</button>
-                                </form>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
                       </tr>
                       {% endfor %}
-
-                      {% if users_list|length == 0 %}
-                      <tr>
-                        <td colspan="6" class="text-center text-secondary py-3">
-                          No hay usuarios.
-                        </td>
-                      </tr>
-                      {% endif %}
                     </tbody>
                   </table>
                 </div>
-
               </div>
             </div>
           </div>
-
         </div>
-
         <div class="modal-footer">
-          <a href="/" class="btn btn-secondary">Cerrar</a>
+          <a href="/" class="btn btn-secondary">Cerrar y volver</a>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Modales de borrado de usuario (fuera del modal principal para evitar bloqueos) -->
+  {% if user and user.role == "admin" %}
+  {% for u in users_list %}
+  <div class="modal fade" id="delUser{{ u.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger">⚠️ Borrar usuario {{ u.username }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Esta acción no se puede deshacer.</strong></p>
+          <p>Se eliminará el usuario y sus permisos.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form method="post" action="/dash_users/{{ u.id }}/delete" class="m-0">
+            <button class="btn btn-danger">Sí, borrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
   {% endif %}
 
   <!-- Modal Escáner -->
@@ -646,9 +639,10 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopScanner()"></button>
         </div>
         <div class="modal-body">
-          <div id="reader"></div>
+          <div id="reader"
+            style="width: 100%; min-height: 300px; background: #000; border-radius: 8px; overflow: hidden;"></div>
           <div class="text-center mt-3 small text-secondary">
-            <i class="fa-solid fa-circle-info me-1"></i> Apunta al código de barras o QR de la OT
+            <i class="fa-solid fa-expand me-1"></i> Centra el código en el recuadro para escanearlo más rápido
           </div>
         </div>
       </div>
@@ -674,9 +668,16 @@
         try {
           html5QrCode = new Html5Qrcode("reader");
           const config = {
-            fps: 20,
-            qrbox: { width: 280, height: 280 },
-            aspectRatio: 1.0
+            fps: 30, // Más FPS para fluidez
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              const size = Math.floor(minEdge * 0.75); // 75% del área útil
+              return { width: size, height: size };
+            },
+            aspectRatio: 1.0,
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true // Potencia el reconocimiento en móviles modernos
+            }
           };
 
           await html5QrCode.start(

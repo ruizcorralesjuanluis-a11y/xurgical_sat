@@ -323,9 +323,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopScanner()"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="reader"></div>
+                    <div id="reader"
+                        style="width: 100%; min-height: 300px; background: #000; border-radius: 8px; overflow: hidden;">
+                    </div>
                     <div class="text-center mt-3 small text-secondary">
-                        <i class="fa-solid fa-circle-info me-1"></i> Apunta al código de barras o QR de la OT
+                        <i class="fa-solid fa-expand me-1"></i> Centra el código en el recuadro para escanearlo más
+                        rápido
                     </div>
                 </div>
             </div>
@@ -471,9 +474,16 @@
                 try {
                     html5QrCode = new Html5Qrcode("reader");
                     const config = {
-                        fps: 20,
-                        qrbox: { width: 280, height: 280 },
-                        aspectRatio: 1.0
+                        fps: 30,
+                        qrbox: (viewfinderWidth, viewfinderHeight) => {
+                            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                            const size = Math.floor(minEdge * 0.75);
+                            return { width: size, height: size };
+                        },
+                        aspectRatio: 1.0,
+                        experimentalFeatures: {
+                            useBarCodeDetectorIfSupported: true
+                        }
                     };
 
                     await html5QrCode.start(
