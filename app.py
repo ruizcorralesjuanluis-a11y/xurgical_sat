@@ -149,8 +149,8 @@ def _list_clientes(cur) -> list[dict]:
 
 def _envios_has_column(cur, col: str) -> bool:
     try:
-        cur.execute("PRAGMA table_info(envios)")
-        cols = [r["name"] for r in cur.fetchall()]
+        from db import get_table_columns
+        cols = get_table_columns(cur, "envios")
         return col in cols
     except Exception:
         return False
@@ -522,8 +522,8 @@ def on_startup():
     cur = conn.cursor()
 
     # Detecta columnas reales en users
-    cur.execute("PRAGMA table_info(users)")
-    cols = [r["name"] for r in cur.fetchall()]
+    from db import get_table_columns
+    cols = get_table_columns(cur, "users")
     colset = set(cols)
 
     pw_col = "password_hash" if "password_hash" in colset else ("password" if "password" in colset else None)
@@ -2052,8 +2052,8 @@ async def instrumento_informe_upload(
     cur = conn.cursor()
 
     # Descubre columnas reales
-    cur.execute("PRAGMA table_info(instrumento_informes)")
-    cols = {r[1] if isinstance(r, (tuple, list)) else r["name"]: int(r[3] if isinstance(r, (tuple, list)) else r["notnull"]) for r in cur.fetchall()}
+    from db import get_table_columns
+    cols = get_table_columns(cur, "instrumento_informes")
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -2649,10 +2649,8 @@ def usuarios_new(
 
 
 def _users_schema(cur) -> dict:
-    """Detecta columnas reales de la tabla users para compatibilidad."""
-    cur.execute("PRAGMA table_info(users)")
-    rows = cur.fetchall()
-    cols = [r["name"] for r in rows]
+    from db import get_table_columns
+    cols = get_table_columns(cur, "users")
     colset = set(cols)
 
     # columna de password

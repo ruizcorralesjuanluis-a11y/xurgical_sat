@@ -13,6 +13,7 @@ idna
 itsdangerous
 markupsafe
 typing-extensions
+psycopg2-binary
 
 # Auth
 passlib[bcrypt]
