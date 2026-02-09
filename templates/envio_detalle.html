@@ -81,8 +81,15 @@
       transition: all 0.3s ease;
       cursor: pointer;
       border: 1px solid transparent;
-      min-width: 190px;
+      width: 200px;
+      height: 80px;
       justify-content: flex-start;
+      flex-shrink: 0;
+    }
+
+    .action-form {
+      display: flex;
+      flex-shrink: 0;
     }
 
     .action-card:hover {
@@ -303,10 +310,11 @@
             </button>
 
             <!-- IMPORTAR EXCEL -->
-            <form method="post" action="/envios/{{ envio.id }}/importar" enctype="multipart/form-data" class="m-0">
+            <form method="post" action="/envios/{{ envio.id }}/importar" enctype="multipart/form-data"
+              class="m-0 action-form">
               <input type="file" name="file" id="excelFileDetalle" accept=".xlsx,.xls" class="d-none"
                 onchange="this.form.submit()">
-              <button type="button" class="btn btn-primary px-4 py-3 action-card shadow-sm"
+              <button type="button" class="btn btn-primary px-4 py-3 action-card shadow-sm w-100"
                 onclick="document.getElementById('excelFileDetalle').click()">
                 <i class="fa-solid fa-file-import fa-lg"></i>
                 <div class="text-start">
