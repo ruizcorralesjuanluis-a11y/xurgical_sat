@@ -2495,26 +2495,34 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     elements.append(Paragraph("REGISTRO FOTOGRÁFICO DE DIAGNÓSTICO Y REPARACIÓN", style_sec))
     
     def _get_pdf_img(p):
-        if not p: return Paragraph("<br/><br/><i>Sin imagen</i>", ParagraphStyle('si', alignment=TA_CENTER, fontSize=8, textColor=colors.grey))
-        loc = p.lstrip("/")
-        if os.path.exists(loc):
-            try:
-                # Calculamos aspect ratio para que quepan bien
-                return Image(loc, width=7.5*cm, height=5.5*cm, kind='proportional')
-            except:
-                return "Error carga"
-        return "N/A"
+        if not p: return Paragraph("<br/><br/><i>Sin imagen</i>", ParagraphStyle('si', alignment=TA_CENTER, fontSize=8, textColor=colors.gray))
+        
+        # Intentar resolver ruta. p suele ser '/static/fotos/...'
+        fname = p.split("/")[-1]
+        # Ruta en Render/Local suele ser BASE_DIR / static / fotos / fname
+        loc = os.path.join(str(BASE_DIR), "static", "fotos", fname)
+        
+        if not os.path.exists(loc):
+            # Fallback 2: ruta directa quitando el / inicial
+            loc = p.lstrip("/")
+            if not os.path.exists(loc):
+                return "N/A"
+        
+        try:
+            return Image(loc, width=7.5*cm, height=5.5*cm, kind='proportional')
+        except:
+            return "Error carga"
 
     foto_data = [
         [Paragraph("<b>ESTADO INICIAL / ENTRADA</b>", style_normal), Paragraph("<b>ESTADO FINAL / SALIDA</b>", style_normal)],
         [_get_pdf_img(qc["qc_foto_entrada_1"] or inst["foto_entrada_1"]), _get_pdf_img(qc["qc_foto_salida_1"] or inst["foto_salida_1"])],
         [_get_pdf_img(qc["qc_foto_entrada_2"] or inst["foto_entrada_2"]), _get_pdf_img(qc["qc_foto_salida_2"] or inst["foto_salida_2"])]
     ]
-    foto_tab = Table(foto_data, colWidths=[9*cm, 9*cm])
+    foto_tab = Table(foto_data, colWidths=[8.5*cm, 8.5*cm])
     foto_tab.setStyle(TableStyle([
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('GRID', (0,1), (-1,-1), 0.5, c_border), # Solo rejilla para fotos
+        ('GRID', (0,1), (-1,-1), 0.5, c_border),
         ('TOPPADDING', (0,0), (-1,-1), 5),
         ('BOTTOMPADDING', (0,0), (-1,-1), 5),
     ]))
@@ -2556,7 +2564,7 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
         [Paragraph(f"<b>CONTROL DE CALIDAD</b><br/><br/><br/>{qc['firma_tecnico'] or 'Técnico Especialista'}", style_normal), 
          Paragraph(f"<b>RESPONSABLE TÉCNICO</b><br/><br/><br/>{qc['firma_responsable'] or 'Director Técnico'}", style_normal)]
     ]
-    firma_tab = Table(firma_data, colWidths=[9*cm, 9*cm])
+    firma_tab = Table(firma_data, colWidths=[8.5*cm, 8.5*cm])
     firma_tab.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER')]))
     elements.append(firma_tab)
 
@@ -2572,7 +2580,7 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
 
     doc.build(elements, onFirstPage=static_footer, onLaterPages=static_footer)
     pdf_bytes = buf.getvalue()
-    clean_code = str(inst['codigo_producto']).replace("/", "_").replace("\\", "_")
+    clean_code = str(inst['codigo_producto'] or 'SREF').replace("/", "_").replace("\\", "_")
     filename = f"QC_OPTICA_{instrumento_id}_{clean_code}.pdf"
     return pdf_bytes, filename
 
