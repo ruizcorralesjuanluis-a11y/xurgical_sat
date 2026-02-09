@@ -1,15 +1,8 @@
-
-import sqlite3
-import os
-from pathlib import Path
-
-# Configuración de base de datos
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = os.environ.get("XURGICAL_DB_PATH", str(BASE_DIR / "sat.db"))
+from db import get_conn
 
 def seed_checklist():
-    print(f"Conectando a {DB_PATH}...")
-    conn = sqlite3.connect(DB_PATH)
+    print("Conectando a la base de datos...")
+    conn = get_conn()
     cur = conn.cursor()
 
     # Checklist por defecto para REPARACION
