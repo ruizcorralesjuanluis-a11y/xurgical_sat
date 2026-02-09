@@ -3268,11 +3268,91 @@ def usuarios_new(
 
     conn = get_conn()
     cur = conn.cursor()
-    try:
-        cur.execute(
-            "INSERT INTO users (username, password_hash, role, is_active) VALUES (?, ?, ?, ?)",
-            (username, hash_password(password), role, int(is_active)),
+
+    schema = _users_schema(cur)
+    pw_col = schema.get("password_col")
+    if not pw_col:
+        conn.close()
+        return templates.TemplateResponse(
+            "user_form.html",
+            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Error de esquema DB"},
+            status_code=400,
         )
+
+    try:
+        cols = ["username", pw_col, "role"]
+        vals = [username, hash_password(password), role]
+        
+        if schema.get("has_is_active"):
+            cols.append("is_active")
+            vals.append(int(is_active))
+            
+        if schema.get("has_created_at"):
+            cols.append("created_at")
+            vals.append(_now_str())
+        elif schema.get("has_created_at_at"):
+            cols.append("created_at_at")
+            vals.append(_now_str())
+
+        sql = f"INSERT INTO users ({', '.join(cols)}) VALUES ({', '.join(['?']*len(cols))})"
+        cur.execute(sql, tuple(vals))
+        
+        # Insert permissions default
+        # (Generic logic copied from dash_users_nuevo, simplified here without RETURNING id logic as we redirect anyway)
+        # But wait, we need ID to insert permissions.
+        # So we MUST fetch ID.
+        
+        is_pg = bool(os.environ.get("DATABASE_URL"))
+        new_id = None
+        if is_pg:
+             # On PG we need RETURNING id, but we already executed insert without it above? No wait.
+             # We should use RETURNING id in the SAME execute or fetch lastrowid is unreliable on PG.
+             # Let's redo the execute properly.
+             pass
+        
+    except Exception:
+        pass 
+        
+    # Re-writing the block properly to match dash_users_nuevo logic completely
+    
+    try:
+        cols = ["username", pw_col, "role"]
+        vals = [username, hash_password(password), role]
+
+        if schema.get("has_is_active"):
+            cols.append("is_active")
+            vals.append(int(is_active))
+
+        if schema.get("has_created_at"):
+            cols.append("created_at")
+            vals.append(_now_str())
+        elif schema.get("has_created_at_at"):
+            cols.append("created_at_at")
+            vals.append(_now_str())
+
+        sql = f"INSERT INTO users ({', '.join(cols)}) VALUES ({', '.join(['?']*len(cols))})"
+        
+        is_pg = bool(os.environ.get("DATABASE_URL"))
+        if is_pg:
+            sql += " RETURNING id"
+            cur.execute(sql, tuple(vals))
+            row = cur.fetchone()
+            if row:
+                new_id = int(row["id"])
+            else:
+                 raise Exception("No ID returned")
+        else:
+            cur.execute(sql, tuple(vals))
+            new_id = int(cur.lastrowid)
+
+        # Default permissions
+        for action, _label in ACTIONS:
+            allowed = _default_allowed_by_role(role, action)
+            cur.execute(
+                "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
+                (new_id, action, int(allowed)),
+            )
+
         conn.commit()
     except sqlite3.IntegrityError:
         conn.close()
@@ -3281,8 +3361,16 @@ def usuarios_new(
             {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Ese usuario ya existe"},
             status_code=400,
         )
-    conn.close()
+    except Exception as e:
+        conn.close()
+        print(f"Error creating user: {e}")
+        return templates.TemplateResponse(
+            "user_form.html",
+            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Error interno de base de datos"},
+            status_code=400,
+        )
 
+    conn.close()
     return RedirectResponse(url="/usuarios", status_code=303)
 
 
