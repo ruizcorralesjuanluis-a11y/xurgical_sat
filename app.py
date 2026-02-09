@@ -1445,6 +1445,13 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
     for r in instrumentos:
         if "nombre_trazabilidad" in r:
             r["nombre_trazabilidad"] = _clean_trz(r.get("nombre_trazabilidad"))
+        
+        # Check PDF informe
+        r["has_informe"] = False
+        if envio["tipo_trabajo"] == "OPTICA_RIGIDA":
+             cur.execute("SELECT 1 FROM instrumento_informes WHERE instrumento_id=?", (r["id"],))
+             if cur.fetchone():
+                 r["has_informe"] = True
 
     # DEF_TRZ_NOMBRE_OK: prepara nombre_trazabilidad SOLO para pantalla de grabación (copiar/pegar)
     envio_dict = dict(envio)
@@ -2230,8 +2237,12 @@ async def qc_optica_save(
         cur.execute(f"INSERT INTO instrumento_informes ({', '.join(insert_cols)}) VALUES ({placeholders})", tuple(insert_vals))
         conn.commit()
         
-    # Redirigir de vuelta al listado del parte (envio_id)
+    # Marcar instrumento como REPARADO al guardar el QC
     cur = conn.cursor()
+    cur.execute("UPDATE instrumentos SET estado='Reparado' WHERE id=?", (instrumento_id,))
+    conn.commit()
+
+    # Redirigir de vuelta al listado del parte (envio_id)
     cur.execute("SELECT envio_id FROM instrumentos WHERE id=?", (instrumento_id,))
     row_e = cur.fetchone()
     conn.close()

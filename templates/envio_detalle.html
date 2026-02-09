@@ -553,7 +553,8 @@
                   {% else %}
                   {% if user and user.role in ["admin","tecnico"] %}
                   <form method="post" action="/instrumentos/{{ inst.id }}/estado" class="m-0">
-                    <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <select name="estado" class="form-select form-select-sm"
+                      onchange="handleStateChange(this, {{ inst.id }}, '{{ envio.tipo_trabajo }}')">
                       {% for e in ["Pendiente","En proceso","Reparado","Baja"] %}
                       <option value="{{ e }}" {% if inst.estado==e %}selected{% endif %}>{{ e }}</option>
                       {% endfor %}
@@ -589,12 +590,6 @@
                     </a>
                     {% endif %}
 
-                    {% if user and user.role in ["admin","tecnico"] %}
-                    <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="modal"
-                      data-bs-target="#upInforme{{ inst.id }}" title="Subir PDF">
-                      <i class="fa-solid fa-cloud-arrow-up"></i>
-                    </button>
-                    {% endif %}
                     {% endif %}
 
                     <a class="btn btn-outline-dark btn-sm" href="/instrumentos/{{ inst.id }}" title="Abrir">
@@ -631,30 +626,6 @@
               </tr>
 
 
-              {% if envio and envio.tipo_trabajo == 'OPTICA_RIGIDA' and user and user.role in ["admin","tecnico"] %}
-              <div class="modal fade" id="upInforme{{ inst.id }}" tabindex="-1">
-                <div class="modal-dialog modal-dialog-centered">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h5 class="modal-title">📄 Subir informe PDF (Instrumento #{{ inst.id }})</h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                      <div class="text-secondary small mb-2">
-                        El informe es opcional. Si ya existe uno, se reemplazará.
-                      </div>
-                      <form method="post" action="/instrumentos/{{ inst.id }}/informe/upload"
-                        enctype="multipart/form-data">
-                        <input class="form-control" type="file" name="file" accept="application/pdf" required>
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                          <button class="btn btn-success">Subir PDF</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              </div>
               {% endif %}
 
               <!-- MODAL BORRAR INSTRUMENTO -->
@@ -704,6 +675,20 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    function handleStateChange(select, instId, tipoTrabajo) {
+      if (select.value === 'Reparado' && tipoTrabajo === 'OPTICA_RIGIDA') {
+        if (confirm('¿Desea abrir el Control de Calidad para este instrumento?')) {
+          // Redirigir al formulario QC
+          window.location.href = '/instrumentos/' + instId + '/qc_optica';
+          return;
+        }
+      }
+      // Si no es óptica o dice que NO, enviar formulario normal (cambiar estado)
+      select.form.submit();
+    }
+  </script>
 
   <!-- Autorrelleno desde Articulos.xlsx (Modelo/Código -> Denominación + Fabricante) -->
   <script>
