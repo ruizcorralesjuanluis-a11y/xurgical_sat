@@ -1436,6 +1436,11 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
 
     cur.execute("SELECT * FROM instrumentos WHERE envio_id=? ORDER BY id DESC", (envio_id,))
     instrumentos = [dict(r) for r in cur.fetchall()]
+
+    if _user_role(user) == "tecnico":
+        # DEF_TECNICO_FILTER: Los instrumentos ya reparados desaparecen de la mochila del técnico
+        instrumentos = [i for i in instrumentos if (i.get("estado") or "Pendiente") != "Reparado"]
+
     # CLEAN_TRZ_APPLIED: limpia nombre_trazabilidad para mostrar/copiar sin simbolos
     for r in instrumentos:
         if "nombre_trazabilidad" in r:
@@ -2021,6 +2026,308 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
             "informe": dict(informe) if informe else None,
         },
     )
+# -----------------------------
+# CONTROL DE CALIDAD - OPTICAS RIGIDAS
+# -----------------------------
+@app.get("/instrumentos/{instrumento_id}/qc_optica", response_class=HTMLResponse)
+async def qc_optica_view(request: Request, instrumento_id: int, user=Depends(require_roles("admin", "tecnico"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT * FROM instrumentos WHERE id=?", (instrumento_id,))
+    inst = cur.fetchone()
+    if not inst:
+        conn.close()
+        return HTMLResponse("Instrumento no encontrado", status_code=404)
+        
+    cur.execute("SELECT * FROM envios WHERE id=?", (inst["envio_id"],))
+    envio = cur.fetchone()
+    
+    cur.execute("SELECT * FROM clientes WHERE id=?", (envio["cliente_id"],))
+    cliente = cur.fetchone()
+    
+    cur.execute("SELECT * FROM instrumento_qc_optica WHERE instrumento_id=?", (instrumento_id,))
+    qc = cur.fetchone()
+    
+    conn.close()
+    
+    return templates.TemplateResponse(
+        "instrumento_qc_optica.html",
+        {
+            "request": request,
+            "user": user,
+            "inst": dict(inst),
+            "envio": dict(envio),
+            "cliente": dict(cliente) if cliente else None,
+            "qc": dict(qc) if qc else None,
+            "now_date": datetime.now().strftime("%Y-%m-%d")
+        }
+    )
+
+@app.post("/instrumentos/{instrumento_id}/qc_optica")
+async def qc_optica_save(
+    instrumento_id: int,
+    request: Request,
+    user=Depends(require_roles("admin", "tecnico")),
+    parte_trabajo_cliente: str = Form(""),
+    observaciones_cliente: str = Form(""),
+    observaciones_previas: str = Form(""),
+    diag_ventana: str = Form("CORRECTO"),
+    diag_fibra: str = Form("CORRECTO"),
+    diag_objetivo: str = Form("CORRECTO"),
+    diag_lentes: str = Form("CORRECTO"),
+    diag_camisa: str = Form("CORRECTO"),
+    diag_ocular: str = Form("CORRECTO"),
+    diag_pieza_ojo: str = Form("CORRECTO"),
+    diag_contaminacion: str = Form("CORRECTO"),
+    reparable: int = Form(1),
+    campo_vision_val: str = Form(""),
+    campo_vision_ok: int = Form(1),
+    direccion_vision_val: str = Form(""),
+    direccion_vision_ok: int = Form(1),
+    resolucion_val: str = Form(""),
+    resolucion_ok: int = Form(1),
+    desviacion_val: str = Form(""),
+    desviacion_ok: int = Form(1),
+    luz_val: str = Form(""),
+    luz_ok: int = Form(1),
+    observaciones_finales: str = Form(""),
+    fecha_salida: str = Form(""),
+    firma_tecnico: str = Form(""),
+    firma_responsable: str = Form(""),
+    foto_salida_1: UploadFile = File(None),
+    foto_salida_2: UploadFile = File(None),
+):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # Manejo de fotos de salida
+    fotos = {}
+    for slot, f in [(1, foto_salida_1), (2, foto_salida_2)]:
+        if f and f.filename:
+            safe_name = re.sub(r"[^a-zA-Z0-9.-]", "_", f.filename)
+            fname = f"inst_{instrumento_id}_salida_{slot}_{int(time.time())}_{safe_name}"
+            path = os.path.join(FOTOS_DIR, fname)
+            with open(path, "wb") as buf:
+                buf.write(await f.read())
+            fotos[f"foto_salida_{slot}"] = f"/static/fotos/{fname}"
+            
+            # Borrar anterior si existía
+            cur.execute(f"SELECT foto_salida_{slot} FROM instrumentos WHERE id=?", (instrumento_id,))
+            old = cur.fetchone()
+            if old and old[0]:
+                _try_delete_public_photo(old[0])
+            
+            cur.execute(f"UPDATE instrumentos SET foto_salida_{slot}=? WHERE id=?", (fotos[f"foto_salida_{slot}"], instrumento_id))
+
+    # Guardar/Actualizar QC
+    cur.execute("SELECT 1 FROM instrumento_qc_optica WHERE instrumento_id=?", (instrumento_id,))
+    exists = cur.fetchone()
+    
+    if exists:
+        cur.execute("""
+            UPDATE instrumento_qc_optica SET
+                parte_trabajo_cliente=?, observaciones_cliente=?, observaciones_previas=?,
+                diag_ventana=?, diag_fibra=?, diag_objetivo=?, diag_lentes=?, diag_camisa=?,
+                diag_ocular=?, diag_pieza_ojo=?, diag_contaminacion=?, reparable=?,
+                campo_vision_val=?, campo_vision_ok=?, direccion_vision_val=?, direccion_vision_ok=?,
+                resolucion_val=?, resolucion_ok=?, desviacion_val=?, desviacion_ok=?,
+                luz_val=?, luz_ok=?, observaciones_finales=?, fecha_salida=?,
+                firma_tecnico=?, firma_responsable=?
+            WHERE instrumento_id=?
+        """, (
+            parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
+            diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
+            diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
+            campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
+            resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
+            luz_val, luz_ok, observaciones_finales, fecha_salida,
+            firma_tecnico, firma_responsable, instrumento_id
+        ))
+    else:
+        cur.execute("""
+            INSERT INTO instrumento_qc_optica (
+                instrumento_id, parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
+                diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
+                diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
+                campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
+                resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
+                luz_val, luz_ok, observaciones_finales, fecha_salida,
+                firma_tecnico, firma_responsable
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            instrumento_id, parte_trabajo_cliente, observaciones_cliente, observaciones_previas,
+            diag_ventana, diag_fibra, diag_objetivo, diag_lentes, diag_camisa,
+            diag_ocular, diag_pieza_ojo, diag_contaminacion, reparable,
+            campo_vision_val, campo_vision_ok, direccion_vision_val, direccion_vision_ok,
+            resolucion_val, resolucion_ok, desviacion_val, desviacion_ok,
+            luz_val, luz_ok, observaciones_finales, fecha_salida,
+            firma_tecnico, firma_responsable
+        ))
+
+    conn.commit()
+    conn.close()
+    
+    return RedirectResponse(url=f"/instrumentos/{instrumento_id}/qc_optica", status_code=303)
+
+
+@app.get("/instrumentos/{instrumento_id}/qc_optica/pdf")
+async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user)):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    cur.execute("SELECT * FROM instrumentos WHERE id=?", (instrumento_id,))
+    inst = cur.fetchone()
+    if not inst:
+        conn.close()
+        raise HTTPException(status_code=404, detail="No encontrado")
+        
+    cur.execute("SELECT * FROM envios WHERE id=?", (inst["envio_id"],))
+    envio = cur.fetchone()
+    
+    cur.execute("SELECT * FROM clientes WHERE id=?", (envio["cliente_id"],))
+    cliente = cur.fetchone()
+    
+    cur.execute("SELECT * FROM instrumento_qc_optica WHERE instrumento_id=?", (instrumento_id,))
+    qc = cur.fetchone()
+    conn.close()
+    
+    if not qc:
+        raise HTTPException(status_code=404, detail="No hay datos de QC para este instrumento")
+
+    # Generación PDF
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Logo y Cabecera
+    logo_path = os.path.join("static", "logo-xurgical.png")
+    header_data = [
+        [Image(logo_path, width=150, height=45) if os.path.exists(logo_path) else "", 
+         Paragraph(f"<b>Nº C.C.</b> {24000 + instrumento_id}", styles["Normal"])]
+    ]
+    header_tab = Table(header_data, colWidths=[400, 100])
+    header_tab.setStyle(TableStyle([('ALIGN', (1,0), (1,0), 'RIGHT')]))
+    elements.append(header_tab)
+    elements.append(Spacer(1, 10))
+    
+    elements.append(Paragraph("<font size=16 color='#000000'><b>INFORME CONTROL DE CALIDAD ÓPTICAS RÍGIDAS</b></font>", 
+                              ParagraphStyle('Title', alignment=1, spaceAfter=20)))
+
+    # Datos Generales
+    elements.append(Paragraph("<b>DATOS GENERALES</b>", styles["Normal"]))
+    dg_data = [
+        ["CLIENTE:", str(cliente["nombre"] if cliente else envio["cliente"])[:40], "EQUIPO:", str(inst["denominacion"])[:40]],
+        ["PARTE TRABAJO:", str(qc["parte_trabajo_cliente"])[:20], "MODELO:", str(inst["codigo_producto"])[:20]],
+        ["CODIGO OT:", str(envio["ot_num"]), "N/SERIE:", str(inst["num_serie"])[:20]],
+    ]
+    dg_tab = Table(dg_data, colWidths=[80, 170, 80, 170])
+    dg_tab.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('BACKGROUND', (0,0), (0,-1), colors.lightgrey),
+        ('BACKGROUND', (2,0), (2,-1), colors.lightgrey),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+    ]))
+    elements.append(dg_tab)
+    elements.append(Spacer(1, 10))
+    
+    elements.append(Paragraph(f"<b>OBSERVACIONES DEL CLIENTE:</b> {qc['observaciones_cliente'] or '-'}", styles["Normal"]))
+    elements.append(Spacer(1, 10))
+
+    # Fotos Entrada/Salida
+    elements.append(Paragraph("<b>FOTOS DEL EQUIPO</b>", styles["Normal"]))
+    def _get_pdf_img(p):
+        if not p: return ""
+        # "/static/fotos/xxx.jpg" -> "static/fotos/xxx.jpg"
+        loc = p.lstrip("/")
+        if os.path.exists(loc):
+            return Image(loc, width=120, height=90)
+        return ""
+
+    foto_data = [
+        ["ENTRADA", "SALIDA"],
+        [_get_pdf_img(inst["foto_entrada_1"]), _get_pdf_img(inst["foto_salida_1"])],
+        [_get_pdf_img(inst["foto_entrada_2"]), _get_pdf_img(inst["foto_salida_2"])]
+    ]
+    foto_tab = Table(foto_data, colWidths=[250, 250])
+    foto_tab.setStyle(TableStyle([
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('FONTSIZE', (0,0), (-1,0), 10),
+    ]))
+    elements.append(foto_tab)
+    elements.append(Spacer(1, 10))
+
+    # Diagnóstico (En página 2 si hace falta, pero Reportlab lo gestiona)
+    elements.append(Paragraph("<b>DIAGNÓSTICO</b>", styles["Normal"]))
+    diag_rows = [["ELEMENTO", "CORRECTO", "INCORRECTO", "SUSTITUCIÓN", "REPARACIÓN"]]
+    elementos_qc = [
+        ('diag_ventana', 'VENTANA'), ('diag_fibra', 'FIBRA ILUMINACIÓN'), ('diag_objetivo', 'OBJETIVO'),
+        ('diag_lentes', 'LENTES'), ('diag_camisa', 'CAMISA EXTERIOR'), ('diag_ocular', 'OCULAR'),
+        ('diag_pieza_ojo', 'PIEZA DE OJO'), ('diag_contaminacion', 'CONTAMINACIÓN')
+    ]
+    for key, label in elementos_qc:
+        v = qc[key]
+        row = [label, "X" if v=="CORRECTO" else "", "X" if v=="INCORRECTO" else "", 
+               "X" if v=="SUSTITUCION" else "", "X" if v=="REPARACION" else ""]
+        diag_rows.append(row)
+    
+    diag_tab = Table(diag_rows, colWidths=[150, 80, 80, 90, 80])
+    diag_tab.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+    ]))
+    elements.append(diag_tab)
+    elements.append(Spacer(1, 15))
+
+    # Resultados Técnicos
+    elements.append(Paragraph(f"<b>RESULTADO: EQUIPO REPARABLE: {'SI' if qc['reparable'] else 'NO'}</b>", styles["Normal"]))
+    elements.append(Spacer(1, 10))
+    
+    tec_rows = [["PARÁMETRO", "VALOR", "VALIDO SI", "VALIDO NO"]]
+    for key, label in [('campo_vision', 'CAMPO DE VISIÓN'), ('direccion_vision', 'DIRECCIÓN DE VISIÓN'), 
+                       ('resolucion', 'RESOLUCIÓN'), ('desviacion', 'DESVIACIÓN'), ('luz', 'LUZ')]:
+        ok = qc[key+"_ok"]
+        tec_rows.append([label, qc[key+"_val"] or "-", "X" if ok==1 else "", "X" if ok==0 else ""])
+        
+    tec_tab = Table(tec_rows, colWidths=[150, 100, 100, 100])
+    tec_tab.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('BACKGROUND', (0,0), (-1,0), colors.lightgrey),
+        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
+        ('FONTSIZE', (0,0), (-1,-1), 8),
+    ]))
+    elements.append(tec_tab)
+    elements.append(Spacer(1, 15))
+
+    elements.append(Paragraph(f"<b>OBSERVACIONES:</b> {qc['observaciones_finales'] or '-'}", styles["Normal"]))
+    elements.append(Spacer(1, 20))
+    
+    # Firmas
+    firma_data = [
+        [f"FECHA DE SALIDA: {qc['fecha_salida']}", f"FIRMA TÉCNICO: {qc['firma_tecnico']}", f"RESPONSABLE: {qc['firma_responsable']}"]
+    ]
+    firma_tab = Table(firma_data, colWidths=[160, 170, 170])
+    firma_tab.setStyle(TableStyle([('FONTSIZE', (0,0), (-1,-1), 8)]))
+    elements.append(firma_tab)
+
+    doc.build(elements)
+    filename = f"QC_OPTICA_{instrumento_id}_{inst['codigo_producto']}.pdf"
+    return StreamingResponse(
+        io.BytesIO(buf.getvalue()),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename={filename}"}
+    )
+
+
 # -----------------------------
 # CHECKLIST (admin/tecnico)
 # Endpoint que usa el botón OK del checklist.

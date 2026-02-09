@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Control de Calidad - {{ inst.denominacion }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+        }
+
+        .qc-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .qc-header {
+            border-bottom: 2px solid #0d6efd;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .section-title {
+            background: #e9ecef;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: 700;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .diag-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #6c757d;
+        }
+
+        .diag-row:hover {
+            background-color: #f1f3f5;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-save {
+            padding: 12px 30px;
+            font-weight: 700;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container pb-5">
+        <div class="qc-container">
+            <div class="qc-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">INFORME CONTROL DE CALIDAD</h4>
+                    <small class="text-secondary text-uppercase">Ópticas Rígidas</small>
+                </div>
+                <img src="/static/logo-xurgical.png" height="40">
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                <!-- DATOS GENERALES -->
+                <div class="section-title">DATOS GENERALES</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Cliente</label>
+                        <input type="text" class="form-control" value="{{ envio.cliente }}" readonly disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Equipo</label>
+                        <input type="text" class="form-control" value="{{ inst.denominacion }}" readonly disabled>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Modelo</label>
+                        <input type="text" class="form-control" value="{{ inst.codigo_producto }}" readonly disabled>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">N/Serie</label>
+                        <input type="text" class="form-control" value="{{ inst.num_serie }}" readonly disabled>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Código Interno / OT</label>
+                        <input type="text" class="form-control" value="{{ envio.ot_num }}" readonly disabled>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Parte Trabajo Cliente</label>
+                        <input type="text" name="parte_trabajo_cliente" class="form-control"
+                            value="{{ qc.parte_trabajo_cliente if qc else '' }}" placeholder="Ej: PANTILLA 07/10">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Observaciones Cliente</label>
+                        <textarea name="observaciones_cliente" class="form-control"
+                            rows="2">{{ qc.observaciones_cliente if qc else (inst.observaciones or '') }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Observaciones Previas</label>
+                        <textarea name="observaciones_previas" class="form-control"
+                            rows="2">{{ qc.observaciones_previas if qc else '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- DIAGNÓSTICO -->
+                <div class="section-title">DIAGNÓSTICO</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered diag-table align-middle text-center">
+                        <thead>
+                            <tr class="table-light">
+                                <th class="text-start">ELEMENTO</th>
+                                <th>CORRECTO</th>
+                                <th>INCORRECTO</th>
+                                <th>SUSTITUCIÓN</th>
+                                <th>REPARACIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, label in [
+                            ('diag_ventana', 'VENTANA'),
+                            ('diag_fibra', 'FIBRA ILUMINACIÓN'),
+                            ('diag_objetivo', 'OBJETIVO'),
+                            ('diag_lentes', 'LENTES'),
+                            ('diag_camisa', 'CAMISA EXTERIOR'),
+                            ('diag_ocular', 'OCULAR'),
+                            ('diag_pieza_ojo', 'PIEZA DE OJO'),
+                            ('diag_contaminacion', 'CONTAMINACIÓN')
+                            ] %}
+                            <tr class="diag-row">
+                                <td class="text-start fw-semibold">{{ label }}</td>
+                                {% for val in ['CORRECTO', 'INCORRECTO', 'SUSTITUCION', 'REPARACION'] %}
+                                <td>
+                                    <input type="radio" class="form-check-input" name="{{ key }}" value="{{ val }}" {%
+                                        if qc and qc[key]==val %}checked{% elif not qc and val=='CORRECTO' %}checked{%
+                                        endif %}>
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- RESULTADO -->
+                <div class="section-title">RESULTADO</div>
+                <div class="d-flex align-items-center gap-4 p-2 bg-light rounded border">
+                    <span class="fw-bold">EQUIPO REPARABLE:</span>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="reparable" id="repSi" value="1" {% if not qc
+                            or qc.reparable==1 %}checked{% endif %}>
+                        <label class="form-check-label" for="repSi">SI</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="reparable" id="repNo" value="0" {% if qc and
+                            qc.reparable==0 %}checked{% endif %}>
+                        <label class="form-check-label" for="repNo">NO</label>
+                    </div>
+                </div>
+
+                <!-- DATOS TÉCNICOS -->
+                <div class="section-title">DATOS TÉCNICOS</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-start">CENTRO</th>
+                                <th>VALOR</th>
+                                <th>VALIDO (SI)</th>
+                                <th>VALIDO (NO)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, label in [
+                            ('campo_vision', 'CAMPO DE VISIÓN'),
+                            ('direccion_vision', 'DIRECCIÓN DE VISIÓN'),
+                            ('resolucion', 'RESOLUCIÓN'),
+                            ('desviacion', 'DESVIACIÓN'),
+                            ('luz', 'LUZ')
+                            ] %}
+                            <tr>
+                                <td class="text-start fw-semibold">{{ label }}</td>
+                                <td>
+                                    <input type="text" name="{{ key }}_val"
+                                        class="form-control form-control-sm text-center"
+                                        value="{{ qc[key+'_val'] if qc else '' }}">
+                                </td>
+                                <td>
+                                    <input type="radio" class="form-check-input" name="{{ key }}_ok" value="1" {% if not
+                                        qc or qc[key+'_ok']==1 %}checked{% endif %}>
+                                </td>
+                                <td>
+                                    <input type="radio" class="form-check-input" name="{{ key }}_ok" value="0" {% if qc
+                                        and qc[key+'_ok']==0 %}checked{% endif %}>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- FOTOS SALIDA -->
+                <div class="section-title">FOTOS DE SALIDA</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Foto Salida 1</label>
+                        {% if inst.foto_salida_1 %}
+                        <div class="mb-2">
+                            <img src="{{ inst.foto_salida_1 }}" class="img-thumbnail" style="height: 100px;">
+                        </div>
+                        {% endif %}
+                        <input type="file" name="foto_salida_1" class="form-control" accept="image/*"
+                            capture="environment">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Foto Salida 2</label>
+                        {% if inst.foto_salida_2 %}
+                        <div class="mb-2">
+                            <img src="{{ inst.foto_salida_2 }}" class="img-thumbnail" style="height: 100px;">
+                        </div>
+                        {% endif %}
+                        <input type="file" name="foto_salida_2" class="form-control" accept="image/*"
+                            capture="environment">
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES FINALES Y FIRMAS -->
+                <div class="section-title">CIERRE DEL INFORME</div>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Observaciones Finales</label>
+                        <textarea name="observaciones_finales" class="form-control"
+                            rows="3">{{ qc.observaciones_finales if qc else '' }}</textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Fecha de Salida</label>
+                        <input type="date" name="fecha_salida" class="form-control"
+                            value="{{ qc.fecha_salida if qc else now_date }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Firma Técnico</label>
+                        <input type="text" name="firma_tecnico" class="form-control"
+                            value="{{ qc.firma_tecnico if qc else user.username }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Firma Responsable</label>
+                        <input type="text" name="firma_responsable" class="form-control"
+                            value="{{ qc.firma_responsable if qc else 'JUAN LUIS' }}">
+                    </div>
+                </div>
+
+                <div class="mt-5 d-flex gap-3">
+                    <button type="submit" class="btn btn-primary flex-grow-1 btn-save">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Control de Calidad
+                    </button>
+                    <a href="/ot/{{ envio.ot_num }}" class="btn btn-outline-secondary btn-save">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+
+            {% if qc %}
+            <div class="mt-4 border-top pt-4 text-center">
+                <a href="/instrumentos/{{ inst.id }}/qc_optica/pdf" target="_blank" class="btn btn-danger btn-lg">
+                    <i class="fa-solid fa-file-pdf"></i> Generar Informe PDF Final
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

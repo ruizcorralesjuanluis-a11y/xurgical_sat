@@ -182,10 +182,19 @@ def init_db():
         actualizado_en {dt},
         foto_entrada_1 TEXT,
         foto_entrada_2 TEXT,
+        foto_salida_1 TEXT,
+        foto_salida_2 TEXT,
         tecnico_reparacion TEXT,
         tecnico_reparacion_en TEXT
     )
     """)
+
+    # Migración: asegurar que existen foto_salida_1 y foto_salida_2
+    cols_inst = get_table_columns(cur, "instrumentos")
+    if "foto_salida_1" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN foto_salida_1 TEXT")
+    if "foto_salida_2" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN foto_salida_2 TEXT")
 
     # 5. Permisos granulares
     cur.execute(f"""
@@ -217,6 +226,46 @@ def init_db():
         hecho_por TEXT,
         hecho_en TEXT,
         PRIMARY KEY (instrumento_id, item_id)
+    )
+    """)
+
+    # 8. Control de Calidad Ópticas Rígidas
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS instrumento_qc_optica (
+        instrumento_id INTEGER PRIMARY KEY,
+        parte_trabajo_cliente TEXT,
+        observaciones_cliente TEXT,
+        observaciones_previas TEXT,
+        
+        -- Diagnostico choices: CORRECTO, INCORRECTO, SUSTITUCION, REPARACION
+        diag_ventana TEXT,
+        diag_fibra TEXT,
+        diag_objetivo TEXT,
+        diag_lentes TEXT,
+        diag_camisa TEXT,
+        diag_ocular TEXT,
+        diag_pieza_ojo TEXT,
+        diag_contaminacion TEXT,
+        
+        reparable INTEGER DEFAULT 1,
+        
+        -- Datos técnicos
+        campo_vision_val TEXT,
+        campo_vision_ok INTEGER DEFAULT 1,
+        direccion_vision_val TEXT,
+        direccion_vision_ok INTEGER DEFAULT 1,
+        resolucion_val TEXT,
+        resolucion_ok INTEGER DEFAULT 1,
+        desviacion_val TEXT,
+        desviacion_ok INTEGER DEFAULT 1,
+        luz_val TEXT,
+        luz_ok INTEGER DEFAULT 1,
+        
+        observaciones_finales TEXT,
+        fecha_salida TEXT,
+        firma_tecnico TEXT,
+        firma_responsable TEXT,
+        creado_en {dt}
     )
     """)
 
