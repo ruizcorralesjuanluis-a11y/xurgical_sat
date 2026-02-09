@@ -1375,8 +1375,12 @@ def nuevo_envio_crear(
             return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
         cli_nombre = cli["nombre"]
     else:
-        # Compatibilidad: permitir cliente como texto (principalmente para reparación)
-        # Si es trazabilidad, requerimos cliente registrado.
+        # Si no hay ID, debe haber un nombre manual
+        if not cli_nombre:
+            conn.close()
+            return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
+        
+        # Si es trazabilidad, requerimos cliente registrado (ID).
         if tipo_trabajo == "TRAZABILIDAD":
             conn.close()
             return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
@@ -2540,6 +2544,9 @@ async def importar_excel(
         f.write(await file.read())
 
     cliente, fecha, df = leer_excel_envio(path)
+
+    if not cliente or not str(cliente).strip():
+        return RedirectResponse(url="/importar?err=cliente", status_code=303)
 
     conn = get_conn()
     cur = conn.cursor()

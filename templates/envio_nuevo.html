@@ -86,6 +86,8 @@
 
         {% if request.query_params.get('err') == 'fecha' %}
         <div class="alert alert-danger">❌ La fecha es obligatoria.</div>
+        {% elif request.query_params.get('err') == 'cliente' %}
+        <div class="alert alert-danger">❌ Debes seleccionar un cliente registrado o escribir su nombre.</div>
         {% endif %}
 
         <form method="post" action="/envios/nuevo">
