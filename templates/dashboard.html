@@ -295,14 +295,6 @@
             <a href="/export" class="btn btn-outline-primary btn-sm">
               <i class="fa-solid fa-file-export"></i> Exportar
             </a>
-            <form method="post" action="/importar" enctype="multipart/form-data" class="d-inline m-0">
-              <input type="file" name="file" id="excelFile" accept=".xlsx,.xls" class="d-none"
-                onchange="this.form.submit()">
-              <button type="button" class="btn btn-outline-dark btn-sm"
-                onclick="document.getElementById('excelFile').click()">
-                <i class="fa-solid fa-file-import"></i> Importar Excel
-              </button>
-            </form>
           </div>
           {% endif %}
         </div>

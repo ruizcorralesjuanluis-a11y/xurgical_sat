@@ -251,6 +251,19 @@
 
     <main class="container-fluid px-3 px-md-4 py-3">
 
+      {% set ok = request.query_params.get('ok') %}
+      {% if ok == '1' %}
+      <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3">
+        <i class="fa-solid fa-circle-check me-2"></i> Instrumento añadido correctamente.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% elif ok == 'import' %}
+      <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3">
+        <i class="fa-solid fa-file-circle-check me-2"></i> Listado importado correctamente desde Excel.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endif %}
+
       <!-- CABECERA PARTE -->
       <div class="panel p-3 mb-3">
         <div class="d-flex justify-content-between flex-wrap gap-2">
@@ -282,6 +295,21 @@
                 <div>Instrumento</div>
               </div>
             </button>
+
+            <!-- IMPORTAR EXCEL -->
+            <form method="post" action="/envios/{{ envio.id }}/importar" enctype="multipart/form-data" class="m-0">
+              <input type="file" name="file" id="excelFileDetalle" accept=".xlsx,.xls" class="d-none"
+                onchange="this.form.submit()">
+              <button type="button" class="btn btn-primary px-4 py-3 action-card shadow-sm"
+                onclick="document.getElementById('excelFileDetalle').click()">
+                <i class="fa-solid fa-file-import fa-lg"></i>
+                <div class="text-start">
+                  <div class="small opacity-75">Importar</div>
+                  <div>Excel</div>
+                </div>
+              </button>
+            </form>
+
             <a class="btn btn-dark px-4 py-3 action-card shadow-sm" href="/envios/{{ envio.id }}/etiqueta.pdf"
               target="_blank">
               <i class="fa-solid fa-circle-check fa-lg"></i>

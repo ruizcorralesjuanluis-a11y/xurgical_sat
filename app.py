@@ -2366,8 +2366,59 @@ def borrar_instrumento(instrumento_id: int, user=Depends(require_roles("admin", 
     return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
 
 
-# -----------------------------
 # IMPORTAR EXCEL (admin/recepcion)
+# -----------------------------
+@app.post("/envios/{envio_id}/importar")
+async def envio_importar_excel(
+    envio_id: int,
+    file: UploadFile = File(...),
+    user=Depends(require_roles("admin", "recepcion")),
+):
+    """Importa instrumentos desde un Excel a un parte existente."""
+    path = os.path.join(UPLOAD_DIR, file.filename)
+    with open(path, "wb") as f:
+        f.write(await file.read())
+
+    # Reutilizamos la lógica de lectura existente
+    _, _, df = leer_excel_envio(path)
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    rows = []
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for _, r in df.iterrows():
+        # Normalizamos un poco los campos
+        codigo = str(r.get("codigo_producto") or "").strip()
+        if not codigo: continue # si no hay código, saltamos? o permitimos?
+
+        rows.append((
+            envio_id,
+            codigo,
+            str(r.get("fabricante") or "").strip(),
+            str(r.get("num_serie") or "").strip(),
+            str(r.get("denominacion") or "").strip(),
+            str(r.get("observaciones") or "").strip(),
+            str(r.get("codigo_datamatrix") or "").strip(),
+            "", # nombre_trazabilidad
+            "Pendiente",
+            now_str,
+        ))
+
+    if rows:
+        cur.executemany("""
+            INSERT INTO instrumentos
+            (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, rows)
+        conn.commit()
+
+    conn.close()
+    return RedirectResponse(url=f"/envios/{envio_id}?ok=import", status_code=303)
+
+
+# -----------------------------
+# IMPORTAR EXCEL (admin/recepcion) - CREANDO NUEVA OT
 # -----------------------------
 @app.get("/importar", response_class=HTMLResponse)
 def importar_form(request: Request, user=Depends(require_roles("admin", "recepcion"))):
