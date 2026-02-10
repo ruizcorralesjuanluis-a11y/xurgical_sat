@@ -785,8 +785,20 @@ def dashboard(request: Request, user=Depends(get_current_user)):
             {select_tipo},
             COUNT(i.id) AS n_instrumentos,
             SUM(CASE WHEN i.estado IN ('Pendiente','En proceso') THEN 1 ELSE 0 END) AS n_pendientes,
-            SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_2 IS NOT NULL AND i.foto_entrada_3 IS NOT NULL AND i.foto_entrada_4 IS NOT NULL AND i.foto_entrada_5 IS NOT NULL AND i.foto_entrada_6 IS NOT NULL THEN 1 ELSE 0 END) AS n_fotos_completas,
-            SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL OR  i.foto_entrada_2 IS NOT NULL OR i.foto_entrada_3 IS NOT NULL OR i.foto_entrada_4 IS NOT NULL OR i.foto_entrada_5 IS NOT NULL OR i.foto_entrada_6 IS NOT NULL THEN 1 ELSE 0 END) AS n_con_alguna_foto,
+            SUM(CASE WHEN 
+                (i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_1 != '') AND 
+                (i.foto_entrada_2 IS NOT NULL AND i.foto_entrada_2 != '') AND 
+                (i.foto_entrada_3 IS NOT NULL AND i.foto_entrada_3 != '') AND 
+                (i.foto_entrada_4 IS NOT NULL AND i.foto_entrada_4 != '') AND 
+                (i.foto_entrada_5 IS NOT NULL AND i.foto_entrada_5 != '') AND 
+                (i.foto_entrada_6 IS NOT NULL AND i.foto_entrada_6 != '') THEN 1 ELSE 0 END) AS n_fotos_completas,
+            SUM(CASE WHEN 
+                (i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_1 != '') OR 
+                (i.foto_entrada_2 IS NOT NULL AND i.foto_entrada_2 != '') OR 
+                (i.foto_entrada_3 IS NOT NULL AND i.foto_entrada_3 != '') OR 
+                (i.foto_entrada_4 IS NOT NULL AND i.foto_entrada_4 != '') OR 
+                (i.foto_entrada_5 IS NOT NULL AND i.foto_entrada_5 != '') OR 
+                (i.foto_entrada_6 IS NOT NULL AND i.foto_entrada_6 != '') THEN 1 ELSE 0 END) AS n_con_alguna_foto,
             SUM(CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END) AS n_grabados
         FROM envios e
         LEFT JOIN instrumentos i ON i.envio_id = e.id

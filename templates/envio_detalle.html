@@ -535,14 +535,8 @@
 
                 <!-- Indicador fotos -->
                 <td class="col-fotos">
-                  {% set n_fotos = 0 %}
-                  {% for i in range(1, 7) %}
-                  {% set k = 'foto_entrada_' ~ i %}
-                  {% set f = inst.get(k) or inst[k] %}
-                  {% if f %}{% set n_fotos = n_fotos + 1 %}{% endif %}
-                  {% endfor %}
-
-                  {% if n_fotos >= 1 %}
+                  {% if inst.foto_entrada_1 or inst.foto_entrada_2 or inst.foto_entrada_3 or inst.foto_entrada_4 or
+                  inst.foto_entrada_5 or inst.foto_entrada_6 %}
                   <span class="badge-ok">COMPLETO</span>
                   {% else %}
                   <span class="badge-pend">SIN FOTOS</span>
