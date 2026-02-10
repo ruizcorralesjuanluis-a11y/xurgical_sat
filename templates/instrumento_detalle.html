@@ -209,12 +209,23 @@
   {% endif %}
 
   <!-- CHECKLIST -->
+  {% set ns_chk = namespace(visible_count=0) %}
+  {% for item in checklist %}
+  {% if item.hecho or (user and user.role != 'cliente' and inst.estado not in ['Reparado', 'Baja']) %}
+  {% set ns_chk.visible_count = ns_chk.visible_count + 1 %}
+  {% endif %}
+  {% endfor %}
+
+  {% if ns_chk.visible_count > 0 %}
   <div class="card mb-3" id="checklist-card">
     <div class="card-header"><strong>Checklist técnico</strong></div>
     <div class="card-body">
-      {% if checklist and checklist|length > 0 %}
       <div class="list-group">
         {% for item in checklist %}
+        {% set is_staff = (user and user.role != 'cliente') %}
+        {% set can_edit = (is_staff and inst.estado not in ['Reparado', 'Baja']) %}
+        {# Mostramos si: está hecho, O si somos staff y aún no está finalizado (para poder marcarlo) #}
+        {% if item.hecho or can_edit %}
         <div class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"
           id="chk-{{ item.item_id }}" data-hecho="{{ 1 if item.hecho else 0 }}">
           <div>
@@ -231,7 +242,7 @@
             </div>
           </div>
 
-          {% if user and user.role != 'cliente' %}
+          {% if is_staff %}
           <form method="post" action="/instrumentos/{{ inst.id }}/check/{{ item.item_id }}" class="check-form m-0">
             <button class="btn {% if item.hecho %}btn-outline-secondary{% else %}btn-success{% endif %}" type="submit"
               data-role="btn">
@@ -240,13 +251,12 @@
           </form>
           {% endif %}
         </div>
+        {% endif %}
         {% endfor %}
       </div>
-      {% else %}
-      <div class="text-muted">No hay checklist configurado para este tipo de parte.</div>
-      {% endif %}
     </div>
   </div>
+  {% endif %}
 
   <!-- INFORME PDF SOLO PARA OPTICA_RIGIDA -->
   {% if envio and tipo_upper == 'OPTICA_RIGIDA' %}
