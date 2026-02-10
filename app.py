@@ -1014,6 +1014,11 @@ def export_home(request: Request, user=Depends(require_roles("admin", "recepcion
     )
 
 
+@app.get("/guias", response_class=HTMLResponse)
+def guias_cliente(request: Request, user=Depends(get_current_user)):
+    return templates.TemplateResponse("guias.html", {"request": request, "user": user})
+
+
 @app.get("/export/download")
 def export_download(
     request: Request,

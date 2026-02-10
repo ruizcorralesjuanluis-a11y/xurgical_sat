@@ -1,0 +1,191 @@
+{% extends "layout.html" if layout_exists else "" %}
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xurgical SAT - Guías y Protocolos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: .6rem 1rem;
+        }
+
+        .panel {
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, .05);
+            background: #fff;
+            border: none;
+            margin-bottom: 2rem;
+        }
+
+        .guide-card {
+            border-radius: 12px;
+            border: 1px solid #eef2f3;
+            transition: transform 0.2s;
+        }
+
+        .guide-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .bg-soft-primary {
+            background-color: #eef2ff;
+            color: #4f46e5;
+        }
+
+        .bg-soft-danger {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .bg-soft-warning {
+            background-color: #fffbeb;
+            color: #d97706;
+        }
+
+        .bg-soft-success {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar topbar d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <img src="/static/logo-xurgical.png" style="height:30px;">
+            <span class="fw-bold">Xurgical SAT</span>
+            <span class="text-secondary small">/ Guías y Protocolos</span>
+        </div>
+        <a href="/" class="btn btn-outline-dark btn-sm">Dashboard</a>
+    </nav>
+
+    <main class="container py-4">
+        <header class="mb-4 text-center">
+            <h2 class="fw-bold">Centro de Conocimiento SAT</h2>
+            <p class="text-secondary">Consejos y protocolos para maximizar la vida útil de su instrumental.</p>
+        </header>
+
+        <div class="row g-4">
+            <!-- GUÍA 1 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="panel p-4 h-100 guide-card">
+                    <div class="icon-box bg-soft-danger">
+                        <i class="fa-solid fa-skull-crossbones fa-xl"></i>
+                    </div>
+                    <h5 class="fw-bold">Los Enemigos del Acero</h5>
+                    <p class="small text-muted">Evite estos errores comunes que destruyen el instrumental
+                        prematuramente.</p>
+                    <ul class="small ps-3 text-secondary">
+                        <li class="mb-2"><strong>Suero Salino:</strong> El cloro del suero provoca corrosión por
+                            "pitting" (agujeros microscópicos) irreversible.</li>
+                        <li class="mb-2"><strong>Sangre Seca:</strong> La sangre es ácida. Si se seca, ataca la capa
+                            protectora del acero.</li>
+                        <li class="mb-2"><strong>Apilamiento:</strong> Colocar pinzas pesadas sobre tijeras delicadas
+                            dobla las puntas y desajusta cortes.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- GUÍA 2 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="panel p-4 h-100 guide-card">
+                    <div class="icon-box bg-soft-primary">
+                        <i class="fa-solid fa-pump-soap fa-xl"></i>
+                    </div>
+                    <h5 class="fw-bold">Protocolo de Limpieza</h5>
+                    <p class="small text-muted">Pasos críticos antes de enviar el material al taller o esterilizarlo.
+                    </p>
+                    <ul class="small ps-3 text-secondary">
+                        <li class="mb-2"><strong>Pre-limpieza:</strong> Limpie restos orgánicos inmediatamente tras el
+                            uso con agua destilada o enzima.</li>
+                        <li class="mb-2"><strong>pH Neutro:</strong> Use siempre detergentes con pH entre 7 y 8.5 para
+                            no dañar el acabado.</li>
+                        <li class="mb-2"><strong>Cepillado Suave:</strong> Use solo cepillos de nylon. Los metálicos
+                            crean rayas donde crece óxido.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- GUÍA 3 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="panel p-4 h-100 guide-card">
+                    <div class="icon-box bg-soft-warning">
+                        <i class="fa-solid fa-eye fa-xl"></i>
+                    </div>
+                    <h5 class="fw-bold">Cuidado de Ópticas</h5>
+                    <p class="small text-muted">Las ópticas rígidas son los elementos más frágiles del inventario.</p>
+                    <ul class="small ps-3 text-secondary">
+                        <li class="mb-2"><strong>El Secado es Clave:</strong> La humedad remanente crea hongos internos.
+                            Seque con aire a presión suave.</li>
+                        <li class="mb-2"><strong>Lentes Limpias:</strong> No toque los extremos con los dedos. La grasa
+                            se quema en el autoclave y opaca la lente.</li>
+                        <li class="mb-2"><strong>Protección:</strong> Transporte siempre la óptica en su estuche o con
+                            funda protectora, nunca suelta.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- GUÍA 4 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="panel p-4 h-100 guide-card">
+                    <div class="icon-box bg-soft-success">
+                        <li class="fa-solid fa-oil-can fa-xl"></li>
+                    </div>
+                    <h5 class="fw-bold">Mantenimiento y Lubricación</h5>
+                    <p class="small text-muted">Asegure un movimiento suave en cada intervención.</p>
+                    <ul class="small ps-3 text-secondary">
+                        <li class="mb-2"><strong>Lubricante SAT:</strong> Use solo aceites hidrosolubles específicos.
+                            NUNCA use aceites domésticos.</li>
+                        <li class="mb-2"><strong>Box-Locks:</strong> Ponga una gota en cada articulación después de la
+                            limpieza y antes del autoclave.</li>
+                        <li class="mb-2"><strong>Inspección:</strong> Compruebe el cierre de las cremalleras. Si saltan,
+                            es señal de desgaste crítico.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- GUÍA 5 -->
+            <div class="col-md-6 col-lg-8">
+                <div class="panel p-4 h-100 bg-dark text-white shadow-lg">
+                    <h5 class="fw-bold mb-3"><i class="fa-solid fa-lightbulb text-warning me-2"></i>¿Sabía que...?</h5>
+                    <p>Un instrumental correctamente lubricado y limpio requiere un <strong>40% menos de reparaciones
+                            mayores</strong>. Seguir estos protocolos no solo mejora la seguridad del paciente, sino que
+                        reduce notablemente su presupuesto anual en reposiciones.</p>
+                    <div class="mt-4 alert alert-light bg-opacity-10 border-0 text-white small">
+                        <i class="fa-solid fa-circle-info me-2"></i> Estamos trabajando para añadir vídeos demostrativos
+                        y PDFs descargables para cada especialidad.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-5 text-secondary small">
+        &copy; 2026 Xurgical Industrial Vision - Servicio de Asistencia Técnica
+    </footer>
+
+</body>
+
+</html>
