@@ -704,6 +704,20 @@ def dashboard(request: Request, user=Depends(get_current_user)):
 
     q = (request.query_params.get('q') or '').strip()
 
+    # --- 0. Notificaciones de Recogida ---
+    n_peticiones_pendientes = 0
+    peticiones_recogida = []
+    if _user_role(user) in ["admin", "recepcion"]:
+        cur.execute("""
+            SELECT pr.*, c.nombre as cliente_nombre 
+            FROM peticiones_recogida pr
+            JOIN clientes c ON pr.cliente_id = c.id
+            WHERE pr.estado = 'Pendiente'
+            ORDER BY pr.creado_en DESC
+        """)
+        peticiones_recogida = [dict(r) for r in cur.fetchall()]
+        n_peticiones_pendientes = len(peticiones_recogida)
+
     # --- 1. KPIs Globales (Instrumentos) ---
     kpi_where = ""
     kpi_params = []
@@ -922,6 +936,8 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         "perms_by_user": perms_by_user,
         "db_type": db_type,
         "clientes_list_global": clientes_list_global,
+        "n_peticiones_pendientes": n_peticiones_pendientes,
+        "peticiones_recogida": peticiones_recogida,
     }
 
     return templates.TemplateResponse(
@@ -3980,3 +3996,13 @@ async def peticion_recogida(
     conn.close()
 
     return RedirectResponse(url="/?msg=recogida_ok", status_code=303)
+
+
+@app.post("/peticion_recogida/{peticion_id}/completar")
+def completar_peticion_recogida(peticion_id: int, user=Depends(require_roles("admin", "recepcion"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE peticiones_recogida SET estado = 'Completada' WHERE id = ?", (peticion_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/", status_code=303)
