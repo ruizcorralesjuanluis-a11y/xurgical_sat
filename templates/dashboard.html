@@ -250,6 +250,12 @@
         </a>
         {% endif %}
 
+        {% if user.role in ["admin", "recepcion", "cliente"] %}
+        <a href="/export" class="btn btn-outline-primary btn-sm">
+          <i class="fa-solid fa-file-export"></i> Exportar
+        </a>
+        {% endif %}
+
         <div class="ms-2 d-flex align-items-center gap-1">
           <button class="btn btn-outline-dark btn-sm p-2" onclick="openScanner()" title="Escanear OT">
             <i class="fa-solid fa-camera"></i>

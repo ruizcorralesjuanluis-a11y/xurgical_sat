@@ -368,7 +368,7 @@
         </a>
         {% endif %}
 
-        {% if user and user.role in ["admin","recepcion"] %}
+        {% if user and user.role in ["admin", "recepcion", "cliente"] %}
         <a class="btn btn-outline-primary btn-sm" href="/export/download?scope=parte&envio_id={{ envio.id }}&fmt=xlsx">
           <i class="fa-solid fa-file-export"></i> Exportar OT
         </a>

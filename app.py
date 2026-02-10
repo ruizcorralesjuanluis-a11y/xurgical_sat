@@ -988,11 +988,19 @@ def _build_instrumentos_where(estado: str | None, solo_pendientes: bool, solo_gr
 
 
 @app.get("/export", response_class=HTMLResponse)
-def export_home(request: Request, user=Depends(require_roles("admin", "recepcion"))):
+def export_home(request: Request, user=Depends(require_roles("admin", "recepcion", "cliente"))):
     # Página con opciones de exportación
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT id, ot_num, cliente, fecha FROM envios ORDER BY id DESC LIMIT 400")
+    
+    if _user_role(user) == "cliente" and user.get("cliente_id"):
+        cur.execute("SELECT id, ot_num, cliente, fecha FROM envios WHERE cliente_id=? ORDER BY id DESC LIMIT 400", (int(user["cliente_id"]),))
+    elif _user_role(user) == "cliente":
+        # Por seguridad
+        cur.execute("SELECT id, ot_num, cliente, fecha FROM envios WHERE 1=0")
+    else:
+        cur.execute("SELECT id, ot_num, cliente, fecha FROM envios ORDER BY id DESC LIMIT 400")
+        
     envios = [dict(r) for r in cur.fetchall()]
     conn.close()
     return templates.TemplateResponse(
@@ -1009,7 +1017,7 @@ def export_home(request: Request, user=Depends(require_roles("admin", "recepcion
 @app.get("/export/download")
 def export_download(
     request: Request,
-    user=Depends(require_roles("admin", "recepcion")),
+    user=Depends(require_roles("admin", "recepcion", "cliente")),
     scope: str = "partes",  # partes | instrumentos | parte
     envio_id: str | None = None,
     estado: str | None = None,
@@ -1042,6 +1050,9 @@ def export_download(
     elif grabado == "no":
         solo_grabados = False
 
+    cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+    is_cliente = _user_role(user) == "cliente"
+
     conn = get_conn()
     cur = conn.cursor()
 
@@ -1058,6 +1069,13 @@ def export_download(
         if eid:
             where_env = "e.id=?"
             params_env = [eid]
+            
+        if is_cliente:
+            if cli_id:
+                where_env += " AND e.cliente_id=?"
+                params_env.append(int(cli_id))
+            else:
+                where_env += " AND 1=0"
 
         cur.execute(
             f"""
@@ -1094,7 +1112,14 @@ def export_download(
         params_envio: list = []
         if scope == "parte":
             where_envio = "i.envio_id=?"
-            params_envio = [int(envio_id)]
+            params_envio = [eid] # Usamos eid ya parseado
+            
+        if is_cliente:
+            if cli_id:
+                where_envio += " AND e.cliente_id=?"
+                params_envio.append(int(cli_id))
+            else:
+                where_envio += " AND 1=0"
 
         cur.execute(
             f"""
