@@ -38,6 +38,7 @@ import sqlite3
 import io
 import csv
 from datetime import datetime
+from typing import Optional
 
 # Etiquetas (PDF) + código de barras / QR
 from reportlab.pdfgen import canvas
