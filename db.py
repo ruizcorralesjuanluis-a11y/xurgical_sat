@@ -32,6 +32,7 @@ class PGCursorWrapper:
             sql = sql.replace('?', '%s')
         # Limpieza de SQL específico de SQLite
         sql = sql.replace("BEGIN IMMEDIATE", "BEGIN")
+        sql = sql.replace("datetime('now')", "CURRENT_TIMESTAMP")
         return self.cur.execute(sql, params)
 
     def executemany(self, sql, seq_params):

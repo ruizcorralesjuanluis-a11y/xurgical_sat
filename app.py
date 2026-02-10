@@ -1776,7 +1776,7 @@ def grabar_instrumento(instrumento_id: int, user=Depends(require_roles("admin", 
         UPDATE instrumentos
         SET grabado=1,
             grabado_por=?,
-            grabado_en=datetime('now')
+            grabado_en=CURRENT_TIMESTAMP
         WHERE id=?
         """,
         (int(user["id"]), instrumento_id),
@@ -2012,7 +2012,7 @@ def instrumento_editar_guardar(
             observaciones=?,
             codigo_datamatrix=?,
             nombre_trazabilidad=?,
-            actualizado_en=datetime('now')
+            actualizado_en=CURRENT_TIMESTAMP
         WHERE id=?
         """,
         (
@@ -2814,7 +2814,7 @@ async def checklist_toggle(
         cur.execute(
             """
             UPDATE instrumento_checklist
-               SET hecho=?, hecho_por=?, hecho_en=datetime('now')
+               SET hecho=?, hecho_por=?, hecho_en=CURRENT_TIMESTAMP
              WHERE instrumento_id=? AND item_id=?
             """,
             (nuevo, hecho_por, instrumento_id, item_id),
@@ -2823,7 +2823,7 @@ async def checklist_toggle(
         cur.execute(
             """
             INSERT INTO instrumento_checklist (instrumento_id, item_id, hecho, hecho_por, hecho_en)
-            VALUES (?, ?, ?, ?, datetime('now'))
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
             (instrumento_id, item_id, nuevo, hecho_por),
         )
