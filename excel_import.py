@@ -70,7 +70,7 @@ def leer_excel_envio(path_excel: str):
         row = raw.iloc[i].tolist()
         row_norm = {_norm(v) for v in row if v is not None and str(v).strip() != ""}
         # Buscamos columnas clave
-        has_code = any(k in row_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA"])
+        has_code = any(k in row_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA", "MODELO"])
         has_desc = any(k in row_norm for k in ["DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO"])
         
         if has_code and has_desc:
@@ -81,7 +81,7 @@ def leer_excel_envio(path_excel: str):
         # Fallback: Check if row 0 has the columns directly (simple table)
         row0 = raw.iloc[0].tolist()
         row0_norm = {_norm(v) for v in row0 if v is not None}
-        has_code_0 = any(k in row0_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA"])
+        has_code_0 = any(k in row0_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA", "MODELO"])
         has_desc_0 = any(k in row0_norm for k in ["DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO"])
         
         if has_code_0 and has_desc_0:
@@ -131,7 +131,7 @@ def leer_excel_envio(path_excel: str):
                 return colmap[k]
         return None
 
-    c_codigo = pick("CODIGO PRODUCTO", "CODIGO", "CÓDIGO", "REF", "REFERENCIA")
+    c_codigo = pick("CODIGO PRODUCTO", "CODIGO", "CÓDIGO", "REF", "REFERENCIA", "MODELO")
     c_fab   = pick("FABRICANTE", "MARCA")
     c_ns    = pick("N/S", "NS", "N SERIE", "Nº SERIE", "NUMERO SERIE", "SERIE")
     c_deno  = pick("DENOMINACION", "DESCRIPCION", "DESCRIPCIÓN", "NOMBRE")
