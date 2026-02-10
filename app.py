@@ -212,8 +212,8 @@ def _reserve_numeros_cliente(cur, cliente_id: int, cantidad: int) -> tuple[str, 
 # -----------------------------
 # ARTICULOS (catálogo para autocompletar)
 # -----------------------------
-ARTICULOS_XLSX = os.path.join(os.path.dirname(__file__), 'Articulos.xlsx')
-ARTICULOS_XLS  = os.path.join(os.path.dirname(__file__), 'Articulos.xls')
+ARTICULOS_XLSX = str(BASE_DIR / 'Articulos.xlsx')
+ARTICULOS_XLS  = str(BASE_DIR / 'Articulos.xls')
 _articulos_map = None  # dict normalizado: codigo -> {descripcion, fabricante?}
 
 def _norm_codigo(x: str) -> str:
@@ -268,26 +268,14 @@ def _codigo_variants(codigo_norm: str) -> list:
     return out
 
 def load_articulos_map() -> dict:
-    """Carga el catálogo de Articulos para autocompletar.
-
-    Devuelve un dict normalizado: codigo -> {descripcion: str, fabricante: str|None}
-
-    - Prefiere Articulos.xlsx (openpyxl) para evitar depender de xlrd
-    - Cachea en memoria
-    """
+    """Carga el catálogo de Articulos para autocompletar."""
     global _articulos_map
     if _articulos_map is not None:
         return _articulos_map
 
-    # Por defecto preferimos .xlsx (openpyxl) para evitar depender de xlrd.
-    # Pero en algunos catálogos el .xlsx solo trae Código/Descripción y el fabricante está
-    # en el .xls (columna D). Por eso:
-    # 1) intentamos cargar .xlsx si existe
-    # 2) si no se obtiene fabricante y existe .xls, intentamos cargarlo también (si hay motor)
-    # Si existe .xls, lo priorizamos porque suele traer más columnas (p.ej. fabricante en D).
-    # Si no podemos leerlo (falta xlrd), caeremos a .xlsx automáticamente.
     path = ARTICULOS_XLS if os.path.exists(ARTICULOS_XLS) else ARTICULOS_XLSX
     if not os.path.exists(path):
+        print(f">>> [ARTICULOS] Archivo no encontrado: {path}", flush=True)
         _articulos_map = {}
         return _articulos_map
 
@@ -304,9 +292,6 @@ def load_articulos_map() -> dict:
             if not fab_s or fab_s.lower() == "nan":
                 fab_s = None
 
-        # Heurística de respaldo cuando el catálogo no trae columna de fabricante:
-        # En tu catálogo, muchas descripciones terminan en " AS" (Aescula).
-        # Si no hay fabricante explícito, inferimos Aescula en ese caso.
         if fab_s is None:
             try:
                 d = desc.strip()
@@ -314,122 +299,47 @@ def load_articulos_map() -> dict:
                     fab_s = "Aescula"
             except Exception:
                 pass
-        # Inserta la clave normalizada
         m[code] = {"descripcion": desc, "fabricante": fab_s}
-
-        # Equivalencia: códigos que terminan en "R" deben encontrarse también sin la "R" final.
-        # (No añadimos la variante con "R" para códigos que NO terminan en R, para evitar falsos positivos.)
         if code.endswith('R') and len(code) > 1:
             code2 = code[:-1].strip()
             if code2 and code2 not in m:
                 m[code2] = {"descripcion": desc, "fabricante": fab_s}
 
     m = {}
-
-    # 1) Intento con pandas (si está instalado)
-    def _load_with_pandas(p):
-        if pd is None:
-            return None
+    df = None
+    if pd is not None:
         try:
-            return pd.read_excel(p)
-        except Exception:
-            return None
-
-    df = _load_with_pandas(path)
-
-    # Si priorizamos .xls pero no se puede leer (típicamente por falta de xlrd),
-    # caemos automáticamente a .xlsx si existe.
-    if df is None and path.lower().endswith('.xls') and os.path.exists(ARTICULOS_XLSX):
-        path = ARTICULOS_XLSX
-        df = _load_with_pandas(path)
-    # Si el catálogo preferido es .xls pero no hay motor para leerlo, y existe .xlsx, usamos .xlsx.
-    if df is None and path.lower().endswith('.xls') and os.path.exists(ARTICULOS_XLSX):
-        path = ARTICULOS_XLSX
-        df = _load_with_pandas(path)
+            engine = 'openpyxl' if path.lower().endswith('.xlsx') else None
+            df = pd.read_excel(path, engine=engine)
+            print(f">>> [ARTICULOS] Cargado {path} ({len(df)} filas)", flush=True)
+        except Exception as e:
+            print(f">>> [ARTICULOS] Error {path}: {e}", flush=True)
+            if path.lower().endswith('.xls') and os.path.exists(ARTICULOS_XLSX):
+                try:
+                    path = ARTICULOS_XLSX
+                    df = pd.read_excel(path, engine='openpyxl')
+                except Exception:
+                    pass
 
     if df is not None:
-        cols = {str(c).strip().lower(): c for c in df.columns}
-        col_codigo = cols.get("código") or cols.get("codigo") or cols.get("cod") or (df.columns[0] if len(df.columns) >= 1 else None)
-        col_desc = cols.get("descripción") or cols.get("descripcion") or cols.get("denominacion") or (df.columns[1] if len(df.columns) >= 2 else None)
-        # Fabricante:
-        # - Preferimos columna por nombre (FABRICANTE/MARCA/...)
-        # - Si el catálogo no trae cabecera (o viene distinta), hacemos fallback a la columna D
-        #   (4a columna, índice 3), que en tu Excel corresponde a fabricante.
-        # Si hay cabeceras duplicadas, pandas suele renombrar la segunda como 'Fabricante.1'.
-        # Fabricante: forzamos columna D (índice 3) según tu catálogo.
-        col_fab = (df.columns[3] if len(df.columns) >= 4 else (cols.get("fabricante.1") or cols.get("fabricante") or cols.get("marca") or cols.get("manufacturer")))
+        cols_raw = [str(c).strip() for c in df.columns]
+        cols_map = {c.lower(): c for c in cols_raw}
+        col_codigo = cols_map.get("código") or cols_map.get("codigo") or cols_map.get("cod") or (cols_raw[0] if cols_raw else None)
+        col_desc = cols_map.get("descripción") or cols_map.get("descripcion") or cols_map.get("denominacion") or (cols_raw[1] if len(cols_raw) >= 2 else None)
+        col_fab = None
+        if len(cols_raw) >= 4:
+            col_fab = cols_raw[3]
+        else:
+            col_fab = cols_map.get("fabricante") or cols_map.get("marca") or cols_map.get("manufacturer")
 
         if col_codigo and col_desc:
             for _, row in df.iterrows():
                 try:
-                    code = row.get(col_codigo, "") if hasattr(row, "get") else row[col_codigo]
-                    desc = row.get(col_desc, "") if hasattr(row, "get") else row[col_desc]
-                    fab = row.get(col_fab, "") if (col_fab and hasattr(row, "get")) else (row[col_fab] if col_fab else None)
-                    _put(m, code, desc, fab)
+                    _put(m, row[col_codigo], row[col_desc], row[col_fab] if col_fab else None)
                 except Exception:
                     continue
-
-        # Si hemos leído un .xlsx que no trae fabricante (todo vacío) y existe un .xls,
-        # intentamos complementar/recargar desde el .xls (columna D) si pandas puede leerlo.
-        if path.lower().endswith('.xlsx') and os.path.exists(ARTICULOS_XLS):
-            any_fab = any(v.get('fabricante') for v in m.values())
-            if not any_fab:
-                df_xls = _load_with_pandas(ARTICULOS_XLS)
-                if df_xls is not None and len(df_xls.columns) >= 2:
-                    cols2 = {str(c).strip().lower(): c for c in df_xls.columns}
-                    col_codigo2 = cols2.get("código") or cols2.get("codigo") or cols2.get("cod") or (df_xls.columns[0] if len(df_xls.columns) >= 1 else None)
-                    col_desc2 = cols2.get("descripción") or cols2.get("descripcion") or cols2.get("denominacion") or (df_xls.columns[1] if len(df_xls.columns) >= 2 else None)
-                    col_fab2 = (df_xls.columns[3] if len(df_xls.columns) >= 4 else (cols2.get("fabricante.1") or cols2.get("fabricante") or cols2.get("marca") or cols2.get("manufacturer")))
-
-                    if col_codigo2 and col_desc2:
-                        # Ojo: usamos _put para que normalice y cree equivalencias
-                        for _, row in df_xls.iterrows():
-                            try:
-                                code = row.get(col_codigo2, "") if hasattr(row, "get") else row[col_codigo2]
-                                desc = row.get(col_desc2, "") if hasattr(row, "get") else row[col_desc2]
-                                fab = row.get(col_fab2, "") if (col_fab2 and hasattr(row, "get")) else (row[col_fab2] if col_fab2 else None)
-                                _put(m, code, desc, fab)
-                            except Exception:
-                                continue
-
-        _articulos_map = m
-        return _articulos_map
-
-    # 2) Fallback sin pandas: leer con openpyxl (solo .xlsx)
-    if load_workbook is None or not path.lower().endswith(".xlsx"):
-        _articulos_map = {}
-        return _articulos_map
-
-    try:
-        wb = load_workbook(path, read_only=True, data_only=True)
-        ws = wb.active
-
-        rows = ws.iter_rows(values_only=True)
-        headers = next(rows, None)
-        if not headers:
-            _articulos_map = {}
-            return _articulos_map
-
-        hmap = {str(h).strip().lower(): idx for idx, h in enumerate(headers) if h is not None}
-        idx_code = hmap.get("código") or hmap.get("codigo") or hmap.get("cod") or 0
-        idx_desc = hmap.get("descripción") or hmap.get("descripcion") or hmap.get("denominacion") or 1
-        # Igual que con pandas: si no hay cabecera reconocible, usa columna D (índice 3)
-        # Fabricante: forzamos columna D (índice 3) según tu catálogo.
-        idx_fab = 3 if len(headers) >= 4 else (hmap.get("fabricante") or hmap.get("marca") or hmap.get("manufacturer"))
-
-        for r in rows:
-            if not r:
-                continue
-            code = r[idx_code] if idx_code is not None and idx_code < len(r) else ""
-            desc = r[idx_desc] if idx_desc is not None and idx_desc < len(r) else ""
-            fab = r[idx_fab] if (idx_fab is not None and idx_fab < len(r)) else None
-            _put(m, code, desc, fab)
-    except Exception:
-        m = {}
-
     _articulos_map = m
     return _articulos_map
-
 
 # -----------------------------
 # Permisos por acción (además de roles)
@@ -600,90 +510,31 @@ def manual_init_db():
         return {"ok": False, "error": str(e)}
 
 
-# -----------------------------
-# CATÁLOGO ARTÍCULOS (autorrelleno al crear instrumento)
-# Lee Articulos.xlsx (preferido) o Articulos.xls (si tu entorno soporta .xls)
-# Endpoint: /articulos_lookup?codigo=...
-# -----------------------------
-ARTICULOS_CACHE = None
-ARTICULOS_PATH_XLSX = os.path.join(os.path.dirname(__file__), "Articulos.xlsx")
-ARTICULOS_PATH_XLS = os.path.join(os.path.dirname(__file__), "Articulos.xls")
-
-
-def _load_articulos_df():
-    global ARTICULOS_CACHE
-    if ARTICULOS_CACHE is not None:
-        return ARTICULOS_CACHE
-
-    if pd is None:
-        ARTICULOS_CACHE = None
-        return None
-
-    path = None
-    if os.path.exists(ARTICULOS_PATH_XLSX):
-        path = ARTICULOS_PATH_XLSX
-    elif os.path.exists(ARTICULOS_PATH_XLS):
-        path = ARTICULOS_PATH_XLS
-
-    if not path:
-        ARTICULOS_CACHE = None
-        return None
-
-    try:
-        df = pd.read_excel(path)
-    except Exception:
-        # Si es .xls y no tienes xlrd instalado, fallará.
-        ARTICULOS_CACHE = None
-        return None
-
-    # Esperado: columnas tipo 'Código' y 'Descripción' (y opcionalmente 'Fabricante')
-    cols = {str(c).strip().lower(): c for c in df.columns}
-    code_col = cols.get('código') or cols.get('codigo')
-    desc_col = cols.get('descripción') or cols.get('descripcion')
-    fab_col  = cols.get('fabricante') or cols.get('marca') or cols.get('manufacturer')
-
-    if not code_col or not desc_col:
-        ARTICULOS_CACHE = None
-        return None
-
-    use_cols = [code_col, desc_col] + ([fab_col] if fab_col else [])
-    df = df[use_cols].copy()
-    if fab_col:
-        df.columns = ['codigo', 'descripcion', 'fabricante']
-    else:
-        df.columns = ['codigo', 'descripcion']
-    # Normaliza también prefijos (REP/MAN) para que el lookup sea consistente.
-    df['codigo_norm'] = df['codigo'].astype(str).apply(_norm_codigo)
-    df['descripcion'] = df['descripcion'].astype(str).str.strip()
-    if 'fabricante' in df.columns:
-        df['fabricante'] = df['fabricante'].astype(str).str.strip()
-
-    ARTICULOS_CACHE = df
-    return ARTICULOS_CACHE
-
-
-@app.get('/articulos_lookup_df_unused')
-def articulos_lookup_df_unused(codigo: str, user=Depends(get_current_user)):
-    # Solo necesita estar logueado (mismo comportamiento que el resto de la app)
-    df = _load_articulos_df()
-    if df is None:
-        return JSONResponse({'found': False, 'error': 'Catálogo Articulos no disponible'}, status_code=200)
-
-    # Nota: mantenemos este endpoint solo para compatibilidad/depuración.
-    # El endpoint principal /articulos_lookup usa _norm_codigo (sin prefijos RP/MT).
+@app.get('/articulos_lookup')
+def articulos_lookup(codigo: str, user=Depends(get_current_user)):
+    """Lookup de artículo para autorrelleno en alta manual de instrumentos."""
     key = _norm_codigo(codigo)
     if not key:
         return {'found': False}
 
-    hit = df[df['codigo_norm'] == key]
-    if hit.empty:
-        return {'found': False}
+    m = load_articulos_map()
+    if not m:
+        return {'found': False, 'error': 'Catálogo Articulos no disponible'}
+    
+    for k in _codigo_variants(key):
+        hit = m.get(k)
+        if hit:
+            resp = {
+                'found': True,
+                'codigo': k,
+                'descripcion': (hit.get('descripcion') or '').strip(),
+            }
+            fab = (hit.get('fabricante') or '').strip()
+            if fab:
+                resp['fabricante'] = fab
+            return resp
 
-    row = hit.iloc[0]
-    resp = {'found': True, 'codigo': str(row['codigo']).strip(), 'descripcion': str(row['descripcion']).strip()}
-    if 'fabricante' in row.index and str(row.get('fabricante') or '').strip():
-        resp['fabricante'] = str(row.get('fabricante')).strip()
-    return resp
+    return {'found': False}
 
 
 
