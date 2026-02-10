@@ -1878,11 +1878,7 @@ def instrumento_nuevo_crear(
         dm_auto = f"{prefijo_dm}{str(nums[0]).zfill(5)}"
         nombre_trz_auto = _build_nombre_trazabilidad(prefijo_nombre, dm_auto)
 
-    cur.execute("""
-        INSERT INTO instrumentos
-        (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
-    """, (
+    vals = [
         envio_id,
         (codigo_producto or "").strip(),
         (fabricante or "").strip(),
@@ -1891,14 +1887,32 @@ def instrumento_nuevo_crear(
         (observaciones or "").strip(),
         (dm_auto or (codigo_datamatrix or "").strip()),
         (nombre_trz_auto or ""),
-    ))
+    ]
 
-    inst_id = cur.lastrowid
-    # Fallback para Postgres
+    sql = """
+        INSERT INTO instrumentos
+        (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
+    """
+
+    is_pg = bool(os.environ.get("DATABASE_URL"))
+    inst_id = None
+    
+    if is_pg:
+        sql += " RETURNING id"
+        cur.execute(sql, tuple(vals))
+        row = cur.fetchone()
+        if row:
+            inst_id = int(row["id"])
+    else:
+        cur.execute(sql, tuple(vals))
+        inst_id = cur.lastrowid
+        
+    # Fallback por si acaso (ej: driver antiguo)
     if inst_id is None:
         cur.execute("SELECT MAX(id) as mid FROM instrumentos WHERE envio_id=?", (envio_id,))
         row_id = cur.fetchone()
-        if row_id:
+        if row_id and row_id["mid"]:
             inst_id = row_id["mid"]
 
     conn.commit()
