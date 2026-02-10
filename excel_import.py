@@ -135,7 +135,7 @@ def leer_excel_envio(path_excel: str):
     c_fab   = pick("FABRICANTE", "MARCA")
     c_ns    = pick("N/S", "NS", "N SERIE", "Nº SERIE", "NUMERO SERIE", "SERIE")
     c_deno  = pick("DENOMINACION", "DESCRIPCION", "DESCRIPCIÓN", "NOMBRE")
-    c_obs   = pick("OBSERVACIONES", "OBSERVACION", "OBS")
+    c_dm = pick("CODIGO DATAMATRIX", "DATAMATRIX", "QR", "CODIGO MATRIZ")
 
     if not c_codigo or not c_deno:
         raise ValueError(f"Columnas detectadas: {list(df.columns)}")
@@ -154,8 +154,8 @@ def leer_excel_envio(path_excel: str):
     df_final["num_serie"] = clean_series(df[c_ns]) if c_ns else ""
     df_final["denominacion"] = clean_series(df[c_deno])
     df_final["observaciones"] = clean_series(df[c_obs]) if c_obs else ""
-
-    # En tu Excel no hay DataMatrix → vacío
-    df_final["codigo_datamatrix"] = ""
+    
+    # Leemos DataMatrix si existe
+    df_final["codigo_datamatrix"] = clean_series(df[c_dm]) if c_dm else ""
 
     return cliente, fecha, df_final
