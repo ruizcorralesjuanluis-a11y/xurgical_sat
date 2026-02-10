@@ -167,9 +167,15 @@
             <div class="small text-secondary">Parte de Trabajo</div>
             <div class="fw-bold h5 mb-0">OT: {{ envio.ot_num }}</div>
         </div>
-        <a href="/" class="btn btn-outline-dark btn-sm">
-            <i class="fa-solid fa-house"></i>
-        </a>
+        <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-link btn-sm p-0" data-bs-toggle="modal" data-bs-target="#myPassModal"
+                title="Cambiar mi contraseña">
+                <i class="fa-solid fa-key text-secondary fs-5"></i>
+            </button>
+            <a href="/" class="btn btn-outline-dark btn-sm">
+                <i class="fa-solid fa-house"></i>
+            </a>
+        </div>
     </div>
 
     <div class="container">
@@ -344,7 +350,27 @@
         </div>
     </div>
 
-    <!-- Menú Móvil -->
+    <!-- Modal Cambiar Mi Contraseña -->
+    <div class="modal fade" id="myPassModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title h6"><i class="fa-solid fa-key text-primary me-2"></i>Nueva Contraseña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="/perfil/password">
+                    <div class="modal-body">
+                        <input type="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres"
+                            minlength="6" required autofocus>
+                        <div class="form-text small mt-2">Se cerrará la sesión tras el cambio por seguridad.</div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Actualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <nav class="mobile-menu fixed-bottom d-flex justify-content-around align-items-center d-md-none shadow-lg">
         <a href="/" class="text-dark text-center text-decoration-none px-3">
             <i class="fa-solid fa-house fs-4"></i>
