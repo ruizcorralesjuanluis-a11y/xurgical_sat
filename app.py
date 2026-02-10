@@ -3364,7 +3364,10 @@ def usuarios_new(
         for action, _label in ACTIONS:
             allowed = _default_allowed_by_role(role, action)
             cur.execute(
-                "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
+                """
+                INSERT INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)
+                ON CONFLICT (user_id, action) DO UPDATE SET allowed=excluded.allowed
+                """,
                 (new_id, action, int(allowed)),
             )
 
@@ -3498,7 +3501,10 @@ def dash_users_nuevo(
         for action, _label in ACTIONS:
             allowed = _default_allowed_by_role(role, action)
             cur.execute(
-                "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
+                """
+                INSERT INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)
+                ON CONFLICT (user_id, action) DO UPDATE SET allowed=excluded.allowed
+                """,
                 (new_id, action, int(allowed)),
             )
 
@@ -3530,7 +3536,10 @@ def dash_users_set_role(
     for action, _label in ACTIONS:
         allowed = _default_allowed_by_role(role, action)
         cur.execute(
-            "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
+            """
+            INSERT INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)
+            ON CONFLICT (user_id, action) DO UPDATE SET allowed=excluded.allowed
+            """,
             (int(user_id), action, int(allowed)),
         )
 
@@ -3607,7 +3616,10 @@ async def dash_users_set_perms(
     for action, _label in ACTIONS:
         allowed = 1 if form.get(f"perm_{action}") == "on" else 0
         cur.execute(
-            "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
+            """
+            INSERT INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)
+            ON CONFLICT (user_id, action) DO UPDATE SET allowed=excluded.allowed
+            """,
             (int(user_id), action, int(allowed)),
         )
 
