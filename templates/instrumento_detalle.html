@@ -168,6 +168,10 @@
     </div>
 
     <!-- FOTOS (entrada: 1-6) -->
+    {% set ns = namespace(has_photos=false) %}
+    {% for i in range(1, 7) %}{% if inst['foto_entrada_' ~ i] %}{% set ns.has_photos = true %}{% endif %}{% endfor %}
+
+    {% if ns.has_photos %}
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
         <strong>Fotos de entrada</strong>
@@ -177,24 +181,22 @@
         <div class="row g-3">
           {% for i in range(1, 7) %}
           {% set foto_url = inst['foto_entrada_' ~ i] %}
+          {% if foto_url %}
           <div class="col-md-4">
             <div class="photo-box">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <strong>Foto {{ i }}</strong>
-                {% if foto_url %}
                 <a class="btn btn-sm btn-outline-primary" href="{{ foto_url }}" target="_blank">Abrir</a>
-                {% endif %}
               </div>
-              <img class="photo-img" src="{{ foto_url or '' }}" alt="Foto {{ i }}">
-              <div class="hint mt-2">
-                {% if foto_url %}OK{% else %}Pendiente{% endif %}
-              </div>
+              <img class="photo-img" src="{{ foto_url }}" alt="Foto {{ i }}">
             </div>
           </div>
+          {% endif %}
           {% endfor %}
         </div>
       </div>
     </div>
+    {% endif %}
 
     <!-- CHECKLIST -->
     <div class="card mb-3" id="checklist-card">
