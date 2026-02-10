@@ -214,7 +214,7 @@
     {% for i in range(1, 7) %}
     { { i } }: { { 1 if inst['foto_entrada_' ~i] else 0 } },
     {% endfor %}
-  };
+    };
     let busy = false;
 
     let currentStream = null;
