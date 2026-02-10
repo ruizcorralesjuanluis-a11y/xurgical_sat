@@ -785,8 +785,8 @@ def dashboard(request: Request, user=Depends(get_current_user)):
             {select_tipo},
             COUNT(i.id) AS n_instrumentos,
             SUM(CASE WHEN i.estado IN ('Pendiente','En proceso') THEN 1 ELSE 0 END) AS n_pendientes,
-            SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_2 IS NOT NULL THEN 1 ELSE 0 END) AS n_fotos_completas,
-            SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL OR  i.foto_entrada_2 IS NOT NULL THEN 1 ELSE 0 END) AS n_con_alguna_foto,
+            SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_2 IS NOT NULL AND i.foto_entrada_3 IS NOT NULL AND i.foto_entrada_4 IS NOT NULL AND i.foto_entrada_5 IS NOT NULL AND i.foto_entrada_6 IS NOT NULL THEN 1 ELSE 0 END) AS n_fotos_completas,
+            SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL OR  i.foto_entrada_2 IS NOT NULL OR i.foto_entrada_3 IS NOT NULL OR i.foto_entrada_4 IS NOT NULL OR i.foto_entrada_5 IS NOT NULL OR i.foto_entrada_6 IS NOT NULL THEN 1 ELSE 0 END) AS n_con_alguna_foto,
             SUM(CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END) AS n_grabados
         FROM envios e
         LEFT JOIN instrumentos i ON i.envio_id = e.id
@@ -996,7 +996,7 @@ def export_download(
                 SUM(CASE WHEN i.estado='Reparado' THEN 1 ELSE 0 END) AS n_reparados,
                 SUM(CASE WHEN i.estado='Baja' THEN 1 ELSE 0 END) AS n_baja,
                 SUM(CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END) AS n_grabados,
-                SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_2 IS NOT NULL THEN 1 ELSE 0 END) AS n_fotos_completas
+                SUM(CASE WHEN i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_2 IS NOT NULL AND i.foto_entrada_3 IS NOT NULL AND i.foto_entrada_4 IS NOT NULL AND i.foto_entrada_5 IS NOT NULL AND i.foto_entrada_6 IS NOT NULL THEN 1 ELSE 0 END) AS n_fotos_completas
             FROM envios e
             LEFT JOIN instrumentos i ON i.envio_id = e.id
             WHERE {where_env}
@@ -2752,7 +2752,7 @@ async def cambiar_estado(
 # -----------------------------
 @app.post("/instrumentos/{instrumento_id}/foto_webcam/{slot}")
 async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Depends(require_roles("admin", "recepcion"))):
-    if slot not in (1, 2):
+    if slot not in range(1, 7):
         return JSONResponse({"ok": False, "error": "slot inválido"}, status_code=400)
 
     data = await request.json()
@@ -2765,7 +2765,7 @@ async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Dep
     except Exception:
         return JSONResponse({"ok": False, "error": "imagen inválida"}, status_code=400)
 
-    col = "foto_entrada_1" if slot == 1 else "foto_entrada_2"
+    col = f"foto_entrada_{slot}"
 
     conn = get_conn()
     cur = conn.cursor()
@@ -2920,10 +2920,10 @@ async def checklist_admin_toggle(
 
 @app.post("/instrumentos/{instrumento_id}/foto_borrar/{slot}")
 def foto_borrar(instrumento_id: int, slot: int, user=Depends(require_roles("admin", "recepcion", "tecnico", "grabado"))):
-    if slot not in (1, 2):
+    if slot not in range(1, 7):
         return JSONResponse({"ok": False, "error": "slot inválido"}, status_code=400)
 
-    col = "foto_entrada_1" if slot == 1 else "foto_entrada_2"
+    col = f"foto_entrada_{slot}"
 
     conn = get_conn()
     cur = conn.cursor()
@@ -2949,22 +2949,21 @@ def foto_borrar(instrumento_id: int, slot: int, user=Depends(require_roles("admi
 def borrar_instrumento(instrumento_id: int, user=Depends(require_roles("admin", "recepcion"))):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT envio_id, foto_entrada_1, foto_entrada_2 FROM instrumentos WHERE id=?", (instrumento_id,))
+    cur.execute("SELECT envio_id, " + ", ".join([f"foto_entrada_{i}" for i in range(1,7)]) + " FROM instrumentos WHERE id=?", (instrumento_id,))
     row = cur.fetchone()
     if not row:
         conn.close()
         return HTMLResponse("Instrumento no encontrado", status_code=404)
 
     envio_id = row["envio_id"]
-    f1 = row["foto_entrada_1"]
-    f2 = row["foto_entrada_2"]
+    fotos_to_delete = [row[f"foto_entrada_{i}"] for i in range(1,7)]
 
     cur.execute("DELETE FROM instrumentos WHERE id=?", (instrumento_id,))
     conn.commit()
     conn.close()
 
-    _try_delete_public_photo(f1)
-    _try_delete_public_photo(f2)
+    for f in fotos_to_delete:
+        _try_delete_public_photo(f)
 
     return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
 

@@ -161,7 +161,7 @@
       </div>
     </div>
 
-    <!-- FOTOS (solo VER en abrir; sin capturar) -->
+    <!-- FOTOS (entrada: 1-6) -->
     {% if tipo_upper != 'OPTICA_RIGIDA' %}
     <div class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -170,35 +170,23 @@
       </div>
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-6">
+          {% for i in range(1, 7) %}
+          {% set foto_url = getattr(inst, 'foto_entrada_' ~ i) if inst is mapping else inst['foto_entrada_' ~ i] %}
+          <div class="col-md-4">
             <div class="photo-box">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong>Foto 1</strong>
-                {% if inst.foto_entrada_1 %}
-                <a class="btn btn-sm btn-outline-primary" href="{{ inst.foto_entrada_1 }}" target="_blank">Abrir</a>
+                <strong>Foto {{ i }}</strong>
+                {% if foto_url %}
+                <a class="btn btn-sm btn-outline-primary" href="{{ foto_url }}" target="_blank">Abrir</a>
                 {% endif %}
               </div>
-              <img class="photo-img" src="{{ inst.foto_entrada_1 or '' }}" alt="Foto 1">
+              <img class="photo-img" src="{{ foto_url or '' }}" alt="Foto {{ i }}">
               <div class="hint mt-2">
-                {% if inst.foto_entrada_1 %}OK{% else %}Pendiente{% endif %}
+                {% if foto_url %}OK{% else %}Pendiente{% endif %}
               </div>
             </div>
           </div>
-
-          <div class="col-md-6">
-            <div class="photo-box">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <strong>Foto 2</strong>
-                {% if inst.foto_entrada_2 %}
-                <a class="btn btn-sm btn-outline-primary" href="{{ inst.foto_entrada_2 }}" target="_blank">Abrir</a>
-                {% endif %}
-              </div>
-              <img class="photo-img" src="{{ inst.foto_entrada_2 or '' }}" alt="Foto 2">
-              <div class="hint mt-2">
-                {% if inst.foto_entrada_2 %}OK{% else %}Pendiente{% endif %}
-              </div>
-            </div>
-          </div>
+          {% endfor %}
         </div>
       </div>
     </div>

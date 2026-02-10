@@ -535,10 +535,16 @@
 
                 <!-- Indicador fotos -->
                 <td class="col-fotos">
-                  {% if inst.foto_entrada_1 and inst.foto_entrada_2 %}
-                  <span class="badge-ok">COMPLETADO</span>
+                  {% set n_fotos = 0 %}
+                  {% for i in range(1, 7) %}
+                  {% set f = getattr(inst, 'foto_entrada_' ~ i) if inst is mapping else inst['foto_entrada_' ~ i] %}
+                  {% if f %}{% set n_fotos = n_fotos + 1 %}{% endif %}
+                  {% endfor %}
+
+                  {% if n_fotos >= 1 %}
+                  <span class="badge-ok">{{ n_fotos }} FOTOS</span>
                   {% else %}
-                  <span class="badge-pend">PENDIENTE</span>
+                  <span class="badge-pend">SIN FOTOS</span>
                   {% endif %}
                 </td>
 

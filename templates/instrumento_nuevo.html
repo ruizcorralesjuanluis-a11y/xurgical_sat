@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,430 +9,478 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    body{
-      min-height:100vh; margin:0; font-size:0.9rem;
-      background-image:url("/static/bg.png");
-      background-size:cover; background-attachment:fixed; background-position:center;
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-size: 0.9rem;
+      background-image: url("/static/bg.png");
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center;
     }
-    .page-overlay{ min-height:100vh; background: rgba(245,247,250,.86); }
-    .topbar{ background:#ffffffcc; backdrop-filter: blur(6px); border-bottom:1px solid #e5e7eb; padding:.6rem 1rem; }
-    .logo{ height:34px }
-    .panel{ border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.06); background: rgba(255,255,255,.95); }
-    .muted{ color:#6b7280; }
-    .photo-box{
-      border:1px solid #e5e7eb; border-radius:12px; background:#fff; min-height:180px;
-      display:flex; align-items:center; justify-content:center; overflow:hidden;
+
+    .page-overlay {
+      min-height: 100vh;
+      background: rgba(245, 247, 250, .86);
     }
-    .photo-box img{ width:100%; height:auto; display:block; }
-    .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-      border:1px solid #e5e7eb; border-radius:8px; padding:2px 8px; background:#fff; font-size:.85rem;
+
+    .topbar {
+      background: #ffffffcc;
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid #e5e7eb;
+      padding: .6rem 1rem;
     }
-    .pill{
-      border-radius:999px; padding:.25rem .6rem; font-weight:800; font-size:.75rem;
-      border:1px solid #e5e7eb; background:#fff;
+
+    .logo {
+      height: 34px
+    }
+
+    .panel {
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+      background: rgba(255, 255, 255, .95);
+    }
+
+    .muted {
+      color: #6b7280;
+    }
+
+    .photo-box {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #fff;
+      min-height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .photo-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .kbd {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 2px 8px;
+      background: #fff;
+      font-size: .85rem;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: .25rem .6rem;
+      font-weight: 800;
+      font-size: .75rem;
+      border: 1px solid #e5e7eb;
+      background: #fff;
     }
   </style>
 </head>
 
 <body>
-<div class="page-overlay">
+  <div class="page-overlay">
 
-<nav class="navbar topbar d-flex justify-content-between align-items-center">
-  <div class="d-flex align-items-center gap-3">
-    <img src="/static/logo-xurgical.png" class="logo" alt="Xurgical">
-    <strong>Xurgical SAT</strong>
-    <span class="text-secondary">/ {% if inst %}Editar{% else %}Nuevo{% endif %} instrumento</span>
-  </div>
+    <nav class="navbar topbar d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <img src="/static/logo-xurgical.png" class="logo" alt="Xurgical">
+        <strong>Xurgical SAT</strong>
+        <span class="text-secondary">/ {% if inst %}Editar{% else %}Nuevo{% endif %} instrumento</span>
+      </div>
 
-  <div class="d-flex align-items-center gap-2">
-    <a href="/envios/{{ envio.id }}" class="btn btn-outline-secondary btn-sm">⬅ Volver al parte</a>
-    <span class="badge text-bg-dark">{{ user.username }}</span>
-    <span class="badge text-bg-secondary">{{ user.role }}</span>
-    <form method="post" action="/logout" class="m-0">
-      <button class="btn btn-danger btn-sm">Salir</button>
-    </form>
-  </div>
-</nav>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/envios/{{ envio.id }}" class="btn btn-outline-secondary btn-sm">⬅ Volver al parte</a>
+        <span class="badge text-bg-dark">{{ user.username }}</span>
+        <span class="badge text-bg-secondary">{{ user.role }}</span>
+        <form method="post" action="/logout" class="m-0">
+          <button class="btn btn-danger btn-sm">Salir</button>
+        </form>
+      </div>
+    </nav>
 
-<main class="container-fluid px-3 px-md-4 py-3">
+    <main class="container-fluid px-3 px-md-4 py-3">
 
-  <div class="panel p-3 mb-3">
-    <h5 class="mb-1">{% if inst %}Editar instrumento #{{ inst.id }}{% else %}Nuevo instrumento{% endif %}</h5>
-    <div class="muted">
-      Pulsa <span class="kbd">Espacio</span> para capturar. Automático: foto 1 → foto 2.
+      <div class="panel p-3 mb-3">
+        <h5 class="mb-1">{% if inst %}Editar instrumento #{{ inst.id }}{% else %}Nuevo instrumento{% endif %}</h5>
+        <div class="muted">
+          Pulsa <span class="kbd">Espacio</span> para capturar. Automático: foto 1 → foto 2.
+          {% if inst %}
+          <span class="pill ms-2">Siguiente: <b id="nextSlot">1</b></span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- FORM DATOS -->
+      <div class="panel p-3 mb-3">
+        {% if inst %}
+        <form method="post" action="/instrumentos/{{ inst.id }}/editar">
+          {% else %}
+          <form method="post" action="/envios/{{ envio.id }}/instrumentos/nuevo">
+            {% endif %}
+
+            <div class="row g-2">
+              <div class="col-md-3">
+                <label class="form-label">Modelo / Código producto</label>
+                <input class="form-control" name="codigo_producto" value="{{ inst.codigo_producto if inst else '' }}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Fabricante</label>
+                <input class="form-control" name="fabricante" value="{{ inst.fabricante if inst else '' }}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Nº serie</label>
+                <input class="form-control" name="num_serie" value="{{ inst.num_serie if inst else '' }}">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">DataMatrix</label>
+                <input class="form-control" name="codigo_datamatrix"
+                  value="{{ inst.codigo_datamatrix if inst else '' }}">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Denominación</label>
+                <input class="form-control" name="denominacion" value="{{ inst.denominacion if inst else '' }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Observaciones</label>
+                <input class="form-control" name="observaciones" value="{{ inst.observaciones if inst else '' }}">
+              </div>
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+              <button class="btn btn-primary">{% if inst %}Guardar cambios{% else %}Guardar y pasar a fotos{% endif
+                %}</button>
+              <a class="btn btn-outline-secondary" href="/envios/{{ envio.id }}">Cancelar</a>
+            </div>
+          </form>
+      </div>
+
       {% if inst %}
-        <span class="pill ms-2">Siguiente: <b id="nextSlot">1</b></span>
+      <!-- FOTOS (SOLO EN EDITAR / una vez creado) -->
+      <div class="panel p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h6 class="m-0">Fotos de entrada (6 slots disponibles)</h6>
+          <span class="pill">Siguiente: <b id="nextSlot2">1</b></span>
+        </div>
+
+        <div class="row g-3 mt-2">
+          {% for i in range(1, 7) %}
+          <div class="col-12 col-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <b>Foto {{ i }}</b>
+              <button class="btn btn-outline-danger btn-sm" type="button" onclick="deletePhoto({{ i }})">Borrar</button>
+            </div>
+            <div class="photo-box">
+              {% set foto_url = getattr(inst, 'foto_entrada_' ~ i) if inst is mapping else inst['foto_entrada_' ~ i] %}
+              {% if foto_url %}
+              <img src="{{ foto_url }}" alt="Foto {{ i }}">
+              {% else %}
+              <span class="muted">Sin foto</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mt-3">
+          <div class="fw-bold mb-2">Cámara</div>
+          <select id="cameraSelect" class="form-select form-select-sm mb-2"></select>
+          <video id="video" autoplay playsinline class="w-100"
+            style="max-height:320px;border-radius:12px;border:1px solid #e5e7eb;background:#000"></video>
+          <canvas id="canvas" style="display:none"></canvas>
+          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot
+            libre.</div>
+        </div>
+
+        <div class="mt-3 d-flex justify-content-end">
+          <form method="post" action="/instrumentos/{{ inst.id }}/finalizar_fotos">
+            <button class="btn btn-success">✅ Finalizar y volver al parte</button>
+          </form>
+        </div>
+      </div>
       {% endif %}
-    </div>
-  </div>
 
-  <!-- FORM DATOS -->
-  <div class="panel p-3 mb-3">
-    {% if inst %}
-      <form method="post" action="/instrumentos/{{ inst.id }}/editar">
-    {% else %}
-      <form method="post" action="/envios/{{ envio.id }}/instrumentos/nuevo">
-    {% endif %}
-
-      <div class="row g-2">
-        <div class="col-md-3">
-          <label class="form-label">Modelo / Código producto</label>
-          <input class="form-control" name="codigo_producto" value="{{ inst.codigo_producto if inst else '' }}">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Fabricante</label>
-          <input class="form-control" name="fabricante" value="{{ inst.fabricante if inst else '' }}">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">Nº serie</label>
-          <input class="form-control" name="num_serie" value="{{ inst.num_serie if inst else '' }}">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label">DataMatrix</label>
-          <input class="form-control" name="codigo_datamatrix" value="{{ inst.codigo_datamatrix if inst else '' }}">
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Denominación</label>
-          <input class="form-control" name="denominacion" value="{{ inst.denominacion if inst else '' }}">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Observaciones</label>
-          <input class="form-control" name="observaciones" value="{{ inst.observaciones if inst else '' }}">
-        </div>
-      </div>
-
-      <div class="mt-3 d-flex gap-2">
-        <button class="btn btn-primary">{% if inst %}Guardar cambios{% else %}Guardar y pasar a fotos{% endif %}</button>
-        <a class="btn btn-outline-secondary" href="/envios/{{ envio.id }}">Cancelar</a>
-      </div>
-    </form>
+    </main>
   </div>
 
   {% if inst %}
-  <!-- FOTOS (SOLO EN EDITAR / una vez creado) -->
-  <div class="panel p-3 mb-3">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <h6 class="m-0">Fotos de entrada (2 obligatorias)</h6>
-      <span class="pill">Siguiente: <b id="nextSlot2">1</b></span>
-    </div>
+  <script>
+    const instId = {{ inst.id }};
+    const photosStatus = {
+    {% for i in range(1, 7) %}
+    { { i } }: { { 1 if inst['foto_entrada_' ~i] else 0 } },
+    {% endfor %}
+  };
+    let busy = false;
 
-    <div class="row g-3 mt-2">
-      <div class="col-12 col-md-6">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <b>Foto 1</b>
-          <button class="btn btn-outline-danger btn-sm" type="button" onclick="deletePhoto(1)">Borrar</button>
-        </div>
-        <div class="photo-box">
-          {% if inst.foto_entrada_1 %}
-            <img src="{{ inst.foto_entrada_1 }}" alt="Foto 1">
-          {% else %}
-            <span class="muted">Sin foto</span>
-          {% endif %}
-        </div>
-      </div>
+    let currentStream = null;
 
-      <div class="col-12 col-md-6">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <b>Foto 2</b>
-          <button class="btn btn-outline-danger btn-sm" type="button" onclick="deletePhoto(2)">Borrar</button>
-        </div>
-        <div class="photo-box">
-          {% if inst.foto_entrada_2 %}
-            <img src="{{ inst.foto_entrada_2 }}" alt="Foto 2">
-          {% else %}
-            <span class="muted">Sin foto</span>
-          {% endif %}
-        </div>
-      </div>
-    </div>
+    async function startCamera(deviceId) {
+      const v = document.getElementById("video");
 
-    <div class="mt-3">
-      <div class="fw-bold mb-2">Cámara</div>
-      <select id="cameraSelect" class="form-select form-select-sm mb-2"></select>
-      <video id="video" autoplay playsinline class="w-100"
-             style="max-height:320px;border-radius:12px;border:1px solid #e5e7eb;background:#000"></video>
-      <canvas id="canvas" style="display:none"></canvas>
-      <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> dos veces: foto1 + foto2.</div>
-    </div>
+      // parar stream anterior
+      if (currentStream) {
+        try { currentStream.getTracks().forEach(t => t.stop()); } catch (e) { }
+        currentStream = null;
+      }
 
-    <div class="mt-3 d-flex justify-content-end">
-      <form method="post" action="/instrumentos/{{ inst.id }}/finalizar_fotos">
-        <button class="btn btn-success">✅ Finalizar y volver al parte</button>
-      </form>
-    </div>
-  </div>
-  {% endif %}
+      const constraints = deviceId
+        ? { video: { deviceId: { exact: deviceId } }, audio: false }
+        : { video: true, audio: false };
 
-</main>
-</div>
-
-{% if inst %}
-<script>
-  const instId = {{ inst.id }};
-  const hasFoto1 = {{ 1 if inst.foto_entrada_1 else 0 }};
-  const hasFoto2 = {{ 1 if inst.foto_entrada_2 else 0 }};
-  let busy = false;
-
-  let currentStream = null;
-
-  async function startCamera(deviceId){
-    const v = document.getElementById("video");
-
-    // parar stream anterior
-    if(currentStream){
-      try{ currentStream.getTracks().forEach(t => t.stop()); }catch(e){}
-      currentStream = null;
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentStream = stream;
+      v.srcObject = stream;
     }
 
-    const constraints = deviceId
-      ? { video: { deviceId: { exact: deviceId } }, audio: false }
-      : { video: true, audio: false };
+    async function loadCameras() {
+      // pedir permisos para que aparezcan labels
+      try { await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); } catch (e) { }
 
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    currentStream = stream;
-    v.srcObject = stream;
-  }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === "videoinput");
 
-  async function loadCameras(){
-    // pedir permisos para que aparezcan labels
-    try{ await navigator.mediaDevices.getUserMedia({video:true, audio:false}); }catch(e){}
+      const sel = document.getElementById("cameraSelect");
+      if (!sel) {
+        // fallback
+        await startCamera();
+        return;
+      }
 
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const cams = devices.filter(d => d.kind === "videoinput");
+      sel.innerHTML = "";
+      cams.forEach((c, i) => {
+        const opt = document.createElement("option");
+        opt.value = c.deviceId;
+        opt.text = c.label || ("Cámara " + (i + 1));
+        sel.appendChild(opt);
+      });
 
-    const sel = document.getElementById("cameraSelect");
-    if(!sel) {
-      // fallback
-      await startCamera();
-      return;
+      const saved = localStorage.getItem("xurgical_camera_id");
+      const initial = cams.find(c => c.deviceId === saved)?.deviceId || cams[0]?.deviceId;
+
+      if (initial) {
+        sel.value = initial;
+        await startCamera(initial);
+      } else {
+        await startCamera();
+      }
+
+      sel.addEventListener("change", async () => {
+        localStorage.setItem("xurgical_camera_id", sel.value);
+        await startCamera(sel.value);
+      });
     }
 
-    sel.innerHTML = "";
-    cams.forEach((c,i)=>{
-      const opt = document.createElement("option");
-      opt.value = c.deviceId;
-      opt.text = c.label || ("Cámara " + (i+1));
-      sel.appendChild(opt);
-    });
 
-    const saved = localStorage.getItem("xurgical_camera_id");
-    const initial = cams.find(c => c.deviceId === saved)?.deviceId || cams[0]?.deviceId;
-
-    if(initial){
-      sel.value = initial;
-      await startCamera(initial);
-    }else{
-      await startCamera();
+    function getNextSlot() {
+      // Buscamos el primer slot vacío
+      for (let i = 1; i <= 6; i++) {
+        if (!photosStatus[i]) return i;
+      }
+      // Si todos están llenos, rotamos sobre el último usado o el 1
+      const key = "xurgical_last_slot_" + instId;
+      const last = parseInt(localStorage.getItem(key) || "6", 10);
+      let next = last + 1;
+      if (next > 6) next = 1;
+      return next;
+    }
+    function setLastSlot(slot) {
+      localStorage.setItem("xurgical_last_slot_" + instId, String(slot));
+    }
+    function updateLabels() {
+      const s = String(getNextSlot());
+      const a = document.getElementById("nextSlot");
+      const b = document.getElementById("nextSlot2");
+      if (a) a.innerText = s;
+      if (b) b.innerText = s;
     }
 
-    sel.addEventListener("change", async ()=>{
-      localStorage.setItem("xurgical_camera_id", sel.value);
-      await startCamera(sel.value);
-    });
-  }
+    function captureToDataUrl() {
+      const v = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
+      if (vw === 0 || vh === 0) throw new Error("Cámara no lista todavía");
 
+      // ✅ tamaño “taller”
+      const MAX_W = 960, MAX_H = 540;
+      const scale = Math.min(MAX_W / vw, MAX_H / vh, 1);
+      const w = Math.round(vw * scale);
+      const h = Math.round(vh * scale);
 
-  function getNextSlot(){
-    if(!hasFoto1) return 1;
-    if(!hasFoto2) return 2;
-    const key = "xurgical_last_slot_" + instId;
-    const last = parseInt(localStorage.getItem(key) || "2", 10);
-    return (last === 1) ? 2 : 1;
-  }
-  function setLastSlot(slot){
-    localStorage.setItem("xurgical_last_slot_" + instId, String(slot));
-  }
-  function updateLabels(){
-    const s = String(getNextSlot());
-    const a = document.getElementById("nextSlot");
-    const b = document.getElementById("nextSlot2");
-    if(a) a.innerText = s;
-    if(b) b.innerText = s;
-  }
-
-  function captureToDataUrl(){
-    const v = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
-    if(vw === 0 || vh === 0) throw new Error("Cámara no lista todavía");
-
-    // ✅ tamaño “taller”
-    const MAX_W = 960, MAX_H = 540;
-    const scale = Math.min(MAX_W / vw, MAX_H / vh, 1);
-    const w = Math.round(vw * scale);
-    const h = Math.round(vh * scale);
-
-    canvas.width = w; canvas.height = h;
-    canvas.getContext("2d").drawImage(v, 0, 0, w, h);
-    return canvas.toDataURL("image/jpeg", 0.65);
-  }
-
-  async function uploadToSlot(slot){
-    const dataUrl = captureToDataUrl();
-    const r = await fetch(`/instrumentos/${instId}/foto_webcam/${slot}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: dataUrl })
-    });
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error || "Error subiendo foto");
-    setLastSlot(slot);
-  }
-
-  async function captureSpace(){
-    if(busy) return;
-    busy = true;
-    try{
-      const slot = getNextSlot();
-      await uploadToSlot(slot);
-      location.reload();
-    }catch(e){
-      alert(e.message || String(e));
-      busy = false;
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(v, 0, 0, w, h);
+      return canvas.toDataURL("image/jpeg", 0.65);
     }
-  }
 
-  async function deletePhoto(slot){
-    if(busy) return;
-    busy = true;
-    try{
-      const r = await fetch(`/instrumentos/${instId}/foto_borrar/${slot}`, { method: "POST" });
+    async function uploadToSlot(slot) {
+      const dataUrl = captureToDataUrl();
+      const r = await fetch(`/instrumentos/${instId}/foto_webcam/${slot}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl })
+      });
       const j = await r.json();
-      if(!j.ok) throw new Error(j.error || "Error borrando foto");
-      location.reload();
-    }catch(e){
-      alert(e.message || String(e));
-      busy = false;
-    }
-  }
-
-  // Barra espaciadora: capturar SOLO cuando no estás escribiendo en un campo.
-  // Evita que al rellenar descripción/inputs se dispare otra foto.
-  document.addEventListener("keydown", (ev) => {
-    if(ev.code !== "Space") return;
-
-    // Si el foco está en un campo de formulario (o editable), NO capturamos.
-    const el = document.activeElement;
-    const typing = el && (
-      el.tagName === "INPUT" ||
-      el.tagName === "TEXTAREA" ||
-      el.tagName === "SELECT" ||
-      el.isContentEditable
-    );
-    if(typing) return;
-
-    // Solo capturar si existe el vídeo (cámara) y está visible.
-    const v = document.getElementById("video");
-    if(!v) return;
-    const visible = !!(v.offsetWidth || v.offsetHeight || v.getClientRects().length);
-    if(!visible) return;
-
-    // Aquí sí: evitamos scroll y disparamos captura.
-    ev.preventDefault();
-    captureSpace();
-  });
-
-  loadCameras();
-  updateLabels();
-</script>
-{% endif %}
-
-<!-- Autorrelleno desde Articulos.xlsx: al salir de "Modelo / Código producto" -->
-<script>
-  (function(){
-    window.addEventListener('load', ()=>{ try{ lookupNow(); }catch(e){} });
-const inputCodigo = document.querySelector('input[name="codigo_producto"]');
-    const inputDenom = document.querySelector('input[name="denominacion"]');
-    const inputFab = document.querySelector('input[name="fabricante"]');
-    if(!inputCodigo || !inputDenom) return;
-
-    let lastQ = "";
-    let lastAutoCode = "";
-    let timer = null;
-
-    function normCode(s){
-      if(!s) return "";
-      let t = String(s).trim();
-      // prefijos rp/mt (insensible a mayúsculas) -> quitar
-      t = t.replace(/^(rp|mt)\s*/i, "");
-      t = t.replace(/^[\s\-_]+/, "");
-      return t.toUpperCase();
+      if (!j.ok) throw new Error(j.error || "Error subiendo foto");
+      setLastSlot(slot);
     }
 
-    async function lookupNow(){
-      const qRaw = (inputCodigo.value || "");
-      const q = normCode(qRaw);
-      if(!q || q === lastQ) return;
-      lastQ = q;
-
-      try{
-        const res = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, {headers:{"Accept":"application/json"}});
-        if(!res.ok) return;
-        const data = await res.json();
-        if(!data || !data.found) return;
-
-        // Relleno controlado:
-        // - si está vacío, rellena
-        // - si fue autofill previo (dataset.autofill="1"), se permite sobreescribir al cambiar el código
-        const canOverwriteDenom = (!inputDenom.value.trim() || inputDenom.dataset.autofill === "1");
-        if(canOverwriteDenom && data.descripcion){
-          inputDenom.value = data.descripcion;
-          inputDenom.dataset.autofill = "1";
-        }
-
-        if(inputFab){
-          const canOverwriteFab = (!inputFab.value.trim() || inputFab.dataset.autofill === "1");
-          if(canOverwriteFab && data.fabricante){
-            inputFab.value = data.fabricante;
-            inputFab.dataset.autofill = "1";
-          }
-        }
-
-        // Guardamos el último código que resolvió el catálogo (para saber cuándo limpiar)
-        lastAutoCode = (data.codigo ? normCode(data.codigo) : q);
-
-        // Si el backend devuelve el código normalizado, lo ponemos (sin prefijos rp/mt)
-        if(data.codigo){
-          inputCodigo.value = data.codigo;
-        }
-      }catch(e){
-        // silencio
+    async function captureSpace() {
+      if (busy) return;
+      busy = true;
+      try {
+        const slot = getNextSlot();
+        await uploadToSlot(slot);
+        location.reload();
+      } catch (e) {
+        alert(e.message || String(e));
+        busy = false;
       }
     }
 
-    function scheduleLookup(){
-      if(timer) clearTimeout(timer);
-      timer = setTimeout(lookupNow, 200);
+    async function deletePhoto(slot) {
+      if (busy) return;
+      busy = true;
+      try {
+        const r = await fetch(`/instrumentos/${instId}/foto_borrar/${slot}`, { method: "POST" });
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.error || "Error borrando foto");
+        location.reload();
+      } catch (e) {
+        alert(e.message || String(e));
+        busy = false;
+      }
     }
 
-    // Si el usuario modifica la denominación/fabricante a mano, ya no se pisa
-    inputDenom.addEventListener('input', ()=>{ inputDenom.dataset.autofill = "0"; });
-    if(inputFab){ inputFab.addEventListener('input', ()=>{ inputFab.dataset.autofill = "0"; }); }
+    // Barra espaciadora: capturar SOLO cuando no estás escribiendo en un campo.
+    // Evita que al rellenar descripción/inputs se dispare otra foto.
+    document.addEventListener("keydown", (ev) => {
+      if (ev.code !== "Space") return;
 
-    // Si cambia el código y la denominación fue autofill, la limpiamos para que se rellene la nueva
-      inputCodigo.addEventListener('input', ()=>{
+      // Si el foco está en un campo de formulario (o editable), NO capturamos.
+      const el = document.activeElement;
+      const typing = el && (
+        el.tagName === "INPUT" ||
+        el.tagName === "TEXTAREA" ||
+        el.tagName === "SELECT" ||
+        el.isContentEditable
+      );
+      if (typing) return;
+
+      // Solo capturar si existe el vídeo (cámara) y está visible.
+      const v = document.getElementById("video");
+      if (!v) return;
+      const visible = !!(v.offsetWidth || v.offsetHeight || v.getClientRects().length);
+      if (!visible) return;
+
+      // Aquí sí: evitamos scroll y disparamos captura.
+      ev.preventDefault();
+      captureSpace();
+    });
+
+    loadCameras();
+    updateLabels();
+  </script>
+  {% endif %}
+
+  <!-- Autorrelleno desde Articulos.xlsx: al salir de "Modelo / Código producto" -->
+  <script>
+    (function () {
+      window.addEventListener('load', () => { try { lookupNow(); } catch (e) { } });
+      const inputCodigo = document.querySelector('input[name="codigo_producto"]');
+      const inputDenom = document.querySelector('input[name="denominacion"]');
+      const inputFab = document.querySelector('input[name="fabricante"]');
+      if (!inputCodigo || !inputDenom) return;
+
+      let lastQ = "";
+      let lastAutoCode = "";
+      let timer = null;
+
+      function normCode(s) {
+        if (!s) return "";
+        let t = String(s).trim();
+        // prefijos rp/mt (insensible a mayúsculas) -> quitar
+        t = t.replace(/^(rp|mt)\s*/i, "");
+        t = t.replace(/^[\s\-_]+/, "");
+        return t.toUpperCase();
+      }
+
+      async function lookupNow() {
+        const qRaw = (inputCodigo.value || "");
+        const q = normCode(qRaw);
+        if (!q || q === lastQ) return;
+        lastQ = q;
+
+        try {
+          const res = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, { headers: { "Accept": "application/json" } });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!data || !data.found) return;
+
+          // Relleno controlado:
+          // - si está vacío, rellena
+          // - si fue autofill previo (dataset.autofill="1"), se permite sobreescribir al cambiar el código
+          const canOverwriteDenom = (!inputDenom.value.trim() || inputDenom.dataset.autofill === "1");
+          if (canOverwriteDenom && data.descripcion) {
+            inputDenom.value = data.descripcion;
+            inputDenom.dataset.autofill = "1";
+          }
+
+          if (inputFab) {
+            const canOverwriteFab = (!inputFab.value.trim() || inputFab.dataset.autofill === "1");
+            if (canOverwriteFab && data.fabricante) {
+              inputFab.value = data.fabricante;
+              inputFab.dataset.autofill = "1";
+            }
+          }
+
+          // Guardamos el último código que resolvió el catálogo (para saber cuándo limpiar)
+          lastAutoCode = (data.codigo ? normCode(data.codigo) : q);
+
+          // Si el backend devuelve el código normalizado, lo ponemos (sin prefijos rp/mt)
+          if (data.codigo) {
+            inputCodigo.value = data.codigo;
+          }
+        } catch (e) {
+          // silencio
+        }
+      }
+
+      function scheduleLookup() {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(lookupNow, 200);
+      }
+
+      // Si el usuario modifica la denominación/fabricante a mano, ya no se pisa
+      inputDenom.addEventListener('input', () => { inputDenom.dataset.autofill = "0"; });
+      if (inputFab) { inputFab.addEventListener('input', () => { inputFab.dataset.autofill = "0"; }); }
+
+      // Si cambia el código y la denominación fue autofill, la limpiamos para que se rellene la nueva
+      inputCodigo.addEventListener('input', () => {
         const now = normCode(inputCodigo.value);
-        if(!now) return;
+        if (!now) return;
 
         // Si la denominación venía del catálogo, la limpiamos al cambiar referencia para que se rellene la nueva
-        if(inputDenom.dataset.autofill === "1" && lastAutoCode && now !== lastAutoCode){
+        if (inputDenom.dataset.autofill === "1" && lastAutoCode && now !== lastAutoCode) {
           inputDenom.value = "";
           inputDenom.dataset.autofill = "1";
         }
 
         // Si el fabricante venía del catálogo, también lo limpiamos al cambiar referencia
-        if(inputFab && inputFab.dataset.autofill === "1" && lastAutoCode && now !== lastAutoCode){
+        if (inputFab && inputFab.dataset.autofill === "1" && lastAutoCode && now !== lastAutoCode) {
           inputFab.value = "";
           inputFab.dataset.autofill = "1";
         }
       });
 
-    inputCodigo.addEventListener('blur', lookupNow);
-    inputCodigo.addEventListener('change', lookupNow);
-    inputCodigo.addEventListener('input', scheduleLookup);
-  })();
-</script>
+      inputCodigo.addEventListener('blur', lookupNow);
+      inputCodigo.addEventListener('change', lookupNow);
+      inputCodigo.addEventListener('input', scheduleLookup);
+    })();
+  </script>
 </body>
+
 </html>

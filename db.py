@@ -222,19 +222,30 @@ def init_db():
         actualizado_en {dt},
         foto_entrada_1 TEXT,
         foto_entrada_2 TEXT,
+        foto_entrada_3 TEXT,
+        foto_entrada_4 TEXT,
+        foto_entrada_5 TEXT,
+        foto_entrada_6 TEXT,
         foto_salida_1 TEXT,
         foto_salida_2 TEXT,
+        foto_salida_3 TEXT,
+        foto_salida_4 TEXT,
+        foto_salida_5 TEXT,
+        foto_salida_6 TEXT,
         tecnico_reparacion TEXT,
         tecnico_reparacion_en TEXT
     )
     """)
 
-    # Migración: asegurar que existen foto_salida_1 y foto_salida_2
+    # Migración: asegurar que existen las columnas de fotos (1-6) tanto entrada como salida
     cols_inst = get_table_columns(cur, "instrumentos")
-    if "foto_salida_1" not in cols_inst:
-        cur.execute("ALTER TABLE instrumentos ADD COLUMN foto_salida_1 TEXT")
-    if "foto_salida_2" not in cols_inst:
-        cur.execute("ALTER TABLE instrumentos ADD COLUMN foto_salida_2 TEXT")
+    for i in range(1, 7):
+        col_e = f"foto_entrada_{i}"
+        if col_e not in cols_inst:
+            cur.execute(f"ALTER TABLE instrumentos ADD COLUMN {col_e} TEXT")
+        col_s = f"foto_salida_{i}"
+        if col_s not in cols_inst:
+            cur.execute(f"ALTER TABLE instrumentos ADD COLUMN {col_s} TEXT")
 
     # 5. Permisos granulares
     cur.execute(f"""
