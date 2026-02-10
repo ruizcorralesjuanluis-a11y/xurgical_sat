@@ -368,5 +368,14 @@ def init_db():
     else:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
 
+    # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
+    # Esto soluciona que los clientes no vean sus partes antiguos que no tenían ID
+    cur.execute("""
+        UPDATE envios 
+        SET cliente_id = (SELECT id FROM clientes WHERE clientes.nombre = envios.cliente)
+        WHERE cliente_id IS NULL 
+          AND (SELECT id FROM clientes WHERE clientes.nombre = envios.cliente) IS NOT NULL
+    """)
+
     conn.commit()
     conn.close()
