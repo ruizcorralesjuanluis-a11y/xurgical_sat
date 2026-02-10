@@ -383,7 +383,10 @@
                 <td>
                   <strong>{{ e.ot_num }}</strong>
                   {% if e.is_closed %}
-                  <div class="mt-1"><span class="badge text-bg-success">CERRADO</span></div>
+                  <div class="mt-1"><span class="badge text-bg-success" style="font-size: 0.65rem;">CERRADO</span></div>
+                  {% else %}
+                  <div class="mt-1"><span class="badge text-bg-warning text-dark" style="font-size: 0.65rem;">EN
+                      REPARACIÓN</span></div>
                   {% endif %}
                 </td>
                 <td>
