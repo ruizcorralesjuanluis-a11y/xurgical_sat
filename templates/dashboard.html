@@ -346,15 +346,16 @@
         </div>
       </div>
 
-      {% if user and user.role == "cliente" %}
-      <!-- SECCIÓN CLIENTE -->
       {% if request.query_params.get('msg') == 'recogida_ok' %}
-      <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" style="border-radius:12px;">
-        <i class="fa-solid fa-check-circle me-2"></i> <strong>Solicitud enviada.</strong> Nos pondremos en contacto para
-        coordinar la recogida.
+      <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3" style="border-radius:12px;">
+        <i class="fa-solid fa-check-circle me-2"></i> <strong>Solicitud enviada.</strong> Se ha registrado la petición
+        de recogida correctamente.
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
       {% endif %}
+
+      {% if user and user.role == "cliente" %}
+      <!-- SECCIÓN CLIENTE -->
 
       <div class="row g-2 mb-3">
         <div class="col-md-4">
