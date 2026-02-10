@@ -1039,6 +1039,10 @@ def export_download(
                 i.grabado_por,
                 i.foto_entrada_1,
                 i.foto_entrada_2,
+                i.foto_entrada_3,
+                i.foto_entrada_4,
+                i.foto_entrada_5,
+                i.foto_entrada_6,
                 i.observaciones,
                 i.creado_en,
                 i.actualizado_en
