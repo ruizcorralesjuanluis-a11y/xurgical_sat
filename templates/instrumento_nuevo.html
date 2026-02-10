@@ -175,7 +175,7 @@
               <button class="btn btn-outline-danger btn-sm" type="button" onclick="deletePhoto({{ i }})">Borrar</button>
             </div>
             <div class="photo-box">
-              {% set foto_url = getattr(inst, 'foto_entrada_' ~ i) if inst is mapping else inst['foto_entrada_' ~ i] %}
+              {% set foto_url = inst['foto_entrada_' ~ i] %}
               {% if foto_url %}
               <img src="{{ foto_url }}" alt="Foto {{ i }}">
               {% else %}
