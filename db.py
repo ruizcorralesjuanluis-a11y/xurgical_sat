@@ -375,11 +375,20 @@ def init_db():
         cliente_id INTEGER NOT NULL,
         usuario_id INTEGER,
         n_instrumentos INTEGER DEFAULT 0,
+        contacto TEXT,
+        telefono TEXT,
         observaciones TEXT,
         estado TEXT DEFAULT 'Pendiente',
         creado_en {dt}
     )
     """)
+
+    # Migración: asegurar columnas en peticiones_recogida
+    cols_pr = get_table_columns(cur, "peticiones_recogida")
+    if "contacto" not in cols_pr:
+        cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN contacto TEXT")
+    if "telefono" not in cols_pr:
+        cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN telefono TEXT")
 
     # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
     # Esto soluciona que los clientes no vean sus partes antiguos que no tenían ID

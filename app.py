@@ -3976,6 +3976,8 @@ def borrar_envio(
 @app.post("/peticion_recogida")
 async def peticion_recogida(
     n_instrumentos: int = Form(0),
+    contacto: str = Form(""),
+    telefono: str = Form(""),
     observaciones: str = Form(""),
     user=Depends(require_roles("cliente", "admin", "recepcion"))
 ):
@@ -3989,9 +3991,9 @@ async def peticion_recogida(
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("""
-        INSERT INTO peticiones_recogida (cliente_id, usuario_id, n_instrumentos, observaciones, estado, creado_en)
-        VALUES (?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
-    """, (int(cli_id or 0), u_id, n_instrumentos, observaciones))
+        INSERT INTO peticiones_recogida (cliente_id, usuario_id, n_instrumentos, contacto, telefono, observaciones, estado, creado_en)
+        VALUES (?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
+    """, (int(cli_id or 0), u_id, n_instrumentos, contacto, telefono, observaciones))
     conn.commit()
     conn.close()
 

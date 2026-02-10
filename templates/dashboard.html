@@ -798,6 +798,16 @@
               <label class="form-label small fw-bold">Nº aproximado de instrumentos</label>
               <input type="number" name="n_instrumentos" class="form-control" placeholder="Ej: 15" min="1" required>
             </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Persona de contacto</label>
+                <input type="text" name="contacto" class="form-control" placeholder="Nombre completo" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Teléfono de contacto</label>
+                <input type="tel" name="telefono" class="form-control" placeholder="600 000 000" required>
+              </div>
+            </div>
             <div class="mb-3">
               <label class="form-label small fw-bold">Observaciones / Descripción</label>
               <textarea name="observaciones" class="form-control" rows="3"
@@ -834,7 +844,14 @@
               </div>
               <div class="mb-2">
                 <strong>Instrumentos aprox:</strong> {{ p.n_instrumentos }}<br>
-                <span class="text-secondary small">{{ p.observaciones or 'Sin observaciones' }}</span>
+                <i class="fa-solid fa-user me-1 small text-secondary"></i> <strong>{{ p.contacto or 'N/A'
+                  }}</strong><br>
+                <i class="fa-solid fa-phone me-1 small text-secondary"></i> <a href="tel:{{ p.telefono }}"
+                  class="text-decoration-none">{{ p.telefono or 'N/A' }}</a><br>
+                <div class="mt-1 p-2 bg-light rounded small border">
+                  <i class="fa-solid fa-comment-dots me-1 text-secondary"></i> {{ p.observaciones or 'Sin observaciones'
+                  }}
+                </div>
               </div>
               <form method="post" action="/peticion_recogida/{{ p.id }}/completar">
                 <button type="submit" class="btn btn-outline-success btn-sm w-100">
