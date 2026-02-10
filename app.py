@@ -843,73 +843,75 @@ def dashboard(request: Request, user=Depends(get_current_user)):
 
     q = (request.query_params.get('q') or '').strip()
 
-    cur.execute("SELECT COUNT(*) AS n FROM instrumentos")
-    total_inst = cur.fetchone()["n"]
+    # --- 1. KPIs Globales (Instrumentos) en UNA sola consulta ---
+    cur.execute("""
+        SELECT
+            COUNT(*) as total,
+            SUM(CASE WHEN estado='Pendiente' THEN 1 ELSE 0 END) as pendientes,
+            SUM(CASE WHEN estado='En proceso' THEN 1 ELSE 0 END) as en_proceso,
+            SUM(CASE WHEN estado='Reparado' THEN 1 ELSE 0 END) as reparados,
+            SUM(CASE WHEN estado='Baja' THEN 1 ELSE 0 END) as baja
+        FROM instrumentos
+    """)
+    row_kpi = cur.fetchone()
+    if row_kpi:
+        kpis = {
+            "total": row_kpi["total"],
+            "pendientes": row_kpi["pendientes"],
+            "en_proceso": row_kpi["en_proceso"],
+            "reparado": row_kpi["reparados"],
+            "baja": row_kpi["baja"],
+        }
+    else:
+        kpis = {"total":0, "pendientes":0, "en_proceso":0, "reparado":0, "baja":0}
 
-    def count_estado(e):
-        cur.execute("SELECT COUNT(*) AS n FROM instrumentos WHERE estado=?", (e,))
-        return cur.fetchone()["n"]
-
-    kpis = {
-        "total": total_inst,
-        "pendientes": count_estado("Pendiente"),
-        "en_proceso": count_estado("En proceso"),
-        "reparado": count_estado("Reparado"),
-        "baja": count_estado("Baja"),
-    }
-
+    # --- 2. KPIs Partes (Abiertos/Cerrados) en UNA sola consulta ---
     cur.execute("SELECT COUNT(*) AS n FROM envios")
     total_partes = cur.fetchone()["n"]
 
-    # KPI partes abiertas/cerradas:
-    # - REPARACION: cerrada si todos los instrumentos estan en Reparado o Baja
-    # - TRAZABILIDAD: cerrada si todos los instrumentos estan grabados (grabado=1)
     has_tipo = _envios_has_column(cur, "tipo_trabajo")
-    cur.execute(
-        """
-        SELECT
+    tipo_col = "e.tipo_trabajo" if has_tipo else "'REPARACION'"
+    
+    # Esta consulta agrupa por envío y calcula si está 'cerrado' o no
+    # Logica de cierre:
+    #   - TRAZABILIDAD: cerrado si total > 0 Y todos grabados (grabado=1)
+    #   - REPARACION: cerrado si total > 0 Y todos (Reparado o Baja)
+    cur.execute(f"""
+        SELECT 
             e.id,
-            {tipo_expr} AS tipo_trabajo
+            {tipo_col} as tipo,
+            COUNT(i.id) as total_inst,
+            SUM(CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END) as n_grabados,
+            SUM(CASE WHEN i.estado IN ('Reparado','Baja') THEN 1 ELSE 0 END) as n_terminados
         FROM envios e
-        """.format(tipo_expr=("e.tipo_trabajo" if has_tipo else "'REPARACION'"))
-    )
+        LEFT JOIN instrumentos i ON i.envio_id = e.id
+        GROUP BY e.id, {tipo_col}
+    """)
+    
     abiertos = 0
     cerrados = 0
-    for r in cur.fetchall():
-        envio_id = r["id"]
-        tipo = (r["tipo_trabajo"] or "REPARACION")
-
+    
+    rows = cur.fetchall() # Traemos todos de golpe (mucho más rápido que 1 query por row)
+    for r in rows:
+        t_inst = r["total_inst"]
+        if t_inst == 0:
+            abiertos += 1 # Parte vacío = abierto (o pendiente de hacer algo)
+            continue
+            
+        tipo = (r["tipo"] or "REPARACION").upper()
         if tipo == "TRAZABILIDAD":
-            cur.execute(
-                """
-                SELECT
-                  COUNT(*) AS total,
-                  SUM(CASE WHEN COALESCE(grabado,0)=1 THEN 1 ELSE 0 END) AS done
-                FROM instrumentos
-                WHERE envio_id=?
-                """,
-                (envio_id,),
-            )
+            # Cerrado si todos grabados
+            if r["n_grabados"] == t_inst:
+                cerrados += 1
+            else:
+                abiertos += 1
         else:
-            cur.execute(
-                """
-                SELECT
-                  COUNT(*) AS total,
-                  SUM(CASE WHEN COALESCE(estado,'') IN ('Reparado','Baja') THEN 1 ELSE 0 END) AS done
-                FROM instrumentos
-                WHERE envio_id=?
-                """,
-                (envio_id,),
-            )
-
-        rr = cur.fetchone()
-        total = int(rr["total"] or 0) if rr else 0
-        done = int(rr["done"] or 0) if rr else 0
-        is_closed = (total > 0 and done == total)
-        if is_closed:
-            cerrados += 1
-        else:
-            abiertos += 1
+            # REPARACION / OPTICA
+            # Cerrado si todos terminados
+            if r["n_terminados"] == t_inst:
+                cerrados += 1
+            else:
+                abiertos += 1
 
     kpis_partes = {"total": total_partes, "abiertos": abiertos, "cerrados": cerrados}
 
