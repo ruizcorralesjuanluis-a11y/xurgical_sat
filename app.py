@@ -95,9 +95,13 @@ FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join(UPLOAD_DIR, "fotos
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(FOTOS_DIR, exist_ok=True)
+print(f"DEBUG: UPLOAD_DIR = {os.path.abspath(UPLOAD_DIR)}")
+print(f"DEBUG: FOTOS_DIR = {os.path.abspath(FOTOS_DIR)}")
 
-# Monta FOTOS_DIR en /static/fotos PRIORITARIAMENTE para soportar discos externos
+# Montaje de estáticos
+# 1. Las fotos van en una ruta dedicada para evitar colisiones
 app.mount("/static/fotos", StaticFiles(directory=FOTOS_DIR), name="fotos_externas")
+# 2. El resto de estáticos (css, js, logos) en /static
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -2905,6 +2909,7 @@ async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Dep
 
     filename = f"inst_{instrumento_id}_{tag}_f{slot}_{uuid.uuid4().hex[:8]}.jpg"
     path_fs = os.path.join(FOTOS_DIR, filename)
+    print(f"DEBUG PHOTO: Guardando foto en {path_fs}")
     with open(path_fs, "wb") as f:
         f.write(raw)
 
