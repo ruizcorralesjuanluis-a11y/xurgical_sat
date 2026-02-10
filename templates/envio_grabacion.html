@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,542 +9,633 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <style>
-    body{
-      min-height:100vh; margin:0; font-size:0.9rem;
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-size: 0.9rem;
       background-image: url("/static/bg.png");
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
       background-attachment: fixed;
     }
-    .page-overlay{ min-height:100vh; background: rgba(245,247,250,0.86); }
 
-    .topbar{
-      background:#ffffffcc;
+    .page-overlay {
+      min-height: 100vh;
+      background: rgba(245, 247, 250, 0.86);
+    }
+
+    .topbar {
+      background: #ffffffcc;
       backdrop-filter: blur(6px);
-      border-bottom:1px solid #e5e7eb;
-      padding:.6rem 1rem;
-    }
-    .logo{ height:34px }
-    .brand{ font-weight:700 }
-
-    .panel{
-      border-radius:14px;
-      box-shadow:0 6px 18px rgba(0,0,0,.06);
-      background: rgba(255,255,255,0.95);
+      border-bottom: 1px solid #e5e7eb;
+      padding: .6rem 1rem;
     }
 
-    .kpi{
-      border-radius:14px;
-      box-shadow:0 6px 18px rgba(0,0,0,.06);
-      background: rgba(255,255,255,0.95);
+    .logo {
+      height: 34px
+    }
+
+    .brand {
+      font-weight: 700
+    }
+
+    .panel {
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .kpi {
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+      background: rgba(255, 255, 255, 0.95);
       padding: .8rem 1rem;
       border: 1px solid #e5e7eb;
     }
-    .kpi .label{
-      color:#6b7280;
-      font-size:.72rem;
-      text-transform:uppercase;
-      letter-spacing:.04em;
-      margin-bottom:.15rem;
-    }
-    .kpi .value{
-      font-weight:800;
-      font-size:1.35rem;
-      line-height:1.1;
+
+    .kpi .label {
+      color: #6b7280;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: .15rem;
     }
 
-    .inst-card{
-      border-radius:14px;
-      background:#fff;
-      border:1px solid #e5e7eb;
-      box-shadow:0 6px 18px rgba(0,0,0,.06);
-      overflow:hidden;
-      cursor:pointer;
+    .kpi .value {
+      font-weight: 800;
+      font-size: 1.35rem;
+      line-height: 1.1;
+    }
+
+    .inst-card {
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+      overflow: hidden;
+      cursor: pointer;
       transition: transform .08s ease;
     }
-    .inst-card:hover{ transform: translateY(-1px); }
 
-    .inst-header{
-      padding:.55rem .7rem;
-      border-bottom:1px solid #eef2f7;
-      display:flex;
+    .inst-card:hover {
+      transform: translateY(-1px);
+    }
+
+    .inst-header {
+      padding: .55rem .7rem;
+      border-bottom: 1px solid #eef2f7;
+      display: flex;
       justify-content: space-between;
-      align-items:center;
-      gap:.5rem;
+      align-items: center;
+      gap: .5rem;
     }
-    .inst-title{ font-weight:800; }
 
-    .inst-body{ padding:.65rem .7rem; }
+    .inst-title {
+      font-weight: 800;
+    }
 
-    .img-pair{ display:grid; grid-template-columns: 1fr 1fr; gap:.5rem; }
-    .thumb{
-      width:100%;
-      height:140px;
+    .inst-body {
+      padding: .65rem .7rem;
+    }
+
+    .img-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+    }
+
+    .thumb {
+      width: 100%;
+      height: 140px;
       object-fit: cover;
-      border-radius:12px;
-      border:1px solid #e5e7eb;
-      background:#f8fafc;
-    }
-    .placeholder{
-      width:100%;
-      height:140px;
-      border-radius:12px;
-      border:1px dashed #cbd5e1;
-      background:#f8fafc;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:#64748b;
-      font-weight:700;
-      font-size:.78rem;
-      text-transform:uppercase;
-      letter-spacing:.04em;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      background: #f8fafc;
     }
 
-    .meta{
-      margin-top:.55rem;
-      display:grid;
+    .placeholder {
+      width: 100%;
+      height: 140px;
+      border-radius: 12px;
+      border: 1px dashed #cbd5e1;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-weight: 700;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .meta {
+      margin-top: .55rem;
+      display: grid;
       grid-template-columns: 1fr;
-      gap:.2rem;
-      color:#111827;
+      gap: .2rem;
+      color: #111827;
     }
-    .meta .muted{ color:#6b7280; }
-    .badge-grabado{ background:#16a34a; }
-    .badge-pend{ background:#f59e0b; color:#111827; }
 
-    .modal-img-pair{ display:grid; grid-template-columns: 1fr 1fr; gap:.75rem; }
-    .modal-img{ width:100%; height:320px; object-fit:contain; background:#0b1220; border-radius:14px; }
-    @media (max-width: 768px){
-      .thumb{ height:120px; }
-      .modal-img{ height:240px; }
+    .meta .muted {
+      color: #6b7280;
+    }
+
+    .badge-grabado {
+      background: #16a34a;
+    }
+
+    .badge-pend {
+      background: #f59e0b;
+      color: #111827;
+    }
+
+    .modal-img-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+    }
+
+    .modal-img {
+      width: 100%;
+      height: 320px;
+      object-fit: contain;
+      background: #0b1220;
+      border-radius: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .thumb {
+        height: 120px;
+      }
+
+      .modal-img {
+        height: 240px;
+      }
     }
   </style>
 </head>
 
 <body>
-<div class="page-overlay">
+  <div class="page-overlay">
 
-<!-- TOPBAR -->
-<nav class="navbar topbar d-flex justify-content-between align-items-center">
-  <div class="d-flex align-items-center gap-3">
-    <img src="/static/logo-xurgical.png" class="logo">
-    <span class="brand">Xurgical SAT</span>
-    <span class="text-secondary">/ Grabación</span>
-    <span class="fw-bold">{{ envio.ot_num }}</span>
-  </div>
-
-  <div class="d-flex align-items-center gap-2">
-    {% if user and user.role != "grabado" %}
-      <a href="/envios/{{ envio.id }}" class="btn btn-outline-secondary btn-sm">⬅ Parte</a>
-    {% endif %}
-    <a href="/" class="btn btn-outline-secondary btn-sm">⬅ Dashboard</a>
-
-    {% if user %}
-      <span class="badge text-bg-dark">{{ user.username }}</span>
-      <span class="badge text-bg-secondary">{{ user.role }}</span>
-      <form method="post" action="/logout" class="m-0">
-        <button class="btn btn-danger btn-sm">Salir</button>
-      </form>
-    {% endif %}
-  </div>
-</nav>
-
-<main class="container-fluid px-3 px-md-4 py-3">
-
-  <!-- KPIs / contadores -->
-  <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3"><div class="kpi"><div class="label">Total instrumentos</div><div class="value">{{ total }}</div></div></div>
-    <div class="col-6 col-md-3"><div class="kpi"><div class="label">Grabados</div><div class="value">{{ grabados }}</div></div></div>
-    <div class="col-6 col-md-3"><div class="kpi"><div class="label">Pendientes</div><div class="value">{{ (total - grabados) }}</div></div></div>
-    <div class="col-6 col-md-3"><div class="kpi"><div class="label">OT</div><div class="value">{{ envio.ot_num }}</div></div></div>
-  </div>
-
-  <div class="panel p-3 mb-3">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <div>
-        <div class="h5 mb-1">Mosaico de grabación</div>
-        <div class="text-secondary">Haz click en una tarjeta para ver el detalle y marcar como <b>GRABADO</b>.</div>
+    <!-- TOPBAR -->
+    <nav class="navbar topbar d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <img src="/static/logo-xurgical.png" class="logo">
+        <span class="brand">Xurgical SAT</span>
+        <span class="text-secondary">/ Grabación</span>
+        <span class="fw-bold">{{ envio.ot_num }}</span>
       </div>
 
-      <div class="d-flex gap-2 align-items-center">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" value="1" id="onlyPending" checked>
-          <label class="form-check-label" for="onlyPending">Mostrar solo pendientes</label>
+      <div class="d-flex align-items-center gap-2">
+        {% if user and user.role != "grabado" %}
+        <a href="/envios/{{ envio.id }}" class="btn btn-outline-secondary btn-sm">⬅ Parte</a>
+        {% endif %}
+        <a href="/" class="btn btn-outline-secondary btn-sm">⬅ Dashboard</a>
+
+        {% if user %}
+        <span class="badge text-bg-dark">{{ user.username }}</span>
+        <span class="badge text-bg-secondary">{{ user.role }}</span>
+        <form method="post" action="/logout" class="m-0">
+          <button class="btn btn-danger btn-sm">Salir</button>
+        </form>
+        {% endif %}
+      </div>
+    </nav>
+
+    <main class="container-fluid px-3 px-md-4 py-3">
+
+      <!-- KPIs / contadores -->
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+          <div class="kpi">
+            <div class="label">Total instrumentos</div>
+            <div class="value">{{ total }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi">
+            <div class="label">Grabados</div>
+            <div class="value">{{ grabados }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi">
+            <div class="label">Pendientes</div>
+            <div class="value">{{ (total - grabados) }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi">
+            <div class="label">OT</div>
+            <div class="value">{{ envio.ot_num }}</div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- MOSAICO -->
-  <div class="row g-3" id="mosaic">
-    {% for inst in instrumentos %}
-      {% set is_grabado = (inst.grabado|int == 1) %}
-      <div class="col-12 col-sm-6 col-lg-4 col-xl-3 inst-item" data-grabado="{{ 1 if is_grabado else 0 }}">
-        <div class="inst-card"
-             role="button"
-             data-bs-toggle="modal"
-             data-bs-target="#instModal"
-             data-inst-id="{{ inst.id }}"
-             data-inst-dm="{{ inst.codigo_datamatrix or '' }}"
-             data-inst-nt="{{ (inst.nombre_trazabilidad or '')|e }}"
-             data-inst-marca="{{ inst.fabricante or '' }}"
-             data-inst-modelo="{{ inst.codigo_producto or '' }}"
-             data-inst-denom="{{ inst.denominacion or '' }}"
-             data-inst-foto1="{{ inst.foto_entrada_1 or '' }}"
-             data-inst-foto2="{{ inst.foto_entrada_2 or '' }}"
-             data-inst-grabado="{{ 1 if is_grabado else 0 }}">
+      <div class="panel p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <div class="h5 mb-1">Mosaico de grabación</div>
+            <div class="text-secondary">Haz click en una tarjeta para ver el detalle y marcar como <b>GRABADO</b>.</div>
+          </div>
 
-          <div class="inst-header">
-            <div class="inst-title">#{{ inst.id }}</div>
-            {% if is_grabado %}
+          <div class="d-flex gap-3 align-items-center">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="onlyPending" checked>
+              <label class="form-check-label" for="onlyPending">Mostrar solo pendientes</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="onlyDone">
+              <label class="form-check-label" for="onlyDone">Mostrar solo grabados</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOSAICO -->
+      <div class="row g-3" id="mosaic">
+        {% for inst in instrumentos %}
+        {% set is_grabado = (inst.grabado|int == 1) %}
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3 inst-item" data-grabado="{{ 1 if is_grabado else 0 }}">
+          <div class="inst-card" role="button" data-bs-toggle="modal" data-bs-target="#instModal"
+            data-inst-id="{{ inst.id }}" data-inst-dm="{{ inst.codigo_datamatrix or '' }}"
+            data-inst-nt="{{ (inst.nombre_trazabilidad or '')|e }}" data-inst-marca="{{ inst.fabricante or '' }}"
+            data-inst-modelo="{{ inst.codigo_producto or '' }}" data-inst-denom="{{ inst.denominacion or '' }}"
+            data-inst-foto1="{{ inst.foto_entrada_1 or '' }}" data-inst-foto2="{{ inst.foto_entrada_2 or '' }}"
+            data-inst-grabado="{{ 1 if is_grabado else 0 }}">
+
+            <div class="inst-header">
+              <div class="inst-title">#{{ inst.id }}</div>
+              {% if is_grabado %}
               <span class="badge text-bg-success badge-grabado">GRABADO</span>
-            {% else %}
+              {% else %}
               <span class="badge badge-pend">PENDIENTE</span>
-            {% endif %}
-          </div>
-
-          <div class="inst-body">
-            <div class="img-pair">
-              {% if inst.foto_entrada_1 %}
-                <img src="{{ inst.foto_entrada_1 }}" class="thumb" alt="Foto 1">
-              {% else %}
-                <div class="placeholder">Falta foto 1</div>
-              {% endif %}
-
-              {% if inst.foto_entrada_2 %}
-                <img src="{{ inst.foto_entrada_2 }}" class="thumb" alt="Foto 2">
-              {% else %}
-                <div class="placeholder">Falta foto 2</div>
               {% endif %}
             </div>
 
-            <div class="meta">
-              <div><span class="muted">DataMatrix:</span> <span class="fw-bold">{{ inst.codigo_datamatrix or '-' }}</span></div>
-              <div><span class="muted">Marca:</span> {{ inst.fabricante or '-' }}</div>
-              <div><span class="muted">Modelo:</span> {{ inst.codigo_producto or '-' }}</div>
+            <div class="inst-body">
+              <div class="img-pair">
+                {% if inst.foto_entrada_1 %}
+                <img src="{{ inst.foto_entrada_1 }}" class="thumb" alt="Foto 1">
+                {% else %}
+                <div class="placeholder">Falta foto 1</div>
+                {% endif %}
+
+                {% if inst.foto_entrada_2 %}
+                <img src="{{ inst.foto_entrada_2 }}" class="thumb" alt="Foto 2">
+                {% else %}
+                <div class="placeholder">Falta foto 2</div>
+                {% endif %}
+              </div>
+
+              <div class="meta">
+                <div><span class="muted">DataMatrix:</span> <span class="fw-bold">{{ inst.codigo_datamatrix or '-'
+                    }}</span></div>
+                <div><span class="muted">Marca:</span> {{ inst.fabricante or '-' }}</div>
+                <div><span class="muted">Modelo:</span> {{ inst.codigo_producto or '-' }}</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    {% endfor %}
+        {% endfor %}
 
-    {% if instrumentos|length == 0 %}
-      <div class="col-12">
-        <div class="panel p-3 text-center text-secondary">Este parte no tiene instrumentos.</div>
+        {% if instrumentos|length == 0 %}
+        <div class="col-12">
+          <div class="panel p-3 text-center text-secondary">Este parte no tiene instrumentos.</div>
+        </div>
+        {% endif %}
       </div>
-    {% endif %}
+
+    </main>
   </div>
 
-</main>
-</div>
-
-<!-- MODAL DETALLE -->
-<div class="modal fade" id="instModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div>
-          <div class="h5 mb-0">Instrumento <span id="mInstId"></span></div>
-          <div class="text-secondary small">OT {{ envio.ot_num }}</div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <div class="modal-body">
-        <div class="modal-img-pair mb-3">
+  <!-- MODAL DETALLE -->
+  <div class="modal fade" id="instModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
           <div>
-            <div class="fw-bold mb-2">Foto 1</div>
-            <img id="mFoto1" class="modal-img" alt="Foto 1">
-            <div id="mFoto1Missing" class="text-secondary small mt-2" style="display:none;">No hay foto 1</div>
+            <div class="h5 mb-0">Instrumento <span id="mInstId"></span></div>
+            <div class="text-secondary small">OT {{ envio.ot_num }}</div>
           </div>
-          <div>
-            <div class="fw-bold mb-2">Foto 2</div>
-            <img id="mFoto2" class="modal-img" alt="Foto 2">
-            <div id="mFoto2Missing" class="text-secondary small mt-2" style="display:none;">No hay foto 2</div>
-          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <div class="row g-3">
-          <div class="col-md-6">
-            <div class="fw-bold">DataMatrix</div>
-            <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
-              <span class="badge text-bg-dark" id="mDM"></span>
-
-              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyDM" title="Copiar código">
-                Copiar
-              </button>
-
-              <span class="text-success small" id="dmCopiedMsg" style="display:none;">Copiado</span>
+        <div class="modal-body">
+          <div class="modal-img-pair mb-3">
+            <div>
+              <div class="fw-bold mb-2">Foto 1</div>
+              <img id="mFoto1" class="modal-img" alt="Foto 1">
+              <div id="mFoto1Missing" class="text-secondary small mt-2" style="display:none;">No hay foto 1</div>
+            </div>
+            <div>
+              <div class="fw-bold mb-2">Foto 2</div>
+              <img id="mFoto2" class="modal-img" alt="Foto 2">
+              <div id="mFoto2Missing" class="text-secondary small mt-2" style="display:none;">No hay foto 2</div>
             </div>
           </div>
 
-          <div class="col-md-6">
-            <div class="fw-bold text-uppercase small mb-1">Nombre de trazabilidad</div>
-            <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
-              <span class="badge text-bg-dark" id="mNT"></span>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="fw-bold">DataMatrix</div>
+              <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge text-bg-dark" id="mDM"></span>
 
-              <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyNT" title="Copiar nombre">
-                Copiar
-              </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyDM" title="Copiar código">
+                  Copiar
+                </button>
 
-              <span class="text-success small" id="ntCopiedMsg" style="display:none;">Copiado</span>
+                <span class="text-success small" id="dmCopiedMsg" style="display:none;">Copiado</span>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="fw-bold text-uppercase small mb-1">Nombre de trazabilidad</div>
+              <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge text-bg-dark" id="mNT"></span>
+
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyNT" title="Copiar nombre">
+                  Copiar
+                </button>
+
+                <span class="text-success small" id="ntCopiedMsg" style="display:none;">Copiado</span>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="fw-bold">Marca</div>
+              <div class="mt-1" id="mMarca"></div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="fw-bold">Modelo</div>
+              <div class="mt-1" id="mModelo"></div>
             </div>
           </div>
 
-          <div class="col-md-4">
-            <div class="fw-bold">Marca</div>
-            <div class="mt-1" id="mMarca"></div>
+          <div class="mt-3">
+            <div class="fw-bold">Denominación</div>
+            <div class="text-secondary" id="mDenom"></div>
           </div>
 
-          <div class="col-md-4">
-            <div class="fw-bold">Modelo</div>
-            <div class="mt-1" id="mModelo"></div>
+          <div class="mt-3" id="mEstado"></div>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between">
+          <div class="text-secondary small">
+            Consejo: confirma siempre las 2 fotos (de dos en dos) antes de marcar.
           </div>
-        </div>
 
-        <div class="mt-3">
-          <div class="fw-bold">Denominación</div>
-          <div class="text-secondary" id="mDenom"></div>
-        </div>
+          <div class="d-flex gap-2">
+            {% if user and user.role == "admin" %}
+            <form id="desgrabarForm" method="post" action="#" class="m-0" style="display:none;">
+              <button class="btn btn-outline-danger">Deshacer grabado</button>
+            </form>
+            {% endif %}
 
-        <div class="mt-3" id="mEstado"></div>
-      </div>
+            <form id="grabarForm" method="post" action="#" class="m-0">
+              <button class="btn btn-success" id="btnGrabar">Marcar como GRABADO</button>
+            </form>
 
-      <div class="modal-footer d-flex justify-content-between">
-        <div class="text-secondary small">
-          Consejo: confirma siempre las 2 fotos (de dos en dos) antes de marcar.
-        </div>
-
-        <div class="d-flex gap-2">
-          {% if user and user.role == "admin" %}
-          <form id="desgrabarForm" method="post" action="#" class="m-0" style="display:none;">
-            <button class="btn btn-outline-danger">Deshacer grabado</button>
-          </form>
-          {% endif %}
-
-          <form id="grabarForm" method="post" action="#" class="m-0">
-            <button class="btn btn-success" id="btnGrabar">Marcar como GRABADO</button>
-          </form>
-
-          <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+            <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cerrar</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-function __cleanTrz(v){
-  v = (v || "").toString().trim();
+  <script>
+    function __cleanTrz(v) {
+      v = (v || "").toString().trim();
 
-  // si viene como string JSON ""HULL00038"" intentamos parsear
-  try{
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))){
-      const parsed = JSON.parse(v);
-      if (typeof parsed === "string") v = parsed;
-    }
-  }catch(e){}
+      // si viene como string JSON ""HULL00038"" intentamos parsear
+      try {
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+          const parsed = JSON.parse(v);
+          if (typeof parsed === "string") v = parsed;
+        }
+      } catch (e) { }
 
-  v = v.replace(/\\/g, ""); // quita backslashes
-  // quita comillas envolventes repetidas
-  while(v.length >= 2 && ((v[0] === "'" && v[v.length-1] === "'") || (v[0] === '"' && v[v.length-1] === '"'))){
-    v = v.slice(1, -1).trim();
-  }
-  v = v.replace(/^['"]+/, "").replace(/['"]+$/, "").trim();
-  return v;
-}
-</script>
-
-<script>
-  // Copiar al portapapeles (DataMatrix / NT)
-  const btnCopyDM = document.getElementById('btnCopyDM');
-  const dmCopiedMsg = document.getElementById('dmCopiedMsg');
-  const btnCopyNT = document.getElementById('btnCopyNT');
-  const ntCopiedMsg = document.getElementById('ntCopiedMsg');
-
-  function flashCopied(){
-    if (!dmCopiedMsg) return;
-    dmCopiedMsg.style.display = '';
-    window.clearTimeout(window.__dmCopyT);
-    window.__dmCopyT = window.setTimeout(() => {
-      dmCopiedMsg.style.display = 'none';
-    }, 900);
-  }
-  function flashCopiedNT(){
-    if (!ntCopiedMsg) return;
-    ntCopiedMsg.style.display = '';
-    window.clearTimeout(window.__ntCopyT);
-    window.__ntCopyT = window.setTimeout(() => {
-      ntCopiedMsg.style.display = 'none';
-    }, 900);
-  }
-  async function copyToClipboard(text){
-    if (!text) return false;
-    // navigator.clipboard funciona en https o localhost
-    try{
-      if (navigator.clipboard && window.isSecureContext){
-        await navigator.clipboard.writeText(text);
-        return true;
+      v = v.replace(/\\/g, ""); // quita backslashes
+      // quita comillas envolventes repetidas
+      while (v.length >= 2 && ((v[0] === "'" && v[v.length - 1] === "'") || (v[0] === '"' && v[v.length - 1] === '"'))) {
+        v = v.slice(1, -1).trim();
       }
-    }catch(e){ /* fallback abajo */ }
-
-    // Fallback para contextos no seguros
-    try{
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      ta.style.top = '0';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
-    }catch(e){
-      return false;
+      v = v.replace(/^['"]+/, "").replace(/['"]+$/, "").trim();
+      return v;
     }
-  }
-  if (btnCopyDM){
-    btnCopyDM.addEventListener('click', async () => {
-      const val = btnCopyDM.getAttribute('data-dm') || '';
-      const ok = await copyToClipboard(val);
-      if (ok) flashCopied();
-    });
-  }
-  if (btnCopyNT){
-    btnCopyNT.addEventListener('click', async () => {
-      const val = btnCopyNT.getAttribute('data-nt') || '';
-      const ok = await copyToClipboard(val);
-      if (ok) flashCopiedNT();
-    });
-  }
+  </script>
 
-  // Filtro: mostrar solo pendientes
-  const onlyPending = document.getElementById('onlyPending');
-  const mosaic = document.getElementById('mosaic');
-  function applyFilter(){
-    const showOnly = onlyPending.checked;
-    const items = mosaic.querySelectorAll('.inst-item');
-    items.forEach(it => {
-      const isGrabado = it.getAttribute('data-grabado') === '1';
-      it.style.display = (showOnly && isGrabado) ? 'none' : '';
-    });
-  }
-  if (onlyPending){
-    onlyPending.addEventListener('change', applyFilter);
+  <script>
+    // Copiar al portapapeles (DataMatrix / NT)
+    const btnCopyDM = document.getElementById('btnCopyDM');
+    const dmCopiedMsg = document.getElementById('dmCopiedMsg');
+    const btnCopyNT = document.getElementById('btnCopyNT');
+    const ntCopiedMsg = document.getElementById('ntCopiedMsg');
+
+    function flashCopied() {
+      if (!dmCopiedMsg) return;
+      dmCopiedMsg.style.display = '';
+      window.clearTimeout(window.__dmCopyT);
+      window.__dmCopyT = window.setTimeout(() => {
+        dmCopiedMsg.style.display = 'none';
+      }, 900);
+    }
+    function flashCopiedNT() {
+      if (!ntCopiedMsg) return;
+      ntCopiedMsg.style.display = '';
+      window.clearTimeout(window.__ntCopyT);
+      window.__ntCopyT = window.setTimeout(() => {
+        ntCopiedMsg.style.display = 'none';
+      }, 900);
+    }
+    async function copyToClipboard(text) {
+      if (!text) return false;
+      // navigator.clipboard funciona en https o localhost
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) { /* fallback abajo */ }
+
+      // Fallback para contextos no seguros
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+    if (btnCopyDM) {
+      btnCopyDM.addEventListener('click', async () => {
+        const val = btnCopyDM.getAttribute('data-dm') || '';
+        const ok = await copyToClipboard(val);
+        if (ok) flashCopied();
+      });
+    }
+    if (btnCopyNT) {
+      btnCopyNT.addEventListener('click', async () => {
+        const val = btnCopyNT.getAttribute('data-nt') || '';
+        const ok = await copyToClipboard(val);
+        if (ok) flashCopiedNT();
+      });
+    }
+
+    // Filtros: Todos, Pendientes, Grabados
+    // Filtros: Solo pendientes / Solo grabados
+    const onlyPending = document.getElementById('onlyPending');
+    const onlyDone = document.getElementById('onlyDone');
+    const mosaic = document.getElementById('mosaic');
+
+    function applyFilter() {
+      if (!onlyPending || !onlyDone) return;
+      const showPending = onlyPending.checked;
+      const showDone = onlyDone.checked;
+      const items = mosaic.querySelectorAll('.inst-item');
+
+      items.forEach(it => {
+        const isGrabado = it.getAttribute('data-grabado') === '1';
+
+        if (showPending && showDone) {
+          it.style.display = 'none'; // Si ambos están marcados como "solo", no mostramos nada
+        } else if (showPending) {
+          it.style.display = isGrabado ? 'none' : '';
+        } else if (showDone) {
+          it.style.display = isGrabado ? '' : 'none';
+        } else {
+          it.style.display = '';
+        }
+      });
+    }
+
+    if (onlyPending) onlyPending.addEventListener('change', applyFilter);
+    if (onlyDone) onlyDone.addEventListener('change', applyFilter);
+
+    // Ejecutar al cargar
     applyFilter();
-  }
 
-  // Modal: cargar datos del instrumento desde la tarjeta
-  const instModal = document.getElementById('instModal');
-  instModal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const id = button.getAttribute('data-inst-id');
+    // Modal: cargar datos del instrumento desde la tarjeta
+    const instModal = document.getElementById('instModal');
+    instModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-inst-id');
 
-    const dm = button.getAttribute('data-inst-dm') || '';
-    const ntRaw = button.getAttribute('data-inst-nt') || '';
-    const nt = __cleanTrz(ntRaw);
+      const dm = button.getAttribute('data-inst-dm') || '';
+      const ntRaw = button.getAttribute('data-inst-nt') || '';
+      const nt = __cleanTrz(ntRaw);
 
-    const marca = button.getAttribute('data-inst-marca') || '';
-    const modelo = button.getAttribute('data-inst-modelo') || '';
-    const denom = button.getAttribute('data-inst-denom') || '';
-    const foto1 = button.getAttribute('data-inst-foto1') || '';
-    const foto2 = button.getAttribute('data-inst-foto2') || '';
-    const grabado = button.getAttribute('data-inst-grabado') === '1';
+      const marca = button.getAttribute('data-inst-marca') || '';
+      const modelo = button.getAttribute('data-inst-modelo') || '';
+      const denom = button.getAttribute('data-inst-denom') || '';
+      const foto1 = button.getAttribute('data-inst-foto1') || '';
+      const foto2 = button.getAttribute('data-inst-foto2') || '';
+      const grabado = button.getAttribute('data-inst-grabado') === '1';
 
-    document.getElementById('mInstId').textContent = '#' + id;
+      document.getElementById('mInstId').textContent = '#' + id;
 
-    // Fotos (si faltan, ocultamos img)
-    const img1 = document.getElementById('mFoto1');
-    const img2 = document.getElementById('mFoto2');
-    const miss1 = document.getElementById('mFoto1Missing');
-    const miss2 = document.getElementById('mFoto2Missing');
+      // Fotos (si faltan, ocultamos img)
+      const img1 = document.getElementById('mFoto1');
+      const img2 = document.getElementById('mFoto2');
+      const miss1 = document.getElementById('mFoto1Missing');
+      const miss2 = document.getElementById('mFoto2Missing');
 
-    if (foto1){ img1.src = foto1; img1.style.display = ''; miss1.style.display='none'; }
-    else { img1.removeAttribute('src'); img1.style.display = 'none'; miss1.style.display='block'; }
+      if (foto1) { img1.src = foto1; img1.style.display = ''; miss1.style.display = 'none'; }
+      else { img1.removeAttribute('src'); img1.style.display = 'none'; miss1.style.display = 'block'; }
 
-    if (foto2){ img2.src = foto2; img2.style.display = ''; miss2.style.display='none'; }
-    else { img2.removeAttribute('src'); img2.style.display = 'none'; miss2.style.display='block'; }
+      if (foto2) { img2.src = foto2; img2.style.display = ''; miss2.style.display = 'none'; }
+      else { img2.removeAttribute('src'); img2.style.display = 'none'; miss2.style.display = 'block'; }
 
-    // Campos
-    const dmEl = document.getElementById('mDM');
-    dmEl.textContent = dm ? dm : '—';
+      // Campos
+      const dmEl = document.getElementById('mDM');
+      dmEl.textContent = dm ? dm : '—';
 
-    const ntEl = document.getElementById('mNT');
-    if (ntEl){ ntEl.textContent = nt ? nt : '—'; }
+      const ntEl = document.getElementById('mNT');
+      if (ntEl) { ntEl.textContent = nt ? nt : '—'; }
 
-    // Copiar DataMatrix
-    if (btnCopyDM){
-      btnCopyDM.setAttribute('data-dm', dm);
-      btnCopyDM.disabled = !dm;
+      // Copiar DataMatrix
+      if (btnCopyDM) {
+        btnCopyDM.setAttribute('data-dm', dm);
+        btnCopyDM.disabled = !dm;
+      }
+      if (dmCopiedMsg) { dmCopiedMsg.style.display = 'none'; }
+
+      // Copiar NT (limpio)
+      if (btnCopyNT) {
+        btnCopyNT.setAttribute('data-nt', nt);
+        btnCopyNT.disabled = !nt;
+      }
+      if (ntCopiedMsg) { ntCopiedMsg.style.display = 'none'; }
+
+      document.getElementById('mMarca').textContent = marca ? marca : '—';
+      document.getElementById('mModelo').textContent = modelo ? modelo : '—';
+      document.getElementById('mDenom').textContent = denom ? denom : '—';
+
+      // Estado
+      const st = document.getElementById('mEstado');
+      st.innerHTML = grabado
+        ? '<span class="badge text-bg-success">GRABADO</span>'
+        : '<span class="badge text-bg-warning text-dark">PENDIENTE DE GRABACIÓN</span>';
+
+      // Formularios
+      const grabarForm = document.getElementById('grabarForm');
+      grabarForm.action = '/instrumentos/' + id + '/grabar';
+
+      const btnGrabar = document.getElementById('btnGrabar');
+      btnGrabar.disabled = grabado;
+      btnGrabar.textContent = grabado ? 'Ya está GRABADO' : 'Marcar como GRABADO';
+
+      const desgrabarForm = document.getElementById('desgrabarForm');
+      if (desgrabarForm) {
+        desgrabarForm.action = '/instrumentos/' + id + '/desgrabar';
+        desgrabarForm.style.display = grabado ? '' : 'none';
+      }
+    });
+  </script>
+
+  <!-- (mantengo estos scripts por compatibilidad aunque ahora no se usen directamente) -->
+  <script>
+    function copyModal(inputId, btn) {
+      const el = document.getElementById(inputId);
+      if (!el) return;
+      const v = el.value || "";
+      if (!v) return;
+      const done = () => {
+        if (btn) { const old = btn.textContent; btn.textContent = "Copiado"; setTimeout(() => btn.textContent = old, 900); }
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).then(done).catch(done);
+      } else {
+        el.select && el.select();
+        document.execCommand && document.execCommand("copy");
+        done();
+      }
     }
-    if (dmCopiedMsg){ dmCopiedMsg.style.display = 'none'; }
+  </script>
 
-    // Copiar NT (limpio)
-    if (btnCopyNT){
-      btnCopyNT.setAttribute('data-nt', nt);
-      btnCopyNT.disabled = !nt;
-    }
-    if (ntCopiedMsg){ ntCopiedMsg.style.display = 'none'; }
-
-    document.getElementById('mMarca').textContent = marca ? marca : '—';
-    document.getElementById('mModelo').textContent = modelo ? modelo : '—';
-    document.getElementById('mDenom').textContent = denom ? denom : '—';
-
-    // Estado
-    const st = document.getElementById('mEstado');
-    st.innerHTML = grabado
-      ? '<span class="badge text-bg-success">GRABADO</span>'
-      : '<span class="badge text-bg-warning text-dark">PENDIENTE DE GRABACIÓN</span>';
-
-    // Formularios
-    const grabarForm = document.getElementById('grabarForm');
-    grabarForm.action = '/instrumentos/' + id + '/grabar';
-
-    const btnGrabar = document.getElementById('btnGrabar');
-    btnGrabar.disabled = grabado;
-    btnGrabar.textContent = grabado ? 'Ya está GRABADO' : 'Marcar como GRABADO';
-
-    const desgrabarForm = document.getElementById('desgrabarForm');
-    if (desgrabarForm){
-      desgrabarForm.action = '/instrumentos/' + id + '/desgrabar';
-      desgrabarForm.style.display = grabado ? '' : 'none';
-    }
-  });
-</script>
-
-<!-- (mantengo estos scripts por compatibilidad aunque ahora no se usen directamente) -->
-<script>
-function copyModal(inputId, btn){
-  const el = document.getElementById(inputId);
-  if(!el) return;
-  const v = el.value || "";
-  if(!v) return;
-  const done = () => {
-    if(btn){ const old=btn.textContent; btn.textContent="Copiado"; setTimeout(()=>btn.textContent=old, 900); }
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(v).then(done).catch(done);
-  } else {
-    el.select && el.select();
-    document.execCommand && document.execCommand("copy");
-    done();
-  }
-}
-</script>
-
-<script>
-document.addEventListener('click', function(ev){
-  const card = ev.target.closest('[data-inst-dm]');
-  if(card){
-    window.__currentInstCard = card;
-  }
-});
-</script>
+  <script>
+    document.addEventListener('click', function (ev) {
+      const card = ev.target.closest('[data-inst-dm]');
+      if (card) {
+        window.__currentInstCard = card;
+      }
+    });
+  </script>
 
 </body>
+
 </html>
