@@ -847,8 +847,8 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         # 🔴 ninguno tiene fotos
         if n_inst == 0 or n_con_alguna_foto == 0:
             d["foto_dot"] = "red"
-        # 🟢 todos los instrumentos tienen las 2 fotos
-        elif n_fotos_completas == n_inst:
+        # 🟢 todos los instrumentos tienen al menos una foto (COMPLETO según feedback usuario)
+        elif n_con_alguna_foto == n_inst:
             d["foto_dot"] = "green"
         # 🟡 mezcla
         else:

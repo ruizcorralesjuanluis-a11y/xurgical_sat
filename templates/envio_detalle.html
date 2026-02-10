@@ -537,12 +537,13 @@
                 <td class="col-fotos">
                   {% set n_fotos = 0 %}
                   {% for i in range(1, 7) %}
-                  {% set f = inst['foto_entrada_' ~ i] %}
+                  {% set k = 'foto_entrada_' ~ i %}
+                  {% set f = inst.get(k) or inst[k] %}
                   {% if f %}{% set n_fotos = n_fotos + 1 %}{% endif %}
                   {% endfor %}
 
                   {% if n_fotos >= 1 %}
-                  <span class="badge-ok">{{ n_fotos }} FOTOS</span>
+                  <span class="badge-ok">COMPLETO</span>
                   {% else %}
                   <span class="badge-pend">SIN FOTOS</span>
                   {% endif %}
