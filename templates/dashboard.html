@@ -245,6 +245,10 @@
             <i class="fa-solid fa-camera"></i>
           </button>
           <span class="badge bg-dark px-2 py-1">{{ user.username }}</span>
+          <button class="btn btn-link btn-sm p-0 ms-1" data-bs-toggle="modal" data-bs-target="#myPassModal"
+            title="Cambiar mi contraseña">
+            <i class="fa-solid fa-key text-secondary"></i>
+          </button>
           <span class="badge bg-secondary px-2 py-1">{{ user.role }}</span>
           <form method="post" action="/logout" class="m-0">
             <button class="btn btn-danger btn-sm p-2" title="Salir">
@@ -515,13 +519,31 @@
                   </div>
                   <div class="mb-2">
                     <label class="form-label">Rol</label>
-                    <select class="form-select" name="role" required>
+                    <select class="form-select" name="role" id="dashRoleSelector" onchange="toggleDashClienteSelector()"
+                      required>
                       <option value="recepcion">recepcion</option>
                       <option value="tecnico">tecnico</option>
                       <option value="grabado">grabado</option>
                       <option value="admin">admin</option>
+                      <option value="cliente">cliente</option>
                     </select>
                   </div>
+                  <div class="mb-2" id="dashClienteSelectorContainer" style="display: none;">
+                    <label class="form-label">Centro / Cliente</label>
+                    <select class="form-select" name="cliente_id">
+                      <option value="">-- Seleccionar centro --</option>
+                      {% for cli in clientes_list_global %}
+                      <option value="{{ cli.id }}">{{ cli.nombre }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <script>
+                    function toggleDashClienteSelector() {
+                      const role = document.getElementById('dashRoleSelector').value;
+                      const container = document.getElementById('dashClienteSelectorContainer');
+                      container.style.display = (role === 'cliente') ? 'block' : 'none';
+                    }
+                  </script>
                   <button class="btn btn-primary w-100">Crear</button>
                 </form>
               </div>
@@ -539,6 +561,7 @@
                         <th>ID</th>
                         <th>Usuario</th>
                         <th>Rol</th>
+                        <th>Centro</th>
                         <th>Activo</th>
                         <th style="min-width:320px;">Permisos por acción</th>
                         <th>Acciones</th>
@@ -553,8 +576,20 @@
                         <td>
                           <form method="post" action="/dash_users/{{ u.id }}/role" class="m-0">
                             <select class="form-select form-select-sm" name="role" onchange="this.form.submit()">
-                              {% for r in ["admin","recepcion","tecnico","grabado"] %}
+                              {% for r in ["admin","recepcion","tecnico","grabado", "cliente"] %}
                               <option value="{{ r }}" {% if u.role==r %}selected{% endif %}>{{ r }}</option>
+                              {% endfor %}
+                            </select>
+                          </form>
+                        </td>
+
+                        <td>
+                          <form method="post" action="/dash_users/{{ u.id }}/cliente" class="m-0">
+                            <select class="form-select form-select-sm" name="cliente_id" onchange="this.form.submit()">
+                              <option value="">-- Interno --</option>
+                              {% for cli in clientes_list_global %}
+                              <option value="{{ cli.id }}" {% if u.cliente_id==cli.id %}selected{% endif %}>{{
+                                cli.nombre }}</option>
                               {% endfor %}
                             </select>
                           </form>
@@ -658,6 +693,28 @@
             <i class="fa-solid fa-expand me-1"></i> Centra el código en el recuadro para escanearlo más rápido
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Cambiar Mi Contraseña -->
+  <div class="modal fade" id="myPassModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-key text-primary me-2"></i>Nueva Contraseña</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="/perfil/password">
+          <div class="modal-body">
+            <input type="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6"
+              required autofocus>
+            <div class="form-text small mt-2">Se cerrará la sesión tras el cambio por seguridad.</div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Actualizar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

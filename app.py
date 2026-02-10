@@ -388,6 +388,7 @@ def _user_id(user):
         return None
 
 def _default_allowed_by_role(role: str, action: str) -> int:
+    role = (role or "").strip().lower()
     if role == "admin":
         return 1
     if role == "recepcion":
@@ -395,6 +396,8 @@ def _default_allowed_by_role(role: str, action: str) -> int:
     if role == "tecnico":
         return 1 if action in {"dashboard_ver","instrumento_editar","fotos_gestionar","estado_cambiar"} else 0
     if role == "grabado":
+        return 1 if action in {"dashboard_ver"} else 0
+    if role == "cliente":
         return 1 if action in {"dashboard_ver"} else 0
     return 0
 
@@ -696,39 +699,44 @@ def dashboard(request: Request, user=Depends(get_current_user)):
 
     q = (request.query_params.get('q') or '').strip()
 
-    # --- 1. KPIs Globales (Instrumentos) en UNA sola consulta ---
-    cur.execute("""
-        SELECT
-            COUNT(*) as total,
-            SUM(CASE WHEN estado='Pendiente' THEN 1 ELSE 0 END) as pendientes,
-            SUM(CASE WHEN estado='En proceso' THEN 1 ELSE 0 END) as en_proceso,
-            SUM(CASE WHEN estado='Reparado' THEN 1 ELSE 0 END) as reparados,
-            SUM(CASE WHEN estado='Baja' THEN 1 ELSE 0 END) as baja
-        FROM instrumentos
-    """)
+    # --- 1. KPIs Globales (Instrumentos) ---
+    kpi_where = ""
+    kpi_params = []
+    if _user_role(user) == "cliente" and user.get("cliente_id"):
+        kpi_where = "WHERE e.cliente_id = ?"
+        kpi_params = [int(user["cliente_id"])]
+
+    cur.execute(f"""
+        SELECT 
+            COUNT(i.id) as total,
+            SUM(CASE WHEN i.estado='Pendiente' THEN 1 ELSE 0 END) as pendientes,
+            SUM(CASE WHEN i.estado='En proceso' THEN 1 ELSE 0 END) as en_proceso,
+            SUM(CASE WHEN i.estado='Reparado' THEN 1 ELSE 0 END) as reparados,
+            SUM(CASE WHEN i.estado='Baja' THEN 1 ELSE 0 END) as baja
+        FROM instrumentos i
+        LEFT JOIN envios e ON e.id = i.envio_id
+        {kpi_where}
+    """, tuple(kpi_params))
+    
     row_kpi = cur.fetchone()
     if row_kpi:
         kpis = {
-            "total": row_kpi["total"],
-            "pendientes": row_kpi["pendientes"],
-            "en_proceso": row_kpi["en_proceso"],
-            "reparado": row_kpi["reparados"],
-            "baja": row_kpi["baja"],
+            "total": row_kpi["total"] or 0,
+            "pendientes": row_kpi["pendientes"] or 0,
+            "en_proceso": row_kpi["en_proceso"] or 0,
+            "reparado": row_kpi["reparados"] or 0,
+            "baja": row_kpi["baja"] or 0,
         }
     else:
         kpis = {"total":0, "pendientes":0, "en_proceso":0, "reparado":0, "baja":0}
 
-    # --- 2. KPIs Partes (Abiertos/Cerrados) en UNA sola consulta ---
-    cur.execute("SELECT COUNT(*) AS n FROM envios")
+    # --- 2. KPIs Partes (Abiertos/Cerrados) ---
+    cur.execute(f"SELECT COUNT(*) AS n FROM envios e {kpi_where}", tuple(kpi_params))
     total_partes = cur.fetchone()["n"]
 
     has_tipo = _envios_has_column(cur, "tipo_trabajo")
     tipo_col = "e.tipo_trabajo" if has_tipo else "'REPARACION'"
     
-    # Esta consulta agrupa por envío y calcula si está 'cerrado' o no
-    # Logica de cierre:
-    #   - TRAZABILIDAD: cerrado si total > 0 Y todos grabados (grabado=1)
-    #   - REPARACION: cerrado si total > 0 Y todos (Reparado o Baja)
     cur.execute(f"""
         SELECT 
             e.id,
@@ -738,29 +746,27 @@ def dashboard(request: Request, user=Depends(get_current_user)):
             SUM(CASE WHEN i.estado IN ('Reparado','Baja') THEN 1 ELSE 0 END) as n_terminados
         FROM envios e
         LEFT JOIN instrumentos i ON i.envio_id = e.id
+        {kpi_where}
         GROUP BY e.id, {tipo_col}
-    """)
+    """, tuple(kpi_params))
     
     abiertos = 0
     cerrados = 0
     
-    rows = cur.fetchall() # Traemos todos de golpe (mucho más rápido que 1 query por row)
+    rows = cur.fetchall() 
     for r in rows:
         t_inst = r["total_inst"]
         if t_inst == 0:
-            abiertos += 1 # Parte vacío = abierto (o pendiente de hacer algo)
+            abiertos += 1 
             continue
             
         tipo = (r["tipo"] or "REPARACION").upper()
         if tipo == "TRAZABILIDAD":
-            # Cerrado si todos grabados
             if r["n_grabados"] == t_inst:
                 cerrados += 1
             else:
                 abiertos += 1
         else:
-            # REPARACION / OPTICA
-            # Cerrado si todos terminados
             if r["n_terminados"] == t_inst:
                 cerrados += 1
             else:
@@ -773,11 +779,22 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     select_tipo = "e.tipo_trabajo" if _envios_has_column(cur, "tipo_trabajo") else "'REPARACION' AS tipo_trabajo"
 
     # --- Buscador (OT / Cliente / DataMatrix) ---
-    where_q = ""
+    where_clauses = []
     params_q: list = []
+
+    # Filtro por rol 'cliente'
+    if _user_role(user) == "cliente" and user.get("cliente_id"):
+        where_clauses.append("e.cliente_id = ?")
+        params_q.append(int(user["cliente_id"]))
+    elif _user_role(user) == "cliente":
+        # Si es cliente pero no tiene ID asignado, por seguridad no ve nada
+        where_clauses.append("1=0")
+
     if q:
-        where_q = "WHERE (e.ot_num LIKE ? OR e.cliente LIKE ? OR COALESCE(i.codigo_datamatrix,'') LIKE ?)"
-        params_q = [f"%{q}%", f"%{q}%", f"%{q}%"]
+        where_clauses.append("(e.ot_num LIKE ? OR e.cliente LIKE ? OR COALESCE(i.codigo_datamatrix,'') LIKE ?)")
+        params_q.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+
+    where_q = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
     cur.execute(f"""
         SELECT
@@ -806,7 +823,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         GROUP BY e.id
         ORDER BY e.id DESC
         LIMIT 200
-    """, params_q)
+    """, tuple(params_q))
 
     envios = []
     for r in cur.fetchall():
@@ -872,16 +889,19 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     # Dentro de cada grupo, más recientes primero.
     envios.sort(key=lambda x: (1 if x.get('is_closed') else 0, -int(x.get('id') or 0)))
 
-    # --- Usuarios para modal (solo admin) ---
+    # --- Usuarios modal y datos auxiliares ---
     open_users_modal = (request.query_params.get("users") == "1")
     users_list = []
     perms_by_user = {}
+    clientes_list_global = []
+
     if _user_role(user) == "admin":
         schema = _users_schema(cur)
         cur.execute(_select_users_sql(schema))
         users_list = [dict(r) for r in cur.fetchall()]
         for u in users_list:
             perms_by_user[int(u["id"])] = _get_user_permissions_map(cur, int(u["id"]))
+        clientes_list_global = _list_clientes(cur)
 
     conn.close()
     context = {
@@ -896,12 +916,42 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         "actions": ACTIONS,
         "perms_by_user": perms_by_user,
         "db_type": db_type,
+        "clientes_list_global": clientes_list_global,
     }
 
     return templates.TemplateResponse(
         "dashboard.html",
         context,
     )
+
+
+@app.post("/perfil/password")
+def change_own_password(
+    password: str = Form(...),
+    user=Depends(get_current_user),
+):
+    if not (password or "").strip() or len(password) < 6:
+        return RedirectResponse(url="/?err=pw_too_short", status_code=303)
+
+    conn = get_conn()
+    cur = conn.cursor()
+    schema = _users_schema(cur)
+    pw_col = schema.get("password_col")
+    
+    user_id = (user.get("id") if isinstance(user, dict) else getattr(user, "id", None))
+    
+    if not pw_col or not user_id:
+        conn.close()
+        return RedirectResponse(url="/?err=db", status_code=303)
+
+    cur.execute(f"UPDATE users SET {pw_col}=? WHERE id=?", (hash_password(password), user_id))
+    conn.commit()
+    conn.close()
+    
+    # Redirigir a login para que vuelva a entrar con la nueva clave
+    response = RedirectResponse(url="/login?msg=pw_changed", status_code=303)
+    response.delete_cookie("access_token")
+    return response
 
 
 # -----------------------------
@@ -1359,6 +1409,14 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
         conn.close()
         return HTMLResponse("Envío no encontrado", status_code=404)
 
+    # SEGURIDAD: Si es rol 'cliente', solo puede ver sus propios envíos
+    if _user_role(user) == "cliente":
+        u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        e_cli_id = envio.get("cliente_id")
+        if not u_cli_id or int(e_cli_id or 0) != int(u_cli_id):
+            conn.close()
+            return HTMLResponse("Acceso denegado: este envío no pertenece a su centro", status_code=403)
+
     cur.execute("""
         SELECT i.*, 
                (SELECT 1 FROM instrumento_informes ii WHERE ii.instrumento_id = i.id LIMIT 1) as has_archived,
@@ -1545,11 +1603,18 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
     """Devuelve una pegatina PDF para la OT."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT id, ot_num, cliente, fecha FROM envios WHERE id=?", (envio_id,))
+    cur.execute("SELECT id, ot_num, cliente, fecha, cliente_id FROM envios WHERE id=?", (envio_id,))
     e = cur.fetchone()
     if not e:
         conn.close()
         return HTMLResponse("OT no encontrada", status_code=404)
+
+    # Seguridad para clientes
+    if _user_role(user) == "cliente":
+        u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        if not u_cli_id or int(e["cliente_id"] or 0) != int(u_cli_id):
+            conn.close()
+            return HTMLResponse("No tienes permiso para ver esta etiqueta", status_code=403)
 
     cur.execute("SELECT COUNT(*) AS n FROM instrumentos WHERE envio_id=?", (envio_id,))
     n_inst = int(cur.fetchone()["n"] or 0)
@@ -1928,9 +1993,16 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
         conn.close()
         return HTMLResponse("Instrumento no encontrado", status_code=404)
 
-    # Cargamos datos de la OT y del cliente (para modo trazabilidad)
+    # Cargamos datos de la OT
     cur.execute("SELECT * FROM envios WHERE id=?", (inst["envio_id"],))
     envio = cur.fetchone()
+
+    # SEGURIDAD: Si es rol 'cliente', verificamos pertenencia
+    if _user_role(user) == "cliente":
+        u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        if not envio or not u_cli_id or int(envio.get("cliente_id") or 0) != int(u_cli_id):
+            conn.close()
+            return HTMLResponse("Acceso denegado: este instrumento no pertenece a su centro", status_code=403)
     cliente = None
     if envio and envio["cliente_id"]:
         cur.execute("SELECT * FROM clientes WHERE id=?", (int(envio["cliente_id"]),))
@@ -2508,6 +2580,24 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
 
 @app.get("/instrumentos/{instrumento_id}/qc_optica/pdf")
 async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user)):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # Seguridad para clientes
+    if _user_role(user) == "cliente":
+        cur.execute("""
+            SELECT e.cliente_id 
+            FROM instrumentos i 
+            JOIN envios e ON e.id = i.envio_id 
+            WHERE i.id=?
+        """, (instrumento_id,))
+        row = cur.fetchone()
+        u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        if not row or not u_cli_id or int(row["cliente_id"] or 0) != int(u_cli_id):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Acceso denegado a este informe")
+    
+    conn.close()
     pdf_bytes, filename = _generate_qc_optica_pdf_bytes(instrumento_id)
     if not pdf_bytes:
         raise HTTPException(status_code=404, detail="No hay datos de QC para este instrumento")
@@ -2532,6 +2622,21 @@ async def qc_optica_pdf_gen(instrumento_id: int, user=Depends(get_current_user))
 def instrumento_informe_download(instrumento_id: int, user=Depends(get_current_user)):
     conn = get_conn()
     cur = conn.cursor()
+
+    # Seguridad para clientes
+    if _user_role(user) == "cliente":
+        cur.execute("""
+            SELECT e.cliente_id 
+            FROM instrumentos i 
+            JOIN envios e ON e.id = i.envio_id 
+            WHERE i.id=?
+        """, (instrumento_id,))
+        row_sec = cur.fetchone()
+        u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        if not row_sec or not u_cli_id or int(row_sec["cliente_id"] or 0) != int(u_cli_id):
+            conn.close()
+            raise HTTPException(status_code=403, detail="Acceso denegado a este informe")
+
     cur.execute("SELECT path, filename FROM instrumento_informes WHERE instrumento_id=? ORDER BY id DESC LIMIT 1", (instrumento_id,))
     row = cur.fetchone()
     conn.close()
@@ -3127,9 +3232,13 @@ def usuarios_list(request: Request, user=Depends(require_roles("admin"))):
 
 @app.get("/usuarios/nuevo", response_class=HTMLResponse)
 def usuarios_new_form(request: Request, user=Depends(require_roles("admin"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    clientes = _list_clientes(cur)
+    conn.close()
     return templates.TemplateResponse(
         "user_form.html",
-        {"request": request, "user": user, "mode": "new", "u": {"username": "", "role": "tecnico", "is_active": 1}, "error": None},
+        {"request": request, "user": user, "mode": "new", "u": {"username": "", "role": "tecnico", "is_active": 1, "cliente_id": None}, "clientes": clientes, "error": None},
     )
 
 
@@ -3140,11 +3249,12 @@ def usuarios_new(
     password: str = Form(...),
     role: str = Form(...),
     is_active: int = Form(1),
+    cliente_id: Optional[str] = Form(None),
     user=Depends(require_roles("admin")),
 ):
     username = (username or "").strip()
 
-    if role not in ("admin", "recepcion", "tecnico", "grabado"):
+    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente"):
         return templates.TemplateResponse(
             "user_form.html",
             {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Rol inválido"},
@@ -3179,8 +3289,16 @@ def usuarios_new(
         )
 
     try:
-        cols = ["username", pw_col, "role"]
-        vals = [username, hash_password(password), role]
+        # Preparamos el cliente_id
+        cli_id_val = None
+        if cliente_id:
+            try:
+                cli_id_val = int(cliente_id)
+            except:
+                cli_id_val = None
+
+        cols = ["username", pw_col, "role", "cliente_id"]
+        vals = [username, hash_password(password), role, cli_id_val]
         
         if schema.get("has_is_active"):
             cols.append("is_active")
@@ -3215,8 +3333,16 @@ def usuarios_new(
     # Re-writing the block properly to match dash_users_nuevo logic completely
     
     try:
-        cols = ["username", pw_col, "role"]
-        vals = [username, hash_password(password), role]
+        # Preparamos el cliente_id
+        cli_id_val = None
+        if cliente_id:
+            try:
+                cli_id_val = int(cliente_id)
+            except:
+                cli_id_val = None
+
+        cols = ["username", pw_col, "role", "cliente_id"]
+        vals = [username, hash_password(password), role, cli_id_val]
 
         if schema.get("has_is_active"):
             cols.append("is_active")
@@ -3298,7 +3424,7 @@ def _users_schema(cur) -> dict:
     }
 
 def _select_users_sql(schema: dict) -> str:
-    parts = ["id", "username", "role"]
+    parts = ["id", "username", "role", "cliente_id"]
 
     if schema.get("has_is_active"):
         parts.append("is_active")
@@ -3326,13 +3452,14 @@ def dash_users_nuevo(
     username: str = Form(...),
     password: str = Form(...),
     role: str = Form(...),
+    cliente_id: Optional[str] = Form(None),
     user=Depends(require_roles("admin")),
 ):
     username = (username or "").strip()
     if not username:
         return RedirectResponse(url="/?users=1&uerr=username", status_code=303)
 
-    if role not in ("admin", "recepcion", "tecnico", "grabado"):
+    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente"):
         return RedirectResponse(url="/?users=1&uerr=role", status_code=303)
 
     if not (password or "").strip():
@@ -3353,8 +3480,16 @@ def dash_users_nuevo(
         return RedirectResponse(url="/?users=1&uerr=db", status_code=303)
 
     try:
-        cols = ["username", pw_col, "role"]
-        vals = [username, hash_password(password), role]
+        # Preparamos el cliente_id
+        cli_id_val = None
+        if cliente_id:
+            try:
+                cli_id_val = int(cliente_id)
+            except:
+                cli_id_val = None
+
+        cols = ["username", pw_col, "role", "cliente_id"]
+        vals = [username, hash_password(password), role, cli_id_val]
 
         if schema.get("has_is_active"):
             cols.append("is_active")
@@ -3409,7 +3544,7 @@ def dash_users_set_role(
     role: str = Form(...),
     user=Depends(require_roles("admin")),
 ):
-    if role not in ("admin", "recepcion", "tecnico", "grabado"):
+    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente"):
         return RedirectResponse(url="/?users=1&uerr=role", status_code=303)
 
     conn = get_conn()
@@ -3430,6 +3565,27 @@ def dash_users_set_role(
     conn.commit()
     conn.close()
     return RedirectResponse(url="/?users=1&uok=role", status_code=303)
+
+
+@app.post("/dash_users/{user_id}/cliente")
+def dash_users_set_cliente(
+    user_id: int,
+    cliente_id: Optional[str] = Form(None),
+    user=Depends(require_roles("admin")),
+):
+    cli_id_val = None
+    if cliente_id:
+        try:
+            cli_id_val = int(cliente_id)
+        except:
+            cli_id_val = None
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET cliente_id=? WHERE id=?", (cli_id_val, user_id))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/?users=1&uok=cliente", status_code=303)
 
 
 @app.post("/dash_users/{user_id}/toggle")

@@ -74,7 +74,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
     # Ajusta columnas si tu tabla users es distinta. En tu app normalmente son:
     # id, username, role, password_hash ...
     cur.execute(
-        "SELECT id, username, role FROM users WHERE id = ?",
+        "SELECT id, username, role, cliente_id FROM users WHERE id = ?",
         (user_id,),
     )
     row = cur.fetchone()
@@ -86,7 +86,7 @@ def get_current_user(request: Request) -> Dict[str, Any]:
         return row
 
     # tuple -> dict
-    return {"id": row[0], "username": row[1], "role": row[2]}
+    return {"id": row[0], "username": row[1], "role": row[2], "cliente_id": row[3]}
 
 
 def require_roles(*roles: str) -> Callable:
@@ -131,7 +131,7 @@ def get_current_user(request: Request):
     from db import get_conn  # import local para evitar ciclos
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT id, username, role, is_active FROM users WHERE id=?", (user_id,))
+    cur.execute("SELECT id, username, role, is_active, cliente_id FROM users WHERE id=?", (user_id,))
     u = cur.fetchone()
     conn.close()
 

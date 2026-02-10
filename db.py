@@ -173,9 +173,15 @@ def init_db():
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL,
         is_active INTEGER NOT NULL DEFAULT 1,
+        cliente_id INTEGER,
         created_at {dt}
     )
     """)
+
+    # Migración: asegurar que existe cliente_id en users
+    cols_users = get_table_columns(cur, "users")
+    if "cliente_id" not in cols_users:
+        cur.execute("ALTER TABLE users ADD COLUMN cliente_id INTEGER")
 
     # 2. Clientes
     cur.execute(f"""

@@ -562,7 +562,10 @@
                     </select>
                   </form>
                   {% else %}
-                  {{ inst.estado or "Pendiente" }}
+                  <span
+                    class="badge {% if inst.estado=='Reparado' %}bg-success{% elif inst.estado=='Baja' %}bg-danger{% else %}bg-warning text-dark{% endif %} p-2">
+                    {{ inst.estado or "Pendiente" }}
+                  </span>
                   {% endif %}
                   {% endif %}
                 </td>
