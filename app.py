@@ -79,8 +79,8 @@ except Exception:  # pragma: no cover
 
 app = FastAPI(title="Xurgical SAT")
 
-# Asegura el esquema incluso si el servidor no dispara el evento startup
-# (algunas ejecuciones/entornos pueden evitarlo en ciertas rutas).
+# Arranque de la aplicación
+print(">>> XURGICAL SAT STARTING UP...")
 try:
     init_db()
 except Exception:
