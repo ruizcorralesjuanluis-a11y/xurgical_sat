@@ -4008,3 +4008,13 @@ def completar_peticion_recogida(peticion_id: int, user=Depends(require_roles("ad
     conn.commit()
     conn.close()
     return RedirectResponse(url="/", status_code=303)
+
+
+@app.get("/api/peticiones_recogida/count")
+def count_peticiones_recogida(user=Depends(require_roles("admin", "recepcion"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) as n FROM peticiones_recogida WHERE estado = 'Pendiente'")
+    row = cur.fetchone()
+    conn.close()
+    return {"count": int(row["n"] or 0) if row else 0}

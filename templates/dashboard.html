@@ -217,6 +217,30 @@
       font-weight: 600 !important;
       margin: 10px auto !important;
     }
+
+    @keyframes bounceIn {
+      0% {
+        transform: scale(0.3);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 1;
+      }
+
+      70% {
+        transform: scale(0.9);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .bounce-in {
+      animation: bounceIn 0.5s ease;
+    }
   </style>
 </head>
 
@@ -257,15 +281,19 @@
         </a>
         {% endif %}
 
-        {% if n_peticiones_pendientes > 0 and user.role in ["admin", "recepcion"] %}
-        <button class="btn btn-warning btn-sm position-relative ms-1" data-bs-toggle="modal"
-          data-bs-target="#pickupListModal" title="Peticiones de recogida pendientes">
-          <i class="fa-solid fa-truck-pickup"></i>
-          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-            style="font-size: 0.6rem;">
-            {{ n_peticiones_pendientes }}
-          </span>
-        </button>
+        {% if user.role in ["admin", "recepcion"] %}
+        <div id="pickupBadgeContainer" class="d-inline-block">
+          {% if n_peticiones_pendientes > 0 %}
+          <button class="btn btn-warning btn-sm position-relative ms-1 bounce-in" data-bs-toggle="modal"
+            data-bs-target="#pickupListModal" title="Peticiones de recogida pendientes">
+            <i class="fa-solid fa-truck-pickup"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.6rem;">
+              {{ n_peticiones_pendientes }}
+            </span>
+          </button>
+          {% endif %}
+        </div>
         {% endif %}
 
         <div class="ms-2 d-flex align-items-center gap-1">
@@ -952,6 +980,40 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
       });
     }
+
+    // Polling de recogidas (cada 2 min)
+    {% if user and user.role in ["admin", "recepcion"] %}
+    function checkPickups() {
+      fetch('/api/peticiones_recogida/count')
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById('pickupBadgeContainer');
+          if (!container) return;
+
+          if (data.count > 0) {
+            // Actualizar o crear botón si no existe o si ha cambiado el número
+            const currentBadge = container.querySelector('.badge');
+            if (!currentBadge || parseInt(currentBadge.innerText) !== data.count) {
+              container.innerHTML = `
+                <button class="btn btn-warning btn-sm position-relative ms-1 bounce-in" data-bs-toggle="modal"
+                    data-bs-target="#pickupListModal" title="Peticiones de recogida pendientes">
+                    <i class="fa-solid fa-truck-pickup"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style="font-size: 0.6rem;">
+                    ${data.count}
+                    </span>
+                </button>
+                `;
+            }
+          } else {
+            container.innerHTML = '';
+          }
+        })
+        .catch(err => console.error("Error polling pickups:", err));
+    }
+    // Ejecutar cada 2 minutos (120000 ms)
+    setInterval(checkPickups, 120000);
+    {% endif %}
   </script>
 </body>
 
