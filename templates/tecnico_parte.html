@@ -177,12 +177,13 @@
         <div class="inst-card" id="inst-{{ inst.id }}">
             <div class="position-relative">
                 {% set ns_pic = namespace(first="") %}
-                {% for i in range(1, 7) %}
-                {% if not ns_pic.first %}
-                {% set f = inst['foto_entrada_' ~ i] %}
-                {% if f %}{% set ns_pic.first = f %}{% endif %}
+                {% if inst.foto_entrada_1 %}{% set ns_pic.first = inst.foto_entrada_1 %}
+                {% elif inst.foto_entrada_2 %}{% set ns_pic.first = inst.foto_entrada_2 %}
+                {% elif inst.foto_entrada_3 %}{% set ns_pic.first = inst.foto_entrada_3 %}
+                {% elif inst.foto_entrada_4 %}{% set ns_pic.first = inst.foto_entrada_4 %}
+                {% elif inst.foto_entrada_5 %}{% set ns_pic.first = inst.foto_entrada_5 %}
+                {% elif inst.foto_entrada_6 %}{% set ns_pic.first = inst.foto_entrada_6 %}
                 {% endif %}
-                {% endfor %}
 
                 {% if ns_pic.first %}
                 <img src="{{ ns_pic.first }}" class="inst-img" alt="Foto Instrumento">
