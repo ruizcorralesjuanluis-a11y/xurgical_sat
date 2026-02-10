@@ -268,10 +268,54 @@
     }
 
     .table-responsive {
-      overflow-x: auto !important;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: hidden !important;
+      /* En PC no queremos scroll lateral */
       border-radius: 12px;
       max-width: 100% !important;
+    }
+
+    .table {
+      width: 100% !important;
+      table-layout: fixed;
+      /* Forzamos a respetar el ancho del contenedor */
+      word-break: break-word;
+    }
+
+    /* Ajustamos anchos relativos para que quepa todo */
+    .col-id {
+      width: 50px;
+    }
+
+    .col-denom {
+      width: auto;
+    }
+
+    .col-fab {
+      width: 120px;
+    }
+
+    .col-modelo {
+      width: 120px;
+    }
+
+    .col-serie {
+      width: 120px;
+    }
+
+    .col-dm {
+      width: 110px;
+    }
+
+    .col-fotos {
+      width: 90px;
+    }
+
+    .col-estado {
+      width: 130px;
+    }
+
+    .col-actions {
+      width: 60px;
     }
 
     /* Botones de tabla unificados */
@@ -515,7 +559,7 @@
               <!-- FILA PRINCIPAL -->
               <tr
                 class="{% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}{% if inst.estado and inst.estado|lower|trim == 'reparado' %}row-reparado{% endif %}{% if inst.estado and inst.estado|lower|trim == 'baja' %} row-baja{% endif %}{% endif %}">
-                <td>{{ inst.id }}</td>
+                <td class="col-id">{{ inst.id }}</td>
 
                 <td class="col-modelo">
                   <strong>{{ inst.codigo_producto or "-" }}</strong>

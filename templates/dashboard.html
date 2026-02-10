@@ -168,6 +168,16 @@
     .dashboard-table-wrapper {
       max-height: calc(100vh - 260px);
       overflow-y: auto;
+      overflow-x: hidden;
+      /* Evita scroll horizontal del contenedor */
+    }
+
+    .table {
+      width: 100% !important;
+      table-layout: auto;
+      /* Permite que las celdas se ajusten */
+      word-break: break-word;
+      /* Rompe palabras largas si es necesario */
     }
 
     .perm-grid {
@@ -367,13 +377,13 @@
             <thead class="table-light">
               <tr>
                 <th>OT</th>
-                <th>Tipo</th>
+                <th class="d-none d-md-table-cell">Tipo</th>
                 <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Instrumentos</th>
+                <th class="d-none d-md-table-cell">Fecha</th>
+                <th class="d-none d-md-table-cell">Instrumentos</th>
                 <th>Pend.</th>
                 <th>Fotos</th>
-                <th>Grabados</th>
+                <th class="d-none d-md-table-cell">Grabados</th>
                 <th></th>
               </tr>
             </thead>
@@ -389,7 +399,7 @@
                       REPARACIÓN</span></div>
                   {% endif %}
                 </td>
-                <td>
+                <td class="d-none d-md-table-cell">
                   {% if e.tipo_trabajo == 'TRAZABILIDAD' %}
                   <span class="badge text-bg-primary">TRAZABILIDAD</span>
                   {% elif e.tipo_trabajo == 'OPTICA_RIGIDA' %}
@@ -399,11 +409,12 @@
                   {% endif %}
                 </td>
                 <td>{{ e.cliente or "-" }}</td>
-                <td>{{ e.fecha|fecha }}</td>
-                <td>{{ e.n_instrumentos }}</td>
+                <td class="d-none d-md-table-cell">{{ e.fecha|fecha }}</td>
+                <td class="d-none d-md-table-cell">{{ e.n_instrumentos }}</td>
                 <td>{{ e.n_pendientes }}</td>
                 <td><span class="dot {{ e.foto_dot }}"></span></td>
-                <td><span class="badge text-bg-light">{{ e.n_grabados or 0 }}/{{ e.n_instrumentos }}</span></td>
+                <td class="d-none d-md-table-cell"><span class="badge text-bg-light">{{ e.n_grabados or 0 }}/{{
+                    e.n_instrumentos }}</span></td>
                 <td class="text-end">
                   <div class="d-flex justify-content-end gap-1">
                     {% if user and user.role == "grabado" %}
