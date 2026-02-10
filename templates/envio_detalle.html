@@ -183,7 +183,24 @@
     }
 
     .col-fotos {
-      width: 120px;
+      width: 80px;
+      text-align: center;
+    }
+
+    .thumb-table {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+      background: #f8fafc;
+      transition: transform 0.2s ease;
+    }
+
+    .thumb-table:hover {
+      transform: scale(3) translateX(10px);
+      z-index: 100;
+      position: relative;
     }
 
     .col-estado {
@@ -533,13 +550,22 @@
                   {{ inst.codigo_datamatrix or "-" }}
                 </td>
 
-                <!-- Indicador fotos -->
-                <td class="col-fotos">
-                  {% if inst.foto_entrada_1 or inst.foto_entrada_2 or inst.foto_entrada_3 or inst.foto_entrada_4 or
-                  inst.foto_entrada_5 or inst.foto_entrada_6 %}
-                  <span class="badge-ok">COMPLETO</span>
+                <td class="col-fotos text-center">
+                  {% set first_photo = "" %}
+                  {% if inst.foto_entrada_1 %}{% set first_photo = inst.foto_entrada_1 %}
+                  {% elif inst.foto_entrada_2 %}{% set first_photo = inst.foto_entrada_2 %}
+                  {% elif inst.foto_entrada_3 %}{% set first_photo = inst.foto_entrada_3 %}
+                  {% elif inst.foto_entrada_4 %}{% set first_photo = inst.foto_entrada_4 %}
+                  {% elif inst.foto_entrada_5 %}{% set first_photo = inst.foto_entrada_5 %}
+                  {% elif inst.foto_entrada_6 %}{% set first_photo = inst.foto_entrada_6 %}
+                  {% endif %}
+
+                  {% if first_photo %}
+                  <a href="/instrumentos/{{ inst.id }}">
+                    <img src="{{ first_photo }}" class="thumb-table" alt="Foto">
+                  </a>
                   {% else %}
-                  <span class="badge-pend">SIN FOTOS</span>
+                  <span class="text-secondary opacity-50 small">-</span>
                   {% endif %}
                 </td>
 
