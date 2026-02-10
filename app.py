@@ -2078,9 +2078,44 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
     # Fallback: si no hay checklist específico para ese tipo, usa el de REPARACION
     if (not checklist) and tipo_ot != "REPARACION":
         checklist = _load_checklist("REPARACION")
-        # Informe PDF (óptica rígida): opcional
+
+    # Informe PDF (óptica rígida): opcional
     cur.execute("SELECT * FROM instrumento_informes WHERE instrumento_id=? ORDER BY id DESC LIMIT 1", (instrumento_id,))
     informe = cur.fetchone()
+
+    # --- HISTORIAL DE TRAZABILIDAD ---
+    historial = []
+    dm = (inst["codigo_datamatrix"] or "").strip()
+    sn = (inst["num_serie"] or "").strip()
+    if dm or sn:
+        clauses = []
+        p_hist = []
+        if dm:
+            clauses.append("i.codigo_datamatrix = ?")
+            p_hist.append(dm)
+        if sn:
+            clauses.append("i.num_serie = ?")
+            p_hist.append(sn)
+        
+        sql_hist = f"""
+            SELECT i.id, i.envio_id, e.ot_num, e.fecha, i.estado, i.creado_en
+            FROM instrumentos i
+            JOIN envios e ON e.id = i.envio_id
+            WHERE ({ " OR ".join(clauses) }) AND i.id != ?
+        """
+        p_hist.append(instrumento_id)
+
+        if _user_role(user) == "cliente":
+            u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+            if u_cli_id:
+                sql_hist += " AND e.cliente_id = ?"
+                p_hist.append(int(u_cli_id))
+
+        sql_hist += " ORDER BY e.id DESC LIMIT 10"
+        cur.execute(sql_hist, tuple(p_hist))
+        historial = [dict(r) for r in cur.fetchall()]
+
+    conn.close()
 
     return templates.TemplateResponse(
         "instrumento_detalle.html",
@@ -2092,6 +2127,7 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
             "envio": dict(envio) if envio else None,
             "cliente": dict(cliente) if cliente else None,
             "informe": dict(informe) if informe else None,
+            "historial": historial
         },
     )
 # -----------------------------
@@ -3914,3 +3950,28 @@ def borrar_envio(
     conn.close()
 
     return RedirectResponse(url="/?ok=borrado", status_code=303)
+
+
+@app.post("/peticion_recogida")
+async def peticion_recogida(
+    n_instrumentos: int = Form(0),
+    observaciones: str = Form(""),
+    user=Depends(require_roles("cliente", "admin", "recepcion"))
+):
+    """El cliente solicita que se pase a recoger material."""
+    cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+    u_id = (user.get("id") if isinstance(user, dict) else getattr(user, "id", None))
+
+    if not cli_id:
+        return RedirectResponse(url="/?err=nocli", status_code=303)
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO peticiones_recogida (cliente_id, usuario_id, n_instrumentos, observaciones, estado, creado_en)
+        VALUES (?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
+    """, (int(cli_id or 0), u_id, n_instrumentos, observaciones))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(url="/?msg=recogida_ok", status_code=303)

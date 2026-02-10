@@ -295,6 +295,48 @@
   </div>
   {% endif %}
 
+  <!-- HISTORIAL DE TRAZABILIDAD (Punto 1) -->
+  {% if historial %}
+  <div class="card mb-3 border-0 shadow-sm" style="border-radius: 16px;">
+    <div class="card-header bg-white border-0 pt-3">
+      <h5 class="mb-0"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Historial de Trazabilidad</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+          <thead class="text-secondary opacity-75">
+            <tr>
+              <th>Fecha</th>
+              <th>OT</th>
+              <th>Estado Final</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in historial %}
+            <tr>
+              <td>{{ h.fecha|fecha }}</td>
+              <td><strong>{{ h.ot_num }}</strong></td>
+              <td>
+                {% set sth = h.estado or 'Pendiente' %}
+                <span
+                  class="badge {% if sth == 'Reparado' %}bg-success-subtle text-success{% elif sth == 'Baja' %}bg-secondary-subtle text-secondary{% else %}bg-warning-subtle text-dark{% endif %} px-2">
+                  {{ sth }}
+                </span>
+              </td>
+              <td class="text-end">
+                <a href="/instrumentos/{{ h.id }}" class="btn btn-link btn-sm p-0 text-decoration-none">Ver <i
+                    class="fa-solid fa-chevron-right small"></i></a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="pb-4"></div>
   </div>
 

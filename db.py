@@ -368,6 +368,19 @@ def init_db():
     else:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
 
+    # 10. PETICIONES DE RECOGIDA (NUEVO)
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS peticiones_recogida (
+        id {pk},
+        cliente_id INTEGER NOT NULL,
+        usuario_id INTEGER,
+        n_instrumentos INTEGER DEFAULT 0,
+        observaciones TEXT,
+        estado TEXT DEFAULT 'Pendiente',
+        creado_en {dt}
+    )
+    """)
+
     # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
     # Esto soluciona que los clientes no vean sus partes antiguos que no tenían ID
     cur.execute("""
