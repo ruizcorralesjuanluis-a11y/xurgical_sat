@@ -28,11 +28,16 @@ class PGCursorWrapper:
     
     def execute(self, sql, params=None):
         # Convertimos ? a %s para Postgres
-        if params:
+        if params is not None:
             sql = sql.replace('?', '%s')
         # Limpieza de SQL específico de SQLite
         sql = sql.replace("BEGIN IMMEDIATE", "BEGIN")
         return self.cur.execute(sql, params)
+
+    def executemany(self, sql, seq_params):
+        # Convertimos ? a %s para Postgres
+        sql = sql.replace('?', '%s')
+        return self.cur.executemany(sql, seq_params)
 
     def fetchone(self):
         row = self.cur.fetchone()
