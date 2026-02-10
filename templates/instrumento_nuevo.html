@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
 
 <head>
@@ -107,7 +107,7 @@
       <div class="panel p-3 mb-3">
         <h5 class="mb-1">{% if inst %}Editar instrumento #{{ inst.id }}{% else %}Nuevo instrumento{% endif %}</h5>
         <div class="muted">
-          Pulsa <span class="kbd">Espacio</span> para capturar. Automático: foto 1 → foto 2.
+          Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot libre.
           {% if inst %}
           <span class="pill ms-2">Siguiente: <b id="nextSlot">1</b></span>
           {% endif %}
@@ -152,8 +152,7 @@
             </div>
 
             <div class="mt-3 d-flex gap-2">
-              <button class="btn btn-primary">{% if inst %}Guardar cambios{% else %}Guardar y pasar a fotos{% endif
-                %}</button>
+              <button class="btn btn-primary">{% if inst %}Guardar cambios{% else %}Guardar y pasar a fotos{% endif %}</button>
               <a class="btn btn-outline-secondary" href="/envios/{{ envio.id }}">Cancelar</a>
             </div>
           </form>
@@ -192,8 +191,7 @@
           <video id="video" autoplay playsinline class="w-100"
             style="max-height:320px;border-radius:12px;border:1px solid #e5e7eb;background:#000"></video>
           <canvas id="canvas" style="display:none"></canvas>
-          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot
-            libre.</div>
+          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot libre.</div>
         </div>
 
         <div class="mt-3 d-flex justify-content-end">
@@ -212,7 +210,7 @@
     const instId = {{ inst.id }};
     const photosStatus = {
     {% for i in range(1, 7) %}
-    { { i } }: { { 1 if inst['foto_entrada_' ~i] else 0 } },
+      {{ i }}: {{ 1 if inst['foto_entrada_' ~ i] else 0 }},
     {% endfor %}
     };
     let busy = false;
