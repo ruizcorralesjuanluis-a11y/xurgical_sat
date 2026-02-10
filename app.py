@@ -1011,7 +1011,7 @@ def export_download(
     request: Request,
     user=Depends(require_roles("admin", "recepcion")),
     scope: str = "partes",  # partes | instrumentos | parte
-    envio_id: int | None = None,
+    envio_id: str | None = None,
     estado: str | None = None,
     solo_pendientes: str | None = None,
     grabado: str | None = None,  # todos|si|no
@@ -1026,6 +1026,15 @@ def export_download(
         raise HTTPException(status_code=400, detail="Scope no soportado")
 
     solo_pend = _bool_param(solo_pendientes)
+    
+    # Parse envio_id a int si viene
+    eid: int | None = None
+    if envio_id and str(envio_id).strip():
+        try:
+            eid = int(envio_id)
+        except:
+            raise HTTPException(status_code=400, detail="envio_id debe ser un número")
+
     grabado = (grabado or "todos").lower()
     solo_grabados: bool | None = None
     if grabado == "si":
@@ -1041,14 +1050,14 @@ def export_download(
     inst_rows: list[dict] = []
 
     if scope in {"partes", "parte"}:
-        if scope == "parte" and not envio_id:
+        if scope == "parte" and not eid:
             raise HTTPException(status_code=400, detail="Falta envio_id")
 
         where_env = "1=1"
         params_env: list = []
-        if envio_id:
+        if eid:
             where_env = "e.id=?"
-            params_env = [int(envio_id)]
+            params_env = [eid]
 
         cur.execute(
             f"""
