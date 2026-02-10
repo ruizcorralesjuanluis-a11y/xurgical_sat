@@ -1,7 +1,9 @@
 
 import os
 import sqlite3
+import threading
 from pathlib import Path
+from psycopg2.pool import ThreadedConnectionPool
 
 # -------------------------------------------------
 # RUTA BASE DEL PROYECTO
@@ -21,6 +23,27 @@ class PGRowWrapper(dict):
     """Permite acceso por atributo o por clave como sqlite3.Row"""
     def __getattr__(self, name):
         return self.get(name)
+
+# Variable global para el pool de conexiones
+_pool = None
+_pool_lock = threading.Lock()
+
+def get_pool():
+    global _pool
+    env_url = os.environ.get("DATABASE_URL")
+    if not env_url:
+        return None
+    
+    with _pool_lock:
+        if _pool is None:
+            import psycopg2
+            url = env_url.strip()
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            # Creamos un pool de 1 a 10 conexiones
+            _pool = ThreadedConnectionPool(1, 15, url, connect_timeout=10)
+            print(f">>> [DATABASE] Pool de conexiones inicializado (1-15 conexiones)", flush=True)
+        return _pool
 
 class PGCursorWrapper:
     def __init__(self, cur):
@@ -74,8 +97,9 @@ def get_table_columns(cur, table_name: str) -> list[str]:
         return [r["name"] for r in cur.fetchall()]
 
 class PGConnWrapper:
-    def __init__(self, conn):
+    def __init__(self, conn, pool=None):
         self.conn = conn
+        self.pool = pool
     def cursor(self):
         import psycopg2.extras
         return PGCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor))
@@ -84,7 +108,10 @@ class PGConnWrapper:
     def rollback(self):
         self.conn.rollback()
     def close(self):
-        self.conn.close()
+        if self.pool:
+            self.pool.putconn(self.conn)
+        else:
+            self.conn.close()
 
 # -------------------------------------------------
 # CONEXIÓN
@@ -94,19 +121,17 @@ def get_connection():
     env_url = os.environ.get("DATABASE_URL")
     
     if env_url:
-        import psycopg2
-        # Limpieza de la URL
-        url = env_url.strip()
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
-        
         try:
-            # Aumentamos el timeout de conexión para evitar fallos por lentitud
+            pool = get_pool()
+            if pool:
+                conn = pool.getconn()
+                return PGConnWrapper(conn, pool=pool)
+        except Exception as e:
+            print(f">>> [DATABASE] ERROR: No se pudo obtener conexión del pool. Reintentando... {e}", flush=True)
+            # Si falla el pool, intentamos conexión directa una vez
+            import psycopg2
+            url = env_url.strip().replace("postgres://", "postgresql://", 1)
             conn = psycopg2.connect(url, connect_timeout=10)
-            # No imprimimos la URL entera por seguridad, pero sí el host
-            from urllib.parse import urlparse
-            p = urlparse(url)
-            print(f">>> [DATABASE] ÉXITO: Conectado a Postgres en {p.hostname}", flush=True)
             return PGConnWrapper(conn)
         except Exception as e:
             print(f">>> [DATABASE] ERROR: No se pudo conectar a Postgres. Revise si la URL es correcta y si incluye la contraseña. Error: {e}", flush=True)
@@ -316,6 +341,15 @@ def init_db():
     for col in ["qc_foto_entrada_1", "qc_foto_entrada_2", "qc_foto_salida_1", "qc_foto_salida_2"]:
         if col not in cols_qc:
             cur.execute(f"ALTER TABLE instrumento_qc_optica ADD COLUMN {col} TEXT")
+
+    # 9. ÍNDICES DE RENDIMIENTO (NUEVO)
+    # Estos índices aceleran drásticamente las búsquedas en tablas con muchos datos
+    if is_pg:
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_checklist_instrumento_id ON instrumento_checklist(instrumento_id)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_informes_instrumento_id ON instrumento_informes(instrumento_id)")
+    else:
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
 
     conn.commit()
     conn.close()
