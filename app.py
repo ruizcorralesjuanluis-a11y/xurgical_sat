@@ -89,7 +89,9 @@ app.state.secret_key = os.environ.get("XURGICAL_SECRET_KEY", "dev-secret-change-
 app.state.serializer = make_serializer(app.state.secret_key)
 
 UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
-FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join("static", "fotos"))
+# Priorizamos que las fotos estén dentro del disco persistente si estamos en Render
+FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join(UPLOAD_DIR, "fotos"))
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(FOTOS_DIR, exist_ok=True)
 
