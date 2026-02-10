@@ -135,6 +135,7 @@ def leer_excel_envio(path_excel: str):
     c_fab   = pick("FABRICANTE", "MARCA")
     c_ns    = pick("N/S", "NS", "N SERIE", "Nº SERIE", "NUMERO SERIE", "SERIE")
     c_deno  = pick("DENOMINACION", "DESCRIPCION", "DESCRIPCIÓN", "NOMBRE")
+    c_obs   = pick("OBSERVACIONES", "OBSERVACION", "OBS")
     c_dm = pick("CODIGO DATAMATRIX", "DATAMATRIX", "QR", "CODIGO MATRIZ")
 
     if not c_codigo or not c_deno:
