@@ -1607,7 +1607,7 @@ async def api_save_checklist(instrumento_id: int, request: Request, user=Depends
 # -----------------------------
 # ETIQUETA (pegatina) OT
 # -----------------------------
-def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: int) -> bytes:
+def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: int, referencia: str = "") -> bytes:
     """Genera una etiqueta PDF con texto + código de barras Code128.
 
     Contenido del barcode: OT|CLIENTE|FECHA|N
@@ -1628,13 +1628,19 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     c.drawString(x0, y_top - 6 * mm, f"OT: {ot_num}")
 
     c.setFont("Helvetica", 10)
-    # Recorta cliente para que no rompa el ancho
+    # Recorta texto si es muy largo
+    ref = (referencia or "").strip()
+    if len(ref) > 35:
+        ref = ref[:32] + "…"
+    
     cli = (cliente or "").strip()
     if len(cli) > 35:
         cli = cli[:32] + "…"
-    c.drawString(x0, y_top - 11 * mm, f"Cliente: {cli}")
-    c.drawString(x0, y_top - 16 * mm, f"Fecha: {fecha}")
-    c.drawString(x0, y_top - 21 * mm, f"Nº Instrumentos: {n_instrumentos}")
+
+    c.drawString(x0, y_top - 11 * mm, f"Ref: {ref}")
+    c.drawString(x0, y_top - 16 * mm, f"Cliente: {cli}")
+    c.drawString(x0, y_top - 21 * mm, f"Fecha: {fecha}")
+    c.drawString(x0, y_top - 26 * mm, f"Nº Instrumentos: {n_instrumentos}")
 
     # Barcode
     # Payload solo con el OT para que el código de barras sea más sencillo y legible
@@ -1668,7 +1674,7 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
     """Devuelve una pegatina PDF para la OT."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT id, ot_num, cliente, fecha, cliente_id FROM envios WHERE id=?", (envio_id,))
+    cur.execute("SELECT id, ot_num, cliente, fecha, cliente_id, nombre_archivo FROM envios WHERE id=?", (envio_id,))
     e = cur.fetchone()
     if not e:
         conn.close()
@@ -1700,7 +1706,8 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
         str(e["ot_num"]),
         str(e["cliente"] or ""),
         fecha,
-        n_inst
+        n_inst,
+        referencia=str(e.get("nombre_archivo") or "")
     )
     filename = f"OT_{e['ot_num']}_etiqueta.pdf"
     return StreamingResponse(
