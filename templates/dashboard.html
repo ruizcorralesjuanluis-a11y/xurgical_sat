@@ -298,14 +298,16 @@
 
         {% if user.role in ["admin", "recepcion", "tecnico"] %}
         <div id="consultaBadgeContainer" class="d-inline-block">
-          {% if n_consultas_pendientes > 0 %}
+          {% if n_consultas_activas > 0 %}
           <button class="btn btn-info btn-sm position-relative ms-2 bounce-in text-white" data-bs-toggle="modal"
-            data-bs-target="#consultaListModal" title="Consultas técnicas pendientes">
+            data-bs-target="#consultaListModal" title="Consultas técnicas">
             <i class="fa-solid fa-comments"></i>
+            {% if n_consultas_pendientes > 0 %}
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
               style="font-size: 0.6rem;">
               {{ n_consultas_pendientes }}
             </span>
+            {% endif %}
           </button>
           {% endif %}
         </div>
@@ -433,6 +435,11 @@
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
               style="font-size: 0.75rem; border: 2px solid white;">
               {{ n_consultas_pendientes }}
+            </span>
+            {% elif n_consultas_activas > 0 %}
+            <span
+              class="position-absolute top-0 start-100 translate-middle p-1 bg-info border border-light rounded-circle">
+              <span class="visually-hidden">Activo</span>
             </span>
             {% endif %}
           </button>

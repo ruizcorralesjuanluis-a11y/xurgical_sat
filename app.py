@@ -711,15 +711,20 @@ def dashboard(request: Request, user=Depends(get_current_user)):
             ORDER BY c.actualizado_en DESC
         """)
         consultas_list = [dict(r) for r in cur.fetchall()]
+        # El staff ve como "pendientes" las que están en estado 'Abierta' (esperando su respuesta)
         n_consultas_pendientes = sum(1 for c in consultas_list if c["estado"] == "Abierta")
+        # Pero añadimos una variable para saber cuántas hay en total sin cerrar
+        n_consultas_activas = len(consultas_list)
     elif _user_role(user) == "cliente" and user.get("cliente_id"):
         cur.execute("""
             SELECT * FROM consultas 
-            WHERE cliente_id = ?
+            WHERE cliente_id = ? AND estado != 'Cerrada'
             ORDER BY actualizado_en DESC
         """, (int(user.get("cliente_id") or 0),))
         consultas_list = [dict(r) for r in cur.fetchall()]
+        # El cliente ve como "pendientes" las que han sido 'Respondida' por el SAT
         n_consultas_pendientes = sum(1 for c in consultas_list if c["estado"] == "Respondida")
+        n_consultas_activas = len(consultas_list)
 
     # --- 1. KPIs Globales (Instrumentos) ---
     kpi_where = ""
@@ -943,6 +948,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         "peticiones_recogida": peticiones_recogida,
         "consultas_list": consultas_list,
         "n_consultas_pendientes": n_consultas_pendientes,
+        "n_consultas_activas": n_consultas_activas or 0,
     }
 
     return templates.TemplateResponse(

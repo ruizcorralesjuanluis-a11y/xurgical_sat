@@ -9,67 +9,93 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #f1f3f5;
             font-size: 0.9rem;
         }
 
         .chat-container {
             max-width: 800px;
-            margin: 2rem auto;
+            margin: 1rem auto;
+            padding: 0 10px;
         }
 
         .chat-card {
-            border-radius: 15px;
+            border-radius: 20px;
             border: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            background: white;
+            overflow: hidden;
+        }
+
+        .msg-list {
+            display: flex;
+            flex-column: column;
+            padding: 20px;
+            background: #fdfdfd;
+            min-height: 300px;
         }
 
         .msg {
-            padding: 10px 15px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-            max-width: 85%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            max-width: 80%;
+            position: relative;
         }
 
         .msg-client {
-            background-color: #007bff;
+            background-color: #0d6efd;
             color: white;
             align-self: flex-end;
             margin-left: auto;
-            border-bottom-right-radius: 2px;
+            border-bottom-right-radius: 4px;
         }
 
         .msg-staff {
-            background-color: white;
-            border: 1px solid #dee2e6;
+            background-color: #e9ecef;
+            color: #212529;
             align-self: flex-start;
-            border-bottom-left-radius: 2px;
+            border-bottom-left-radius: 4px;
         }
 
         .msg-meta {
-            font-size: 0.7rem;
-            opacity: 0.8;
-            margin-top: 4px;
+            font-size: 0.65rem;
+            opacity: 0.7;
+            margin-top: 5px;
             display: block;
         }
 
-        .consulta-info {
-            border-bottom: 1px solid #eee;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
+        .consulta-header {
+            background: #fff;
+            padding: 20px;
+            border-bottom: 2px solid #f1f3f5;
         }
 
-        .badge-estado {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
-
-        .chat-header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
+        .response-area {
             background: white;
-            border-bottom: 1px solid #eee;
+            padding: 20px;
+            border-top: 2px solid #f1f3f5;
+        }
+
+        .btn-send {
+            border-radius: 30px;
+            padding: 10px 25px;
+            font-weight: bold;
+        }
+
+        .img-preview {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .img-preview:hover {
+            transform: scale(1.05);
+        }
+
+        .danger-zone {
+            background: #fff5f5;
+            padding: 15px;
+            border-top: 1px solid #ffe3e3;
         }
     </style>
 </head>
@@ -77,87 +103,118 @@
 <body>
 
     <div class="container chat-container">
-        <div class="mb-3">
-            <a href="/" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Volver al
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="/" class="btn btn-light shadow-sm btn-sm px-3"><i class="fa-solid fa-chevron-left me-1"></i>
                 Dashboard</a>
+            <span class="text-secondary small">ID Consulta: #{{ consulta.id }}</span>
         </div>
 
         <div class="card chat-card">
-            <div class="card-body p-4">
-                <div class="consulta-info">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <h1 class="h5 fw-bold mb-1">{{ consulta.titulo }}</h1>
+            <!-- Cabecera de la Consulta -->
+            <div class="consulta-header text-center text-md-start">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                    <div>
+                        <h1 class="h4 fw-bold mb-1 text-dark">{{ consulta.titulo }}</h1>
+                        <div class="text-secondary small">
+                            <i class="fa-solid fa-hospital me-1"></i> {{ consulta.cliente_nombre or 'Cliente' }}
+                            <span class="mx-2">|</span>
+                            <i class="fa-solid fa-calendar me-1"></i> {{ consulta.creado_en|fecha }}
+                        </div>
+                    </div>
+                    <div>
                         {% if consulta.estado == 'Abierta' %}
-                        <span class="badge bg-warning text-dark badge-estado">Abierta</span>
+                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2">PENDIENTE DE SAT</span>
                         {% elif consulta.estado == 'Respondida' %}
-                        <span class="badge bg-success badge-estado">Respondida</span>
+                        <span class="badge rounded-pill bg-success px-3 py-2">RESPONDIDA</span>
                         {% else %}
-                        <span class="badge bg-secondary badge-estado">{{ consulta.estado }}</span>
+                        <span class="badge rounded-pill bg-secondary px-3 py-2">{{ consulta.estado }}</span>
                         {% endif %}
                     </div>
-                    <div class="small text-secondary mb-3">Iniciada el {{ consulta.creado_en|fecha }}</div>
-                    <p class="mb-3">{{ consulta.descripcion }}</p>
+                </div>
 
+                <div class="mt-4 p-3 bg-light rounded-3">
+                    <p class="mb-3 lead" style="font-size: 1rem;">{{ consulta.descripcion }}</p>
                     {% if consulta.foto_1 or consulta.foto_2 or consulta.foto_3 %}
-                    <div class="row g-2">
-                        {% if consulta.foto_1 %}<div class="col-4"><a href="{{ consulta.foto_1 }}" target="_blank"><img
-                                    src="{{ consulta.foto_1 }}" class="img-fluid rounded border"></a></div>{% endif %}
-                        {% if consulta.foto_2 %}<div class="col-4"><a href="{{ consulta.foto_2 }}" target="_blank"><img
-                                    src="{{ consulta.foto_2 }}" class="img-fluid rounded border"></a></div>{% endif %}
-                        {% if consulta.foto_3 %}<div class="col-4"><a href="{{ consulta.foto_3 }}" target="_blank"><img
-                                    src="{{ consulta.foto_3 }}" class="img-fluid rounded border"></a></div>{% endif %}
+                    <div class="row g-2 justify-content-center justify-content-md-start">
+                        {% if consulta.foto_1 %}<div class="col-4 col-md-3"><a href="{{ consulta.foto_1 }}"
+                                target="_blank"><img src="{{ consulta.foto_1 }}"
+                                    class="img-fluid rounded shadow-sm img-preview border"></a></div>{% endif %}
+                        {% if consulta.foto_2 %}<div class="col-4 col-md-3"><a href="{{ consulta.foto_2 }}"
+                                target="_blank"><img src="{{ consulta.foto_2 }}"
+                                    class="img-fluid rounded shadow-sm img-preview border"></a></div>{% endif %}
+                        {% if consulta.foto_3 %}<div class="col-4 col-md-3"><a href="{{ consulta.foto_3 }}"
+                                target="_blank"><img src="{{ consulta.foto_3 }}"
+                                    class="img-fluid rounded shadow-sm img-preview border"></a></div>{% endif %}
                     </div>
                     {% endif %}
                 </div>
-
-                <div class="d-flex flex-column" id="chatMessages">
-                    {% for m in mensajes %}
-                    <div class="msg {% if m.role == 'cliente' %}msg-client{% else %}msg-staff{% endif %}">
-                        <div class="fw-bold small mb-1">
-                            {% if m.role != 'cliente' %}<i class="fa-solid fa-user-gear me-1"></i>Técnico: {% endif %}
-                            {{ m.username }}
-                        </div>
-                        {{ m.mensaje }}
-                        <span class="msg-meta text-end">{{ m.creado_en|fecha }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-
-                {% if consulta.estado != 'Cerrada' %}
-                <div class="mt-4 pt-4 border-top">
-                    <form method="post" action="/consultas/{{ consulta.id }}/mensaje">
-                        <div class="input-group">
-                            <textarea name="mensaje" class="form-control" placeholder="Escribe tu mensaje aquí..."
-                                rows="2" required></textarea>
-                            <button class="btn btn-primary px-4" type="submit"><i
-                                    class="fa-solid fa-paper-plane"></i></button>
-                        </div>
-                    </form>
-                </div>
-                {% else %}
-                <div class="alert alert-secondary text-center mt-4">
-                    Esta consulta ha sido cerrada.
-                </div>
-                {% endif %}
-
-                {% if user.role in ["admin", "recepcion", "tecnico"] and consulta.estado != 'Cerrada' %}
-                <div class="text-center mt-4">
-                    <form method="post" action="/consultas/{{ consulta.id }}/cerrar">
-                        <button type="submit" class="btn btn-outline-danger btn-sm">Cerrar Consulta
-                            Permanentemente</button>
-                    </form>
-                </div>
-                {% endif %}
             </div>
+
+            <!-- Lista de Mensajes -->
+            <div class="msg-list d-flex flex-column" id="chatMessages">
+                {% if not mensajes %}
+                <div class="text-center py-5 text-secondary opacity-50">
+                    <i class="fa-regular fa-comments fa-3x mb-3"></i>
+                    <p>Aún no hay mensajes en esta conversación.</p>
+                </div>
+                {% endif %}
+                {% for m in mensajes %}
+                <div class="msg {% if m.role == 'cliente' %}msg-client{% else %}msg-staff{% endif %} shadow-sm">
+                    <div class="fw-bold small mb-1">
+                        {% if m.role != 'cliente' %}<i class="fa-solid fa-user-gear me-1"></i>SAT: {% endif %}
+                        {{ m.username }}
+                    </div>
+                    <div style="white-space: pre-wrap;">{{ m.mensaje }}</div>
+                    <span class="msg-meta {% if m.role == 'cliente' %}text-end{% endif %}">{{ m.creado_en|fecha
+                        }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Área de Respuesta -->
+            {% if consulta.estado != 'Cerrada' %}
+            <div class="response-area">
+                <form method="post" action="/consultas/{{ consulta.id }}/mensaje">
+                    <label class="form-label fw-bold text-dark small mb-2"><i
+                            class="fa-solid fa-pen-to-square me-1"></i> Escribe tu respuesta aquí para el
+                        cliente:</label>
+                    <textarea name="mensaje" class="form-control mb-3 shadow-sm border-2"
+                        placeholder="Describe los pasos a seguir o tu valoración..." rows="4" required
+                        style="border-radius: 12px;"></textarea>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-primary btn-send shadow" type="submit">
+                            <i class="fa-solid fa-paper-plane me-2"></i>ENVIAR RESPUESTA AL CLIENTE
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% else %}
+            <div class="alert alert-secondary text-center m-4 rounded-4">
+                <i class="fa-solid fa-lock me-2"></i> Esta consulta ha sido marcada como <strong>RESUELTA Y
+                    CERRADA</strong>.
+            </div>
+            {% endif %}
+
+            <!-- Zona de Peligro (Cerrar) -->
+            {% if user.role in ["admin", "recepcion", "tecnico"] and consulta.estado != 'Cerrada' %}
+            <div class="danger-zone text-center">
+                <p class="small text-secondary mb-2">¿Ya está todo solucionado?</p>
+                <form method="post" action="/consultas/{{ consulta.id }}/cerrar"
+                    onsubmit="return confirm('¿Seguro que quieres cerrar esta consulta? No podrá seguir el chat.')">
+                    <button type="submit" class="btn btn-outline-danger btn-sm px-4 rounded-pill">
+                        <i class="fa-solid fa-check-double me-1"></i> FINALIZAR Y ARCHIVAR CASO
+                    </button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
 
     <script>
-        // Scroll al final del chat
-        const chat = document.getElementById('chatMessages');
-        if (chat) {
+        // Scroll al final del chat al cargar
+        window.onload = function () {
             window.scrollTo(0, document.body.scrollHeight);
-        }
+        };
     </script>
 
 </body>
