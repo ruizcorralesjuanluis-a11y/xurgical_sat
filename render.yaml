@@ -1,12 +1,15 @@
+# Trigger: 2026-02-11 18:32
 services:
   - type: web
     name: xurgical-sat
     plan: free
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT --proxy-headers
     envVars:
       - key: DATABASE_URL
-        sync: false # Aquí pegarás la URL de Neon en el panel de Render
+        sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: RENDER_FORCE_REDEPLOY
+        value: "v3"
