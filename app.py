@@ -518,31 +518,7 @@ def manual_init_db():
         return {"ok": False, "error": str(e)}
 
 
-@app.get('/articulos_lookup')
-def articulos_lookup(codigo: str, user=Depends(get_current_user)):
-    """Lookup de artículo para autorrelleno en alta manual de instrumentos."""
-    key = _norm_codigo(codigo)
-    if not key:
-        return {'found': False}
 
-    m = load_articulos_map()
-    if not m:
-        return {'found': False, 'error': 'Catálogo Articulos no disponible'}
-    
-    for k in _codigo_variants(key):
-        hit = m.get(k)
-        if hit:
-            resp = {
-                'found': True,
-                'codigo': k,
-                'descripcion': (hit.get('descripcion') or '').strip(),
-            }
-            fab = (hit.get('fabricante') or '').strip()
-            if fab:
-                resp['fabricante'] = fab
-            return resp
-
-    return {'found': False}
 
 
 
@@ -1707,7 +1683,7 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
         str(e["cliente"] or ""),
         fecha,
         n_inst,
-        referencia=str(e.get("nombre_archivo") or "")
+        referencia=str(e["nombre_archivo"] or "")
     )
     filename = f"OT_{e['ot_num']}_etiqueta.pdf"
     return StreamingResponse(
