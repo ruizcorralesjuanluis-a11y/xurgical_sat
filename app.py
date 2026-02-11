@@ -699,6 +699,28 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         peticiones_recogida = [dict(r) for r in cur.fetchall()]
         n_peticiones_pendientes = len(peticiones_recogida)
 
+    # --- 0b. Consultas Técnicas (NUEVO Chat) ---
+    consultas_list = []
+    n_consultas_pendientes = 0
+    if _user_role(user) in ["admin", "recepcion", "tecnico"]:
+        cur.execute("""
+            SELECT c.*, cl.nombre as cliente_nombre 
+            FROM consultas c
+            JOIN clientes cl ON c.cliente_id = cl.id
+            WHERE c.estado != 'Cerrada'
+            ORDER BY c.actualizado_en DESC
+        """)
+        consultas_list = [dict(r) for r in cur.fetchall()]
+        n_consultas_pendientes = sum(1 for c in consultas_list if c["estado"] == "Abierta")
+    elif _user_role(user) == "cliente" and user.get("cliente_id"):
+        cur.execute("""
+            SELECT * FROM consultas 
+            WHERE cliente_id = ?
+            ORDER BY actualizado_en DESC
+        """, (int(user.get("cliente_id") or 0),))
+        consultas_list = [dict(r) for r in cur.fetchall()]
+        n_consultas_pendientes = sum(1 for c in consultas_list if c["estado"] == "Respondida")
+
     # --- 1. KPIs Globales (Instrumentos) ---
     kpi_where = ""
     kpi_params = []
@@ -919,6 +941,8 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         "clientes_list_global": clientes_list_global,
         "n_peticiones_pendientes": n_peticiones_pendientes,
         "peticiones_recogida": peticiones_recogida,
+        "consultas_list": consultas_list,
+        "n_consultas_pendientes": n_consultas_pendientes,
     }
 
     return templates.TemplateResponse(
@@ -4006,3 +4030,112 @@ def count_peticiones_recogida(user=Depends(require_roles("admin", "recepcion")))
     row = cur.fetchone()
     conn.close()
     return {"count": int(row["n"] or 0) if row else 0}
+
+
+# -----------------------------
+# CONSULTAS TÉCNICAS (Chat)
+# -----------------------------
+@app.post("/consultas/nueva")
+async def consulta_nueva(
+    titulo: str = Form(...),
+    descripcion: str = Form(...),
+    foto1: UploadFile = File(None),
+    foto2: UploadFile = File(None),
+    foto3: UploadFile = File(None),
+    user=Depends(get_current_user)
+):
+    u_id = (user.get("id") if isinstance(user, dict) else getattr(user, "id", None))
+    cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+    
+    if not cli_id and _user_role(user) == "cliente":
+        return RedirectResponse(url="/?err=nocli", status_code=303)
+        
+    fotos_urls = []
+    for f in [foto1, foto2, foto3]:
+        if f and f.filename:
+            safe_name = re.sub(r"[^a-zA-Z0-9.-]", "_", f.filename)
+            fname = f"consulta_{int(time.time())}_{uuid.uuid4().hex[:6]}_{safe_name}"
+            path = os.path.join(FOTOS_DIR, fname)
+            content = await f.read()
+            with open(path, "wb") as out:
+                out.write(content)
+            fotos_urls.append(f"/static/fotos/{fname}")
+        else:
+            fotos_urls.append(None)
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO consultas (cliente_id, usuario_id, titulo, descripcion, foto_1, foto_2, foto_3)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (cli_id or 0, u_id, titulo, descripcion, fotos_urls[0], fotos_urls[1], fotos_urls[2]))
+    conn.commit()
+    conn.close()
+    
+    return RedirectResponse(url="/?msg=consulta_ok", status_code=303)
+
+@app.get("/consultas/{consulta_id}", response_class=HTMLResponse)
+async def consulta_detalle(request: Request, consulta_id: int, user=Depends(get_current_user)):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    cur.execute("""
+        SELECT c.*, cl.nombre as cliente_nombre 
+        FROM consultas c 
+        LEFT JOIN clientes cl ON c.cliente_id = cl.id 
+        WHERE c.id = ?
+    """, (consulta_id,))
+    consulta = cur.fetchone()
+    if not consulta:
+        conn.close()
+        return HTMLResponse("Consulta no encontrada", status_code=404)
+    
+    # Seguridad
+    if _user_role(user) == "cliente":
+        u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        if int(consulta.get("cliente_id", 0)) != int(u_cli_id or -1):
+            conn.close()
+            return HTMLResponse("Acceso denegado", status_code=403)
+            
+    cur.execute("""
+        SELECT m.*, u.username, u.role
+        FROM consultas_mensajes m
+        JOIN users u ON m.usuario_id = u.id
+        WHERE m.consulta_id = ?
+        ORDER BY m.creado_en ASC
+    """, (consulta_id,))
+    mensajes = [dict(r) for r in cur.fetchall()]
+    
+    conn.close()
+    return templates.TemplateResponse("consulta_chat.html", {
+        "request": request,
+        "user": user,
+        "consulta": dict(consulta),
+        "mensajes": mensajes
+    })
+
+@app.post("/consultas/{consulta_id}/mensaje")
+async def consulta_mensaje_enviar(consulta_id: int, mensaje: str = Form(...), user=Depends(get_current_user)):
+    u_id = (user.get("id") if isinstance(user, dict) else getattr(user, "id", None))
+    
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # Actualizar estado si el que escribe es admin/recepcion/tecnico
+    nuevo_estado = "Respondida" if _user_role(user) in ["admin", "recepcion", "tecnico"] else "Abierta"
+    
+    cur.execute("INSERT INTO consultas_mensajes (consulta_id, usuario_id, mensaje) VALUES (?, ?, ?)", (consulta_id, u_id, mensaje))
+    cur.execute("UPDATE consultas SET estado = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?", (nuevo_estado, consulta_id))
+    
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url=f"/consultas/{consulta_id}", status_code=303)
+
+@app.post("/consultas/{consulta_id}/cerrar")
+def cerrar_consulta(consulta_id: int, user=Depends(require_roles("admin", "recepcion", "tecnico"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE consultas SET estado = 'Cerrada' WHERE id = ?", (consulta_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/", status_code=303)

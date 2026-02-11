@@ -368,7 +368,7 @@ def init_db():
     else:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
 
-    # 10. PETICIONES DE RECOGIDA (NUEVO)
+    # 10. PETICIONES DE RECOGIDA
     cur.execute(f"""
     CREATE TABLE IF NOT EXISTS peticiones_recogida (
         id {pk},
@@ -383,7 +383,36 @@ def init_db():
     )
     """)
 
-    # Migración: asegurar columnas en peticiones_recogida
+    # 11. CONSULTAS TÉCNICAS (NUEVO)
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS consultas (
+        id {pk},
+        cliente_id INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        titulo TEXT,
+        descripcion TEXT,
+        estado TEXT DEFAULT 'Abierta', -- Abierta, Respondida, Cerrada
+        foto_1 TEXT,
+        foto_2 TEXT,
+        foto_3 TEXT,
+        creado_en {dt},
+        actualizado_en {dt}
+    )
+    """)
+
+    # 12. MENSAJES DE CONSULTAS (CHAT)
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS consultas_mensajes (
+        id {pk},
+        consulta_id INTEGER NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        mensaje TEXT,
+        creado_en {dt},
+        FOREIGN KEY (consulta_id) REFERENCES consultas(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Migraciones para peticiones_recogida
     cols_pr = get_table_columns(cur, "peticiones_recogida")
     if "contacto" not in cols_pr:
         cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN contacto TEXT")
@@ -391,7 +420,6 @@ def init_db():
         cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN telefono TEXT")
 
     # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
-    # Esto soluciona que los clientes no vean sus partes antiguos que no tenían ID
     cur.execute("""
         UPDATE envios 
         SET cliente_id = (SELECT id FROM clientes WHERE clientes.nombre = envios.cliente)

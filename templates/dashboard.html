@@ -296,6 +296,21 @@
         </div>
         {% endif %}
 
+        {% if user.role in ["admin", "recepcion", "tecnico"] %}
+        <div id="consultaBadgeContainer" class="d-inline-block">
+          {% if n_consultas_pendientes > 0 %}
+          <button class="btn btn-info btn-sm position-relative ms-2 bounce-in text-white" data-bs-toggle="modal"
+            data-bs-target="#consultaListModal" title="Consultas técnicas pendientes">
+            <i class="fa-solid fa-comments"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.6rem;">
+              {{ n_consultas_pendientes }}
+            </span>
+          </button>
+          {% endif %}
+        </div>
+        {% endif %}
+
         <div class="ms-2 d-flex align-items-center gap-1">
           <button class="btn btn-outline-dark btn-sm p-2" onclick="openScanner()" title="Escanear OT">
             <i class="fa-solid fa-camera"></i>
@@ -391,7 +406,7 @@
       <!-- SECCIÓN CLIENTE -->
 
       <div class="row g-2 mb-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <button class="btn btn-primary p-3 w-100 shadow-sm border-0" data-bs-toggle="modal"
             data-bs-target="#recogidaModal" style="border-radius:12px;">
             <i class="fa-solid fa-truck-ramp-box fa-lg mb-2 d-block"></i>
@@ -399,20 +414,34 @@
             <div class="small opacity-75">Tengo material listo</div>
           </button>
         </div>
-        <div class="col-md-4">
-          <button class="btn btn-dark p-3 w-100 shadow-sm border-0"
-            onclick="alert('Historial por Serial: Estamos indexando el historial de vuestro instrumental para mostrarlo aquí.')"
-            style="border-radius:12px;">
-            <i class="fa-solid fa-clock-rotate-left fa-lg mb-2 d-block"></i>
-            <strong>Trazabilidad Histórica</strong>
-            <div class="small opacity-75">Búsqueda por Serie/DataMatrix</div>
+        <div class="col-md-3">
+          <button class="btn btn-info text-white p-3 w-100 shadow-sm border-0" data-bs-toggle="modal"
+            data-bs-target="#consultaModal"
+            style="border-radius:12px; background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);">
+            <i class="fa-solid fa-comment-medical fa-lg mb-2 d-block"></i>
+            <strong>¿Es reparable?</strong>
+            <div class="small opacity-75">Consultar con técnicos</div>
           </button>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+          <button class="btn btn-dark p-3 w-100 shadow-sm border-0 position-relative" data-bs-toggle="modal"
+            data-bs-target="#consultaListModal" style="border-radius:12px;">
+            <i class="fa-solid fa-comments fa-lg mb-2 d-block"></i>
+            <strong>Mis Consultas</strong>
+            <div class="small opacity-75">Chat y seguimiento</div>
+            {% if n_consultas_pendientes > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.75rem; border: 2px solid white;">
+              {{ n_consultas_pendientes }}
+            </span>
+            {% endif %}
+          </button>
+        </div>
+        <div class="col-md-3">
           <a href="/guias" class="btn bg-white text-dark p-3 w-100 shadow-sm border-0" style="border-radius:12px;">
             <i class="fa-solid fa-book-medical fa-lg mb-2 d-block text-primary"></i>
-            <strong>Guías y Protocolos</strong>
-            <div class="small opacity-50">Cuidado y Mantenimiento</div>
+            <strong>Guías Técnicas</strong>
+            <div class="small opacity-50">Cuidado instrumental</div>
           </a>
         </div>
       </div>
@@ -858,6 +887,97 @@
     </div>
   </div>
 
+  <!-- Modal Nueva Consulta Técnica -->
+  <div class="modal fade" id="consultaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-comment-medical text-info me-2"></i>Consultar Reparabilidad
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="/consultas/nueva" enctype="multipart/form-data">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Título / Instrumento</label>
+              <input type="text" name="titulo" class="form-control" placeholder="Ej: Óptica rígida 4mm 30º" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Descripción del fallo</label>
+              <textarea name="descripcion" class="form-control" rows="3"
+                placeholder="Describe qué le pasa o qué necesitas consultar..." required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Fotos (Máximo 3)</label>
+              <div class="row g-2">
+                <div class="col-4">
+                  <input type="file" name="foto1" class="form-control form-control-sm" accept="image/*">
+                </div>
+                <div class="col-4">
+                  <input type="file" name="foto2" class="form-control form-control-sm" accept="image/*">
+                </div>
+                <div class="col-4">
+                  <input type="file" name="foto3" class="form-control form-control-sm" accept="image/*">
+                </div>
+              </div>
+              <div class="form-text small mt-1">Imágenes del daño ayudan mucho a la valoración previa.</div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="submit" class="btn btn-info text-white w-100">Enviar Consulta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lista de Consultas -->
+  <div class="modal fade" id="consultaListModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-comments text-info me-2"></i>Historial de Consultas</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="list-group list-group-flush">
+            {% if not consultas_list %}
+            <div class="text-center p-4 text-secondary opacity-50">
+              <i class="fa-solid fa-comment-slash fa-2xl d-block mb-3"></i>
+              No hay consultas activas actualmente.
+            </div>
+            {% endif %}
+            {% for c in consultas_list %}
+            <a href="/consultas/{{ c.id }}" class="list-group-item list-group-item-action px-0 py-3 border-bottom">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <div>
+                  {% if user.role != 'cliente' %}
+                  <span class="badge bg-light text-dark border me-1">{{ c.cliente_nombre }}</span>
+                  {% endif %}
+                  <strong class="text-primary">{{ c.titulo }}</strong>
+                </div>
+                <span class="text-secondary small ms-2">{{ c.creado_en|fecha }}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="small text-secondary text-truncate me-3" style="max-width: 70%;">
+                  {{ c.descripcion }}
+                </div>
+                {% if c.estado == 'Abierta' %}
+                <span class="badge text-bg-warning">Abierta</span>
+                {% elif c.estado == 'Respondida' %}
+                <span class="badge text-bg-success">Respondida</span>
+                {% else %}
+                <span class="badge text-bg-secondary">{{ c.estado }}</span>
+                {% endif %}
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Lista de Recogidas Pendientes -->
   <div class="modal fade" id="pickupListModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
@@ -968,6 +1088,18 @@
       text: 'Hemos registrado tu petición de recogida correctamente.',
       icon: 'success',
       confirmButtonColor: '#0d6efd',
+      timer: 5000,
+      timerProgressBar: true
+    }).then(() => {
+      window.history.replaceState(null, '', window.location.pathname);
+    });
+    {% endif %}
+    {% if request.query_params.get('msg') == 'consulta_ok' %}
+    Swal.fire({
+      title: '¡Consulta Enviada!',
+      text: 'Nuestros técnicos revisarán las fotos y te responderán lo antes posible.',
+      icon: 'success',
+      confirmButtonColor: '#0dcaf0',
       timer: 5000,
       timerProgressBar: true
     }).then(() => {
