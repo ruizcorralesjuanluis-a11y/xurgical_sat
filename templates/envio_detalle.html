@@ -531,8 +531,19 @@
 
       <!-- LISTADO INSTRUMENTOS -->
       <div class="panel p-2">
+        <!-- Buscador -->
+        <div class="p-2 mb-1">
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+              <i class="fa-solid fa-magnifying-glass text-muted"></i>
+            </span>
+            <input type="text" id="instrumentSearch" class="form-control border-start-0 ps-0"
+              placeholder="Buscar por modelo, denominación, fabricante, serie o datamatrix...">
+          </div>
+        </div>
+
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
+          <table class="table table-hover align-middle mb-0" id="instrumentsTable">
             <thead class="table-light">
               <tr>
                 <th class="col-id">ID</th>
@@ -558,7 +569,7 @@
 
               <!-- FILA PRINCIPAL -->
               <tr
-                class="{% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}{% if inst.estado and inst.estado|lower|trim == 'reparado' %}row-reparado{% endif %}{% if inst.estado and inst.estado|lower|trim == 'baja' %} row-baja{% endif %}{% endif %}">
+                class="instrument-row {% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}{% if inst.estado and inst.estado|lower|trim == 'reparado' %}row-reparado{% endif %}{% if inst.estado and inst.estado|lower|trim == 'baja' %} row-baja{% endif %}{% endif %}">
                 <td class="col-id">{{ inst.id }}</td>
 
                 <td class="col-modelo">
@@ -708,6 +719,11 @@
 
               {% endfor %}
 
+              <tr id="emptySearchRow" style="display: none;">
+                <td colspan="9" class="text-center text-secondary py-3">
+                  No se han encontrado instrumentos que coincidan con la búsqueda.
+                </td>
+              </tr>
               {% if instrumentos|length == 0 %}
               <tr>
                 <td colspan="9" class="text-center text-secondary py-3">
@@ -724,6 +740,45 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script Filtro Buscador -->
+  <script>
+    (function () {
+      const searchInput = document.getElementById('instrumentSearch');
+      if (!searchInput) return;
+
+      searchInput.addEventListener('input', function (e) {
+        const term = e.target.value.toLowerCase().trim();
+        const table = document.getElementById('instrumentsTable');
+        const mainRows = table.querySelectorAll('tbody tr.instrument-row');
+        let visibleCount = 0;
+
+        mainRows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          const obsRow = row.nextElementSibling;
+          const matches = text.includes(term);
+
+          if (matches) {
+            row.style.display = '';
+            if (obsRow && obsRow.classList.contains('obs-row')) {
+              obsRow.style.display = '';
+            }
+            visibleCount++;
+          } else {
+            row.style.display = 'none';
+            if (obsRow && obsRow.classList.contains('obs-row')) {
+              obsRow.style.display = 'none';
+            }
+          }
+        });
+
+        const emptyRow = document.getElementById('emptySearchRow');
+        if (emptyRow) {
+          emptyRow.style.display = (visibleCount === 0 && term !== '') ? '' : 'none';
+        }
+      });
+    })();
+  </script>
 
   <script>
     function handleStateChange(select, instId, tipoTrabajo) {

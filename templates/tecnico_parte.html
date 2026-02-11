@@ -179,6 +179,21 @@
     </div>
 
     <div class="container">
+        <!-- Buscador -->
+        <div class="mb-3">
+            <div class="input-group shadow-sm">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                </span>
+                <input type="text" id="techSearch" class="form-control border-start-0 ps-0"
+                    placeholder="Buscar instrumento...">
+            </div>
+        </div>
+
+        <div id="noResults" class="text-center py-5 text-secondary" style="display: none;">
+            <i class="fa-solid fa-magnifying-glass fa-3x mb-3 opacity-25"></i>
+            <p>No se han encontrado instrumentos que coincidan con la búsqueda.</p>
+        </div>
         {% for inst in instrumentos %}
         <div class="inst-card" id="inst-{{ inst.id }}">
             <div class="position-relative">
@@ -550,6 +565,35 @@
             }
         }
 
+    </script>
+
+    <!-- Script Filtro Buscador -->
+    <script>
+        (function () {
+            const techSearch = document.getElementById('techSearch');
+            if (!techSearch) return;
+
+            techSearch.addEventListener('input', function (e) {
+                const term = e.target.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.inst-card');
+                const noResults = document.getElementById('noResults');
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    const text = card.innerText.toLowerCase();
+                    if (text.includes(term)) {
+                        card.style.display = '';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (noResults) {
+                    noResults.style.display = (visibleCount === 0 && term !== '') ? '' : 'none';
+                }
+            });
+        })();
     </script>
 </body>
 

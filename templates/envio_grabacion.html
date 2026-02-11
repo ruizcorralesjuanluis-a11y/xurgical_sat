@@ -242,7 +242,13 @@
             <div class="text-secondary">Haz click en una tarjeta para ver el detalle y marcar como <b>GRABADO</b>.</div>
           </div>
 
-          <div class="d-flex gap-3 align-items-center">
+          <div class="d-flex gap-3 align-items-center flex-wrap">
+            <div class="input-group input-group-sm" style="max-width: 250px;">
+              <span class="input-group-text bg-white border-end-0">
+                <i class="fa-solid fa-magnifying-glass text-muted"></i>
+              </span>
+              <input type="text" id="mosaicSearch" class="form-control border-start-0 ps-0" placeholder="Buscar...">
+            </div>
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="onlyPending" checked>
               <label class="form-check-label" for="onlyPending">Mostrar solo pendientes</label>
@@ -506,25 +512,33 @@
       if (!onlyPending || !onlyDone) return;
       const showPending = onlyPending.checked;
       const showDone = onlyDone.checked;
+      const searchTerm = (document.getElementById('mosaicSearch')?.value || "").toLowerCase().trim();
       const items = mosaic.querySelectorAll('.inst-item');
 
       items.forEach(it => {
         const isGrabado = it.getAttribute('data-grabado') === '1';
+        const text = it.innerText.toLowerCase();
+
+        let matchesSearch = !searchTerm || text.includes(searchTerm);
+        let matchesStatus = true;
 
         if (showPending && showDone) {
-          it.style.display = 'none'; // Si ambos están marcados como "solo", no mostramos nada
+          matchesStatus = false; // Si ambos están marcados como "solo", no mostramos nada
         } else if (showPending) {
-          it.style.display = isGrabado ? 'none' : '';
+          matchesStatus = !isGrabado;
         } else if (showDone) {
-          it.style.display = isGrabado ? '' : 'none';
-        } else {
-          it.style.display = '';
+          matchesStatus = isGrabado;
         }
+
+        it.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
       });
     }
 
     if (onlyPending) onlyPending.addEventListener('change', applyFilter);
     if (onlyDone) onlyDone.addEventListener('change', applyFilter);
+    if (document.getElementById('mosaicSearch')) {
+      document.getElementById('mosaicSearch').addEventListener('input', applyFilter);
+    }
 
     // Ejecutar al cargar
     applyFilter();
