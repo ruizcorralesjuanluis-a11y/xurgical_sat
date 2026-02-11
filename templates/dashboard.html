@@ -455,10 +455,11 @@
             <thead class="table-light">
               <tr>
                 <th>OT</th>
+                <th class="d-none d-md-table-cell">Ref.</th>
                 <th class="d-none d-md-table-cell">Tipo</th>
                 <th>Cliente</th>
                 <th class="d-none d-md-table-cell">Fecha</th>
-                <th class="d-none d-md-table-cell">Instrumentos</th>
+                <th class="d-none d-md-table-cell">Instr.</th>
                 <th>Pend.</th>
                 <th>Fotos</th>
                 <th class="d-none d-md-table-cell">Grabados</th>
@@ -476,6 +477,9 @@
                   <div class="mt-1"><span class="badge text-bg-warning text-dark" style="font-size: 0.65rem;">EN
                       REPARACIÓN</span></div>
                   {% endif %}
+                </td>
+                <td class="d-none d-md-table-cell">
+                  <span class="text-secondary small">{{ e.nombre_archivo or "-" }}</span>
                 </td>
                 <td class="d-none d-md-table-cell">
                   {% if e.tipo_trabajo == 'TRAZABILIDAD' %}
