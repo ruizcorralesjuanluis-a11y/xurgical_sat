@@ -684,6 +684,11 @@ def logout():
     return resp
 
 
+@app.get("/health")
+@app.head("/")
+def health_check():
+    return {"status": "ok"}
+
 # -----------------------------
 # DASHBOARD
 # -----------------------------
