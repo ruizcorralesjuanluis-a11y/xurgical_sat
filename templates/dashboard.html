@@ -407,46 +407,60 @@
 
       <div class="row g-2 mb-3">
         <div class="col-md-3">
-          <button class="btn btn-primary p-3 w-100 shadow-sm border-0" data-bs-toggle="modal"
-            data-bs-target="#recogidaModal" style="border-radius:12px;">
-            <i class="fa-solid fa-truck-ramp-box fa-lg mb-2 d-block"></i>
-            <strong>Solicitar Recogida</strong>
-            <div class="small opacity-75">Tengo material listo</div>
+          <button
+            class="btn btn-primary p-3 w-100 h-100 shadow-sm border-0 d-flex align-items-center justify-content-between text-start"
+            data-bs-toggle="modal" data-bs-target="#recogidaModal" style="border-radius:12px; min-height: 70px;">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-truck-ramp-box fa-lg me-3"></i>
+              <strong>Solicitar Recogida</strong>
+            </div>
+            <div class="small opacity-75 d-none d-xl-block">Tengo material listo</div>
           </button>
         </div>
         <div class="col-md-3">
-          <button class="btn btn-info text-white p-3 w-100 shadow-sm border-0" data-bs-toggle="modal"
-            data-bs-target="#consultaModal"
-            style="border-radius:12px; background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);">
-            <i class="fa-solid fa-comment-medical fa-lg mb-2 d-block"></i>
-            <strong>¿Es reparable?</strong>
-            <div class="small opacity-75">Consultar con técnicos</div>
+          <button
+            class="btn btn-info text-white p-3 w-100 h-100 shadow-sm border-0 d-flex align-items-center justify-content-between text-start"
+            data-bs-toggle="modal" data-bs-target="#consultaModal"
+            style="border-radius:12px; min-height: 70px; background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-comment-medical fa-lg me-3"></i>
+              <strong>¿Es reparable?</strong>
+            </div>
+            <div class="small opacity-75 d-none d-xl-block">Consultar técnicos</div>
           </button>
         </div>
         <div class="col-md-3">
-          <button class="btn btn-dark p-3 w-100 shadow-sm border-0 position-relative" data-bs-toggle="modal"
-            data-bs-target="#consultaListModal" style="border-radius:12px;">
-            <i class="fa-solid fa-comments fa-lg mb-2 d-block"></i>
-            <strong>Mis Consultas</strong>
-            <div class="small opacity-75">Chat y seguimiento</div>
+          <button
+            class="btn btn-dark p-3 w-100 h-100 shadow-sm border-0 position-relative d-flex align-items-center justify-content-between text-start"
+            data-bs-toggle="modal" data-bs-target="#consultaListModal" style="border-radius:12px; min-height: 70px;">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-comments fa-lg me-3"></i>
+              <strong>Mis Consultas</strong>
+            </div>
+            <div class="small opacity-75 d-none d-xl-block">Chat y seguimiento</div>
             {% if n_consultas_pendientes > 0 %}
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-              style="font-size: 0.75rem; border: 2px solid white;">
+              style="font-size: 0.75rem; border: 2px solid white; z-index: 10;">
               {{ n_consultas_pendientes }}
             </span>
             {% elif n_consultas_activas > 0 %}
             <span
-              class="position-absolute top-0 start-100 translate-middle p-1 bg-info border border-light rounded-circle">
+              class="position-absolute top-0 start-100 translate-middle p-1 bg-info border border-light rounded-circle"
+              style="z-index:10;">
               <span class="visually-hidden">Activo</span>
             </span>
             {% endif %}
           </button>
         </div>
         <div class="col-md-3">
-          <a href="/guias" class="btn bg-white text-dark p-3 w-100 shadow-sm border-0" style="border-radius:12px;">
-            <i class="fa-solid fa-book-medical fa-lg mb-2 d-block text-primary"></i>
-            <strong>Guías Técnicas</strong>
-            <div class="small opacity-50">Cuidado instrumental</div>
+          <a href="/guias"
+            class="btn bg-white text-dark p-3 w-100 h-100 shadow-sm border-0 d-flex align-items-center justify-content-between text-start"
+            style="border-radius:12px; min-height: 70px;">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-book-medical fa-lg me-3 text-primary"></i>
+              <strong>Guías Técnicas</strong>
+            </div>
+            <div class="small opacity-50 d-none d-xl-block">Cuidado instrumental</div>
           </a>
         </div>
       </div>
