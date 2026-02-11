@@ -10,3 +10,5 @@ services:
         sync: false # Aquí pegarás la URL de Neon en el panel de Render
       - key: SECRET_KEY
         generateValue: true
+      - key: TRIGGER_DEPLOY_LABEL
+        value: "v2"
