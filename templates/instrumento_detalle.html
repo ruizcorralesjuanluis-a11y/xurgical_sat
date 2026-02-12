@@ -155,17 +155,57 @@
       <!-- CAMBIAR ESTADO (si no es trazabilidad) -->
       {% if tipo_upper != 'TRAZABILIDAD' %}
       {% if user and user.role in ["admin","tecnico"] %}
-      <form class="mt-3 d-flex flex-wrap gap-2 align-items-center" method="post"
-        action="/instrumentos/{{ inst.id }}/estado">
-        <label class="form-label m-0"><strong>Estado:</strong></label>
-        <select class="form-select" style="max-width:220px" name="estado">
-          <option value="Pendiente" {% if st=='Pendiente' %}selected{% endif %}>Pendiente</option>
-          <option value="En proceso" {% if st=='En proceso' %}selected{% endif %}>En proceso</option>
-          <option value="Reparado" {% if st=='Reparado' %}selected{% endif %}>Reparado</option>
-          <option value="Baja" {% if st=='Baja' %}selected{% endif %}>Baja</option>
-        </select>
-        <button class="btn btn-primary" type="submit">Guardar estado</button>
+      <hr>
+      <form class="mt-3" method="post" action="/instrumentos/{{ inst.id }}/estado">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label"><strong>Estado:</strong></label>
+            <select class="form-select" name="estado" id="estadoSelect">
+              <option value="Pendiente" {% if st=='Pendiente' %}selected{% endif %}>Pendiente</option>
+              <option value="En proceso" {% if st=='En proceso' %}selected{% endif %}>En proceso</option>
+              <option value="Reparado" {% if st=='Reparado' %}selected{% endif %}>Reparado</option>
+              <option value="Baja" {% if st=='Baja' %}selected{% endif %}>Baja</option>
+            </select>
+          </div>
+
+          <!-- BLOQUE REPUESTOS (Solo visible si En proceso) -->
+          <div id="repuestoBlock" class="col-md-7" {% if st !='En proceso' %}style="display:none" {% endif %}>
+            <div class="card bg-light border-warning">
+              <div class="card-body p-2">
+                <div class="row g-2">
+                  <div class="col-md-8">
+                    <label class="form-label small mb-1"><strong><i class="fa-solid fa-gears"></i> Info
+                        Repuesto:</strong></label>
+                    <input type="text" name="repuesto_info" class="form-control form-control-sm"
+                      placeholder="¿Qué pieza falta?" value="{{ inst.repuesto_info or '' }}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small mb-1"><strong><i class="fa-solid fa-euro-sign"></i>
+                        Precio:</strong></label>
+                    <input type="number" step="0.01" name="repuesto_precio" class="form-control form-control-sm"
+                      placeholder="0.00" value="{{ inst.repuesto_precio or '' }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-2">
+            <button class="btn btn-primary w-100" type="submit">Guardar</button>
+          </div>
+        </div>
       </form>
+
+      <script>
+        document.getElementById('estadoSelect').addEventListener('change', function () {
+          const block = document.getElementById('repuestoBlock');
+          if (this.value === 'En proceso') {
+            block.style.display = 'block';
+          } else {
+            block.style.display = 'none';
+          }
+        });
+      </script>
       {% endif %}
       {% endif %}
 

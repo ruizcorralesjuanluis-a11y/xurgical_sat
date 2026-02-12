@@ -541,8 +541,21 @@
                       <div class="mt-1"><span class="badge text-bg-success" style="font-size: 0.65rem;">CERRADO</span>
                       </div>
                       {% else %}
-                      <div class="mt-1"><span class="badge text-bg-warning text-dark" style="font-size: 0.65rem;">EN
-                          REPARACIÓN</span></div>
+                      <div class="mt-1 d-flex flex-column gap-1">
+                        <span class="badge text-bg-warning text-dark" style="font-size: 0.65rem; width: fit-content;">EN
+                          REPARACIÓN</span>
+                        {% if e.n_en_proceso > 0 %}
+                        <span class="badge bg-info text-dark" style="font-size: 0.65rem; width: fit-content;">
+                          <i class="fa-solid fa-hourglass-half"></i> EN ESPERA REPUESTO
+                        </span>
+                        {% endif %}
+                        {% if e.n_con_repuesto > 0 %}
+                        <span class="badge bg-primary px-2" style="font-size: 0.65rem; width: fit-content;"
+                          title="Tiene repuestos asignados">
+                          <i class="fa-solid fa-euro-sign"></i> PRESUPUESTO
+                        </span>
+                        {% endif %}
+                      </div>
                       {% endif %}
                     </td>
                     <td class="d-none d-md-table-cell">

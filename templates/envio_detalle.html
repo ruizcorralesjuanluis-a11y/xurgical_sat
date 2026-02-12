@@ -600,6 +600,17 @@
                   {% else %}
                   <span class="badge-pend">SIN FOTOS</span>
                   {% endif %}
+
+                  {% if inst.estado == 'En proceso' %}
+                  <div class="mt-1">
+                    <span class="badge bg-info text-dark" style="font-size: 0.65rem;">
+                      <i class="fa-solid fa-hourglass-half"></i> REPUESTO
+                    </span>
+                    {% if inst.repuesto_precio %}
+                    <i class="fa-solid fa-euro-sign text-primary ms-1" title="Precio: {{ inst.repuesto_precio }}€"></i>
+                    {% endif %}
+                  </div>
+                  {% endif %}
                 </td>
 
                 <!-- Estado -->

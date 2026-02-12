@@ -245,12 +245,18 @@ def init_db():
         foto_salida_5 TEXT,
         foto_salida_6 TEXT,
         tecnico_reparacion TEXT,
-        tecnico_reparacion_en TEXT
+        tecnico_reparacion_en TEXT,
+        repuesto_info TEXT,
+        repuesto_precio REAL
     )
     """)
 
     # Migración: asegurar que existen las columnas de fotos (1-6) tanto entrada como salida
     cols_inst = get_table_columns(cur, "instrumentos")
+    if "repuesto_info" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN repuesto_info TEXT")
+    if "repuesto_precio" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN repuesto_precio REAL")
     for i in range(1, 7):
         col_e = f"foto_entrada_{i}"
         if col_e not in cols_inst:

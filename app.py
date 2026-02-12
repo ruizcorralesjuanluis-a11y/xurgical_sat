@@ -843,7 +843,9 @@ def dashboard(request: Request, user=Depends(get_current_user)):
                 (i.foto_entrada_4 IS NOT NULL AND i.foto_entrada_4 != '') OR 
                 (i.foto_entrada_5 IS NOT NULL AND i.foto_entrada_5 != '') OR 
                 (i.foto_entrada_6 IS NOT NULL AND i.foto_entrada_6 != '') THEN 1 ELSE 0 END) AS n_con_alguna_foto,
-            SUM(CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END) AS n_grabados
+            SUM(CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END) AS n_grabados,
+            SUM(CASE WHEN i.estado = 'En proceso' THEN 1 ELSE 0 END) AS n_en_proceso,
+            SUM(CASE WHEN COALESCE(i.repuesto_precio, 0) > 0 THEN 1 ELSE 0 END) AS n_con_repuesto
         FROM envios e
         LEFT JOIN instrumentos i ON i.envio_id = e.id
         {where_q}
@@ -3127,7 +3129,16 @@ async def cambiar_estado(
             conn.close()
             return HTMLResponse("En OTs de trazabilidad no se cambia el estado de reparación.", status_code=400)
 
-    # Actualiza estado
+    # Actualiza estado y repuestos
+    repuesto_info = form.get("repuesto_info")
+    repuesto_precio_raw = form.get("repuesto_precio")
+    repuesto_precio = None
+    if repuesto_precio_raw:
+        try:
+            repuesto_precio = float(repuesto_precio_raw)
+        except:
+            repuesto_precio = None
+
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     username = user.get("username")
 
@@ -3135,9 +3146,11 @@ async def cambiar_estado(
         UPDATE instrumentos 
         SET estado=?, 
             tecnico_reparacion=?, 
-            tecnico_reparacion_en=? 
+            tecnico_reparacion_en=?,
+            repuesto_info=?,
+            repuesto_precio=?
         WHERE id=?
-    """, (estado, username, ahora, instrumento_id))
+    """, (estado, username, ahora, repuesto_info, repuesto_precio, instrumento_id))
     
     conn.commit()
     conn.close()
