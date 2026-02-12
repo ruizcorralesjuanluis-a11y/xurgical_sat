@@ -957,6 +957,64 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     )
 
 
+# -----------------------------
+# TRAZABILIDAD / HISTORIAL
+# -----------------------------
+@app.get("/api/trazabilidad/buscar")
+def api_trazabilidad_buscar(q: str = "", user=Depends(get_current_user)):
+    """Busca el historial de un instrumento por DataMatrix o Nº de Serie."""
+    q = (q or "").strip()
+    if not q:
+        return {"results": []}
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    where_clauses = ["(i.codigo_datamatrix = ? OR i.num_serie = ? OR i.nombre_trazabilidad = ?)"]
+    params = [q, q, q]
+
+    # Filtro por cliente
+    if _user_role(user) == "cliente":
+        u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        if u_cli_id:
+            where_clauses.append("e.cliente_id = ?")
+            params.append(int(u_cli_id))
+        else:
+            conn.close()
+            return {"results": []}
+
+    where_sql = " AND ".join(where_clauses)
+    
+    sql = f"""
+        SELECT i.id, i.envio_id, i.denominacion, i.codigo_producto, i.fabricante, i.estado, i.creado_en,
+               e.ot_num, e.fecha, e.tipo_trabajo
+        FROM instrumentos i
+        JOIN envios e ON e.id = i.envio_id
+        WHERE {where_sql}
+        ORDER BY i.creado_en DESC
+        LIMIT 50
+    """
+    
+    try:
+        cur.execute(sql, tuple(params))
+        rows = cur.fetchall()
+        results = [dict(r) for r in rows]
+        
+        # Formatear fechas para el JSON
+        for r in results:
+            if r.get("fecha"):
+                r["fecha_fmt"] = format_fecha(r["fecha"])
+            if r.get("creado_en"):
+                r["creado_fmt"] = format_fecha(r["creado_en"])
+                
+        return {"results": results}
+    except Exception as e:
+        print(f"Error en api_trazabilidad_buscar: {e}")
+        return {"results": [], "error": str(e)}
+    finally:
+        conn.close()
+
+
 @app.post("/perfil/password")
 def change_own_password(
     password: str = Form(...),
