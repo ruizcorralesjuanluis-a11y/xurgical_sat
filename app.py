@@ -3437,8 +3437,12 @@ def toggle_instrumento_repuesto(instrumento_id: int, repuesto_id: int, user=Depe
         cur.execute("INSERT INTO instrumento_repuestos (instrumento_id, repuesto_id, precio_aplicado) VALUES (?, ?, ?)", (instrumento_id, repuesto_id, precio))
     
     # Recalculate total price and info for the instrument (optional but helpful for the admin view in dashboard)
-    cur.execute("""
-        SELECT SUM(precio_aplicado) as total, GROUP_CONCAT(nombre, ', ') as nombres
+    # Compatibilidad PostgreSQL (Neon/Render) vs SQLite
+    is_pg = os.environ.get("DATABASE_URL") is not None
+    agg_func = "string_agg(nombre, ', ')" if is_pg else "GROUP_CONCAT(nombre, ', ')"
+    
+    cur.execute(f"""
+        SELECT SUM(precio_aplicado) as total, {agg_func} as nombres
         FROM instrumento_repuestos ir
         JOIN repuestos_catalogo rc ON ir.repuesto_id = rc.id
         WHERE ir.instrumento_id = ?
