@@ -706,6 +706,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     # --- 0b. Consultas Técnicas (NUEVO Chat) ---
     consultas_list = []
     n_consultas_pendientes = 0
+    n_consultas_activas = 0
     if _user_role(user) in ["admin", "recepcion", "tecnico"]:
         cur.execute("""
             SELECT c.*, cl.nombre as cliente_nombre 

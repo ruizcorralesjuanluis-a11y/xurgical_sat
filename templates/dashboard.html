@@ -441,16 +441,29 @@
               <strong>Mis Consultas</strong>
             </div>
             <div class="small opacity-75 d-none d-xl-block">Chat y seguimiento</div>
+            {% if n_consultas_pendientes > 0 %}
             <span id="consultasBadge"
               class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-              style="font-size: 0.75rem; border: 2px solid white; z-index: 10; {% if n_consultas_pendientes <= 0 %}display:none;{% endif %}">
+              style="font-size: 0.75rem; border: 2px solid white; z-index: 10;">
               {{ n_consultas_pendientes }}
             </span>
             {% elif n_consultas_activas > 0 %}
-            <span
+            <span id="consultasIndicator"
               class="position-absolute top-0 start-100 translate-middle p-1 bg-info border border-light rounded-circle"
               style="z-index:10;">
               <span class="visually-hidden">Activo</span>
+            </span>
+            {# Se añadirá dinámicamente el badge de contador si cambia #}
+            <span id="consultasBadge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.75rem; border: 2px solid white; z-index: 10; display: none;">
+              0
+            </span>
+            {% else %}
+            <span id="consultasBadge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.75rem; border: 2px solid white; z-index: 10; display: none;">
+              0
             </span>
             {% endif %}
           </button>
