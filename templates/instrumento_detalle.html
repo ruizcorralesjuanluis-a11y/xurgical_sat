@@ -176,11 +176,22 @@
                 <!-- CHECKLIST DE REPUESTOS FRECUENTES -->
                 {% if repuestos_frecuentes %}
                 <div class="mb-2">
-                  <label class="form-label small mb-1 text-primary"><strong><i class="fa-solid fa-list-check"></i>
-                      Selección rápida de repuestos:</strong></label>
-                  <div class="d-flex flex-wrap gap-1">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label small m-0 text-primary"><strong><i class="fa-solid fa-list-check"></i>
+                        Selección rápida:</strong></label>
+                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                      <span class="input-group-text bg-white border-end-0"><i
+                          class="fa-solid fa-magnifying-glass text-muted" style="font-size: 0.7rem;"></i></span>
+                      <input type="text" id="spareSearch" class="form-control form-control-sm border-start-0"
+                        placeholder="Buscar repuesto..." style="font-size: 0.75rem;">
+                    </div>
+                  </div>
+
+                  <div id="spareList" class="d-flex flex-wrap gap-1 p-2 border rounded bg-white"
+                    style="max-height: 150px; overflow-y: auto;">
                     {% for rf in repuestos_frecuentes %}
-                    <form action="/instrumentos/{{ inst.id }}/repuesto/{{ rf.id }}/toggle" method="post" class="m-0">
+                    <form action="/instrumentos/{{ inst.id }}/repuesto/{{ rf.id }}/toggle" method="post"
+                      class="m-0 spare-item" data-name="{{ rf.nombre|lower }}">
                       <button type="submit"
                         class="btn btn-sm {% if rf.checked %}btn-primary{% else %}btn-outline-secondary{% endif %}"
                         style="font-size: 0.72rem; padding: 2px 8px;">
@@ -191,6 +202,21 @@
                     {% endfor %}
                   </div>
                 </div>
+
+                <script>
+                  document.getElementById('spareSearch').addEventListener('input', function () {
+                    const q = this.value.toLowerCase().trim();
+                    const items = document.querySelectorAll('.spare-item');
+                    items.forEach(item => {
+                      const name = item.getAttribute('data-name');
+                      if (name.includes(q)) {
+                        item.classList.remove('d-none');
+                      } else {
+                        item.classList.add('d-none');
+                      }
+                    });
+                  });
+                </script>
                 <hr class="my-2">
                 {% endif %}
 
