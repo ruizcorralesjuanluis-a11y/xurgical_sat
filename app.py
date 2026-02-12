@@ -4352,6 +4352,21 @@ def count_peticiones_recogida(user=Depends(require_roles("admin", "recepcion")))
     conn.close()
     return {"count": int(row["n"] or 0) if row else 0}
 
+@app.get("/api/consultas/unread_count")
+def count_consultas_unread(user=Depends(get_current_user)):
+    conn = get_conn()
+    cur = conn.cursor()
+    role = _user_role(user)
+    count = 0
+    if role in ["admin", "recepcion", "tecnico"]:
+        cur.execute("SELECT COUNT(*) as n FROM consultas WHERE estado='Abierta'")
+        count = cur.fetchone()["n"]
+    elif role == "cliente" and user.get("cliente_id"):
+        cur.execute("SELECT COUNT(*) as n FROM consultas WHERE cliente_id=? AND estado='Respondida'", (int(user.get("cliente_id")),))
+        count = cur.fetchone()["n"]
+    conn.close()
+    return {"count": int(count or 0)}
+
 
 # -----------------------------
 # CONSULTAS TÉCNICAS (Chat)
