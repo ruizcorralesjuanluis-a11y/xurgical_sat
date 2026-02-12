@@ -217,53 +217,6 @@ def _reserve_numeros_cliente(cur, cliente_id: int, cantidad: int) -> tuple[str, 
 
 # moved to top
 
-# -----------------------------
-# CATÁLOGO DE REPUESTOS (admin)
-# -----------------------------
-@app.get("/repuestos_catalogo", response_class=HTMLResponse)
-def view_repuestos_catalogo(request: Request, user=Depends(require_roles("admin"))):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM repuestos_catalogo ORDER BY nombre")
-    items = [dict(r) for r in cur.fetchall()]
-    conn.close()
-    return templates.TemplateResponse("repuestos_catalogo.html", {"request": request, "user": user, "items": items})
-
-@app.post("/repuestos_catalogo/add")
-async def add_repuesto_catalogo(request: Request, user=Depends(require_roles("admin"))):
-    form = await request.form()
-    nombre = (form.get("nombre") or "").strip()
-    precio = float(form.get("precio") or 0)
-    if not nombre:
-        return RedirectResponse(url="/repuestos_catalogo", status_code=303)
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO repuestos_catalogo (nombre, precio) VALUES (?, ?)", (nombre, precio))
-    conn.commit()
-    conn.close()
-    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
-
-@app.post("/repuestos_catalogo/{item_id}/update")
-async def update_repuesto_catalogo(item_id: int, request: Request, user=Depends(require_roles("admin"))):
-    form = await request.form()
-    nombre = (form.get("nombre") or "").strip()
-    precio = float(form.get("precio") or 0)
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("UPDATE repuestos_catalogo SET nombre=?, precio=? WHERE id=?", (nombre, precio, item_id))
-    conn.commit()
-    conn.close()
-    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
-
-@app.post("/repuestos_catalogo/{item_id}/toggle")
-def toggle_repuesto_catalogo(item_id: int, user=Depends(require_roles("admin"))):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("UPDATE repuestos_catalogo SET activo = 1 - COALESCE(activo, 1) WHERE id=?", (item_id,))
-    conn.commit()
-    conn.close()
-    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
-
 
 # -----------------------------
 # ARTICULOS (catálogo para autocompletar)
@@ -3373,6 +3326,28 @@ async def checklist_admin_update(
     conn.close()
     return RedirectResponse(url=f"/checklist_admin?tipo={tipo}", status_code=303)
 
+@app.post("/checklist_admin/{item_id}/toggle")
+async def checklist_admin_toggle(item_id: int, request: Request, user=Depends(require_roles("admin"))):
+    form = await request.form()
+    tipo = (form.get("tipo") or "REPARACION").strip().upper()
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE checklist_items SET activo = 1 - COALESCE(activo, 1) WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url=f"/checklist_admin?tipo={tipo}", status_code=303)
+
+@app.post("/checklist_admin/{item_id}/delete")
+async def checklist_admin_delete(item_id: int, request: Request, user=Depends(require_roles("admin"))):
+    form = await request.form()
+    tipo = (form.get("tipo") or "REPARACION").strip().upper()
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM checklist_items WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url=f"/checklist_admin?tipo={tipo}", status_code=303)
+
 
 # -----------------------------
 # CATÁLOGO DE REPUESTOS (admin)
@@ -3417,6 +3392,15 @@ def toggle_repuesto_catalogo(item_id: int, user=Depends(require_roles("admin")))
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("UPDATE repuestos_catalogo SET activo = 1 - COALESCE(activo, 1) WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+
+@app.post("/repuestos_catalogo/{item_id}/delete")
+def delete_repuesto_catalogo(item_id: int, user=Depends(require_roles("admin"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM repuestos_catalogo WHERE id=?", (item_id,))
     conn.commit()
     conn.close()
     return RedirectResponse(url="/repuestos_catalogo", status_code=303)

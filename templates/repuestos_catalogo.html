@@ -146,10 +146,16 @@
                                     <form method="post" action="/repuestos_catalogo/{{ it.id }}/toggle"
                                         class="d-inline">
                                         <button
-                                            class="btn {% if it.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-sm"
+                                            class="btn {% if it.activo %}btn-outline-warning{% else %}btn-outline-success{% endif %} btn-sm"
                                             title="Activar/Desactivar">
                                             <i
                                                 class="fa-solid {% if it.activo %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                    <form method="post" action="/repuestos_catalogo/{{ it.id }}/delete" class="d-inline"
+                                        onsubmit="return confirm('¿Eliminar permanentemente este repuesto?')">
+                                        <button class="btn btn-outline-danger btn-sm" title="Borrar">
+                                            <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
                                 </td>
