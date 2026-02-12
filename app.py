@@ -2374,7 +2374,7 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
     # --- CHECKLIST DE REPUESTOS ---
     cur.execute("""
         SELECT rc.*, 
-               (SELECT 1 FROM instrumento_repuestos ir WHERE ir.instrumento_id=? AND ir.repuesto_id=rc.id) as checked
+               COALESCE((SELECT ir.cantidad FROM instrumento_repuestos ir WHERE ir.instrumento_id=? AND ir.repuesto_id=rc.id), 0) as cantidad
         FROM repuestos_catalogo rc
         WHERE COALESCE(rc.activo,1)=1
         ORDER BY rc.nombre
@@ -3418,31 +3418,38 @@ def toggle_repuesto_catalogo(item_id: int, user=Depends(require_roles("admin")))
     conn.close()
     return RedirectResponse(url="/repuestos_catalogo", status_code=303)
 
-@app.post("/instrumentos/{instrumento_id}/repuesto/{repuesto_id}/toggle")
-def toggle_instrumento_repuesto(instrumento_id: int, repuesto_id: int, user=Depends(require_roles("admin", "tecnico"))):
+@app.post("/instrumentos/{instrumento_id}/repuesto/{repuesto_id}/adjust")
+def adjust_instrumento_repuesto(instrumento_id: int, repuesto_id: int, action: str = "add", user=Depends(require_roles("admin", "tecnico"))):
     conn = get_conn()
     cur = conn.cursor()
     
-    # Check if already linked
-    cur.execute("SELECT 1 FROM instrumento_repuestos WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
-    exists = cur.fetchone()
+    cur.execute("SELECT cantidad FROM instrumento_repuestos WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
+    row = cur.fetchone()
     
-    if exists:
-        cur.execute("DELETE FROM instrumento_repuestos WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
-    else:
-        # Get price from catalog
-        cur.execute("SELECT precio FROM repuestos_catalogo WHERE id=?", (repuesto_id,))
-        rep = cur.fetchone()
-        precio = rep["precio"] if rep else 0
-        cur.execute("INSERT INTO instrumento_repuestos (instrumento_id, repuesto_id, precio_aplicado) VALUES (?, ?, ?)", (instrumento_id, repuesto_id, precio))
-    
-    # Recalculate total price and info for the instrument (optional but helpful for the admin view in dashboard)
-    # Compatibilidad PostgreSQL (Neon/Render) vs SQLite
+    if action == "add":
+        if row:
+            cur.execute("UPDATE instrumento_repuestos SET cantidad = cantidad + 1 WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
+        else:
+            cur.execute("SELECT precio FROM repuestos_catalogo WHERE id=?", (repuesto_id,))
+            rep = cur.fetchone()
+            precio = rep["precio"] if rep else 0
+            cur.execute("INSERT INTO instrumento_repuestos (instrumento_id, repuesto_id, precio_aplicado, cantidad) VALUES (?, ?, ?, 1)", (instrumento_id, repuesto_id, precio))
+    elif action == "sub":
+        if row:
+            cantidad = row["cantidad"]
+            if cantidad > 1:
+                cur.execute("UPDATE instrumento_repuestos SET cantidad = cantidad - 1 WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
+            else:
+                cur.execute("DELETE FROM instrumento_repuestos WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
+
+    # Recalculate total price and info (unit price * count)
     is_pg = os.environ.get("DATABASE_URL") is not None
-    agg_func = "string_agg(nombre, ', ')" if is_pg else "GROUP_CONCAT(nombre, ', ')"
+    # For info, we want something like "Lente x2, Fibra"
+    agg_info = "string_agg(CASE WHEN cantidad > 1 THEN nombre || ' x' || cantidad ELSE nombre END, ', ')" if is_pg else \
+               "GROUP_CONCAT(CASE WHEN cantidad > 1 THEN nombre || ' x' || cantidad ELSE nombre END, ', ')"
     
     cur.execute(f"""
-        SELECT SUM(precio_aplicado) as total, {agg_func} as nombres
+        SELECT SUM(precio_aplicado * cantidad) as total, {agg_info} as nombres
         FROM instrumento_repuestos ir
         JOIN repuestos_catalogo rc ON ir.repuesto_id = rc.id
         WHERE ir.instrumento_id = ?
@@ -3452,18 +3459,21 @@ def toggle_instrumento_repuesto(instrumento_id: int, repuesto_id: int, user=Depe
     total_precio = totals["total"] or 0
     total_info = totals["nombres"] or ""
     
-    # Update instrument with aggregated data
     cur.execute("UPDATE instrumentos SET repuesto_precio=?, repuesto_info=? WHERE id=?", (total_precio, total_info, instrumento_id))
     
+    # Get current item count for UI feedback
+    cur.execute("SELECT cantidad FROM instrumento_repuestos WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
+    new_row = cur.fetchone()
+    new_qty = new_row["cantidad"] if new_row else 0
+
     conn.commit()
     conn.close()
     
-    # Soporte para AJAX
     return {
         "ok": True, 
         "total_precio": total_precio, 
         "total_info": total_info,
-        "exists": not exists
+        "cantidad": new_qty
     }
 
 

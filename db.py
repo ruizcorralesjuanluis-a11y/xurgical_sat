@@ -266,9 +266,16 @@ def init_db():
         instrumento_id INTEGER NOT NULL,
         repuesto_id INTEGER NOT NULL,
         precio_aplicado REAL,
+        cantidad INTEGER DEFAULT 1,
         PRIMARY KEY (instrumento_id, repuesto_id)
     )
     """)
+
+    # Migración: asegurar que existe la columna cantidad
+    try:
+        cur.execute("ALTER TABLE instrumento_repuestos ADD COLUMN cantidad INTEGER DEFAULT 1")
+    except:
+        pass
 
     # Migración: asegurar que existen las columnas de fotos (1-6) tanto entrada como salida
     cols_inst = get_table_columns(cur, "instrumentos")

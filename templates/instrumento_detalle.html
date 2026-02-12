@@ -190,13 +190,25 @@
                   <div id="spareList" class="d-flex flex-wrap gap-1 p-2 border rounded bg-white"
                     style="max-height: 150px; overflow-y: auto;">
                     {% for rf in repuestos_frecuentes %}
-                    <div class="spare-item" data-name="{{ rf.nombre|lower }}">
-                      <button type="button" onclick="toggleRepuesto({{ rf.id }}, this)"
-                        class="btn btn-sm {% if rf.checked %}btn-primary{% else %}btn-outline-secondary{% endif %}"
-                        style="font-size: 0.72rem; padding: 2px 8px;">
-                        {% if rf.checked %}<i class="fa-solid fa-check"></i>{% endif %}
-                        {{ rf.nombre }} ({{ rf.precio }}€)
-                      </button>
+                    <div class="spare-item d-flex align-items-center gap-1 border rounded p-1"
+                      data-name="{{ rf.nombre|lower }}" style="background: white;">
+                      <span class="small me-1" style="font-size: 0.72rem; white-space: nowrap;">{{ rf.nombre }}</span>
+                      <div class="d-flex align-items-center bg-light rounded border px-1">
+                        <button type="button" onclick="adjustRepuesto({{ rf.id }}, 'sub')"
+                          class="btn btn-link btn-sm p-0 text-danger" style="text-decoration: none; width: 18px;" {% if
+                          rf.cantidad==0 %}disabled{% endif %}>
+                          <i class="fa-solid fa-minus" style="font-size: 0.7rem;"></i>
+                        </button>
+                        <span class="mx-1 fw-bold text-dark qty-label" id="qty-{{ rf.id }}"
+                          style="font-size: 0.75rem; min-width: 14px; text-align: center;">
+                          {{ rf.cantidad }}
+                        </span>
+                        <button type="button" onclick="adjustRepuesto({{ rf.id }}, 'add')"
+                          class="btn btn-link btn-sm p-0 text-success" style="text-decoration: none; width: 18px;">
+                          <i class="fa-solid fa-plus" style="font-size: 0.7rem;"></i>
+                        </button>
+                      </div>
+                      <span class="text-muted small" style="font-size: 0.65rem;">({{ rf.precio }}€)</span>
                     </div>
                     {% endfor %}
                   </div>
@@ -216,37 +228,26 @@
                     });
                   });
 
-                  function toggleRepuesto(repId, btn) {
-                    // Feedback visual inmediato
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
+                  function adjustRepuesto(repId, action) {
+                    const label = document.getElementById(`qty-${repId}`);
+                    const subBtn = label.previousElementSibling;
 
-                    fetch(`/instrumentos/{{ inst.id }}/repuesto/${repId}/toggle`, {
+                    fetch(`/instrumentos/{{ inst.id }}/repuesto/${repId}/adjust?action=${action}`, {
                       method: 'POST',
                       headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     })
                       .then(r => r.json())
                       .then(data => {
-                        btn.disabled = false;
-                        btn.style.opacity = '1';
                         if (data.ok) {
-                          // Actualizar inputs "el sitio" donde deben estar
+                          // Actualizar label de cantidad
+                          label.innerText = data.cantidad;
+
+                          // Habilitar/deshabilitar botón de restar
+                          subBtn.disabled = (data.cantidad === 0);
+
+                          // Actualizar inputs globales
                           document.querySelector('input[name="repuesto_info"]').value = data.total_info;
                           document.querySelector('input[name="repuesto_precio"]').value = data.total_precio;
-
-                          // Actualizar estilo del botón
-                          if (data.exists) {
-                            btn.classList.remove('btn-outline-secondary');
-                            btn.classList.add('btn-primary');
-                            if (!btn.querySelector('.fa-check')) {
-                              btn.insertAdjacentHTML('afterbegin', '<i class="fa-solid fa-check"></i> ');
-                            }
-                          } else {
-                            btn.classList.add('btn-outline-secondary');
-                            btn.classList.remove('btn-primary');
-                            const icon = btn.querySelector('.fa-check');
-                            if (icon) icon.remove();
-                          }
                         }
                       });
                   }
