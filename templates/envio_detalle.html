@@ -363,9 +363,9 @@
         </a>
 
         {% if user and user.role != "cliente" %}
-        <a class="btn btn-outline-success btn-sm" href="/envios/{{ envio.id }}/etiqueta.pdf" target="_blank">
+        <button class="btn btn-outline-success btn-sm" onclick="printEtiqueta('{{ envio.id }}')">
           <i class="fa-solid fa-tag"></i> Etiqueta
-        </a>
+        </button>
         {% endif %}
 
         {% if user and user.role in ["admin", "recepcion", "cliente"] %}
@@ -460,14 +460,13 @@
               </button>
             </form>
 
-            <a class="btn btn-dark px-4 py-3 action-card shadow-sm" href="/envios/{{ envio.id }}/etiqueta.pdf"
-              target="_blank">
+            <button class="btn btn-dark px-4 py-3 action-card shadow-sm" onclick="printEtiqueta('{{ envio.id }}')">
               <i class="fa-solid fa-circle-check fa-lg"></i>
               <div class="text-start">
                 <div class="small opacity-75">Finalizar</div>
                 <div>Imprimir Etiqueta</div>
               </div>
-            </a>
+            </button>
           </div>
           {% endif %}
         </div>
@@ -624,8 +623,8 @@
                   {% else %}
                   {% if user and user.role in ["admin","tecnico"] %}
                   <form method="post" action="/instrumentos/{{ inst.id }}/estado" class="m-0">
-                    <select name="estado" class="form-select form-select-sm"
-                      onchange="handleStateChange(this, {{ inst.id }}, '{{ envio.tipo_trabajo }}')">
+                    <select name="estado" class="form-select form-select-sm" data-inst-id="{{ inst.id }}"
+                      data-tipo-trabajo="{{ envio.tipo_trabajo|default('') }}" onchange="handleStateChange(this)">
                       {% for e in ["Pendiente","En proceso","Reparado","Baja"] %}
                       <option value="{{ e }}" {% if inst.estado==e %}selected{% endif %}>{{ e }}</option>
                       {% endfor %}
@@ -792,7 +791,9 @@
   </script>
 
   <script>
-    function handleStateChange(select, instId, tipoTrabajo) {
+    function handleStateChange(select) {
+      const instId = select.getAttribute('data-inst-id');
+      const tipoTrabajo = select.getAttribute('data-tipo-trabajo');
       if (select.value === 'Reparado' && tipoTrabajo === 'OPTICA_RIGIDA') {
         if (confirm('¿Necesitas hacer un control de calidad?')) {
           // Redirigir al formulario QC
@@ -802,6 +803,23 @@
       }
       // Si no es óptica o dice que NO, enviar formulario normal (cambiar estado)
       select.form.submit();
+    }
+
+    // Función para imprimir etiqueta automáticamente
+    function printEtiqueta(envioId) {
+      const url = `/envios/${envioId}/etiqueta.pdf`;
+      let iframe = document.getElementById('printFrame');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'printFrame';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+      iframe.src = url;
+      iframe.onload = function () {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      };
     }
   </script>
 

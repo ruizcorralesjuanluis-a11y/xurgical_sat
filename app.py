@@ -1792,47 +1792,64 @@ async def api_save_checklist(instrumento_id: int, request: Request, user=Depends
 # -----------------------------
 # ETIQUETA (pegatina) OT
 # -----------------------------
-def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: int, referencia: str = "") -> bytes:
+def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: int, referencia: str = "",
+                        fabricante: str = "", modelo: str = "", serie: str = "") -> bytes:
     """Genera una etiqueta PDF con texto + código de barras Code128.
 
     Contenido del barcode: OT|CLIENTE|FECHA|N
     """
-    # Etiqueta térmica 70x40 mm (requerimiento).
-    # Al imprimir: usar "tamaño real" / 100% (sin ajustar).
-    w, h = 70 * mm, 40 * mm
+    # Etiqueta térmica 29x62 mm (Brother QL-700).
+    # Usamos 62mm de ancho y 29mm de alto (paisaje).
+    w, h = 62 * mm, 29 * mm
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(w, h))
 
-    # Texto
-    # Márgenes
-    x0 = 3 * mm
-    y_top = h - 3 * mm
+    # Márgenes y posiciones ajustadas para 29mm de alto
+    x0 = 2 * mm
+    y_top = h - 2 * mm
 
-    # Texto (compacto para 70x40)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(x0, y_top - 6 * mm, f"OT: {ot_num}")
+    # Título OT
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(x0, y_top - 3.5 * mm, f"OT: {ot_num}")
 
-    c.setFont("Helvetica", 10)
-    # Recorta texto si es muy largo
-    ref = (referencia or "").strip()
-    if len(ref) > 35:
-        ref = ref[:32] + "…"
+    c.setFont("Helvetica", 7.5)
     
-    cli = (cliente or "").strip()
-    if len(cli) > 35:
-        cli = cli[:32] + "…"
+    # Recorta texto si es muy largo
+    def truncate(s, limit=30):
+        s = (s or "").strip()
+        return s[:limit-3] + "…" if len(s) > limit else s
 
-    c.drawString(x0, y_top - 11 * mm, f"Ref: {ref}")
-    c.drawString(x0, y_top - 16 * mm, f"Cliente: {cli}")
-    c.drawString(x0, y_top - 21 * mm, f"Fecha: {fecha}")
-    c.drawString(x0, y_top - 26 * mm, f"Nº Instrumentos: {n_instrumentos}")
+    cli = truncate(cliente, 28)
+    ref = truncate(referencia, 28)
+    fab = truncate(fabricante, 28)
+    mod = truncate(modelo, 28)
+    sn = truncate(serie, 28)
 
-    # Barcode
-    # Payload solo con el OT para que el código de barras sea más sencillo y legible
+    # Distribución compacta (line_h = 3mm)
+    curr_y = y_top - 7.5 * mm
+    step = 3.2 * mm
+
+    c.drawString(x0, curr_y, f"Cli: {cli}")
+    curr_y -= step
+    
+    if fab or mod:
+        c.drawString(x0, curr_y, f"Art: {fab} {mod}")
+        curr_y -= step
+    else:
+        c.drawString(x0, curr_y, f"Ref: {ref}")
+        curr_y -= step
+
+    if sn:
+        c.drawString(x0, curr_y, f"S/N: {sn}")
+        curr_y -= step
+    else:
+        c.drawString(x0, curr_y, f"Fecha: {fecha}")
+        curr_y -= step
+
+    c.drawString(x0, curr_y, f"Inst: {n_instrumentos} | {fecha if sn else ''}")
+
+    # QR Code
     payload = str(ot_num)
-
-    # QR Code ajustado para que entre en 70x40.
-    # El QR es mucho más fácil de leer con móviles (iPhone) que el Barcode 1D.
     from reportlab.graphics.shapes import Drawing
     from reportlab.graphics import renderPDF
     
@@ -1841,13 +1858,13 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     qr_w = bounds[2] - bounds[0]
     qr_h = bounds[3] - bounds[1]
     
-    # Queremos que mida unos 25mm de lado
-    size = 25 * mm
+    # QR de 17mm para 29mm de alto
+    size = 17 * mm
     d = Drawing(size, size, transform=[size/qr_w, 0, 0, size/qr_h, 0, 0])
     d.add(qr_code)
     
-    # Posicionamos el QR a la derecha (ajustando coordenadas)
-    renderPDF.draw(d, c, w - size - 2*mm, 5 * mm)
+    # Posicionamos el QR a la derecha
+    renderPDF.draw(d, c, w - size - 1.5*mm, 3.5 * mm)
     
     c.showPage()
     c.save()
@@ -1859,7 +1876,18 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
     """Devuelve una pegatina PDF para la OT."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT id, ot_num, cliente, fecha, cliente_id, nombre_archivo FROM envios WHERE id=?", (envio_id,))
+    # Intentamos detectar si existe la columna tipo_trabajo
+    cols = []
+    try:
+        from db import get_table_columns
+        cols = get_table_columns(cur, "envios")
+    except: pass
+
+    if "tipo_trabajo" in cols:
+        cur.execute("SELECT id, ot_num, cliente, fecha, cliente_id, nombre_archivo, tipo_trabajo FROM envios WHERE id=?", (envio_id,))
+    else:
+        cur.execute("SELECT id, ot_num, cliente, fecha, cliente_id, nombre_archivo FROM envios WHERE id=?", (envio_id,))
+    
     e = cur.fetchone()
     if not e:
         conn.close()
@@ -1874,6 +1902,19 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
 
     cur.execute("SELECT COUNT(*) AS n FROM instrumentos WHERE envio_id=?", (envio_id,))
     n_inst = int(cur.fetchone()["n"] or 0)
+    
+    # -- Datos extra para Optica Rigida --
+    fabricante, modelo, serie = "", "", ""
+    tipo = str(e["tipo_trabajo"]).upper() if "tipo_trabajo" in e.keys() else "REPARACION"
+    
+    if tipo == "OPTICA_RIGIDA" and n_inst > 0:
+        cur.execute("SELECT fabricante, codigo_producto, num_serie FROM instrumentos WHERE envio_id=? LIMIT 1", (envio_id,))
+        inst_row = cur.fetchone()
+        if inst_row:
+            fabricante = inst_row["fabricante"] or ""
+            modelo = inst_row["codigo_producto"] or ""
+            serie = inst_row["num_serie"] or ""
+
     conn.close()
 
     # --- Fecha para la etiqueta (dd/mm/aaaa) ---
@@ -1892,7 +1933,10 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
         str(e["cliente"] or ""),
         fecha,
         n_inst,
-        referencia=str(e["nombre_archivo"] or "")
+        referencia=str(e["nombre_archivo"] or ""),
+        fabricante=fabricante,
+        modelo=modelo,
+        serie=serie
     )
     filename = f"OT_{e['ot_num']}_etiqueta.pdf"
     return StreamingResponse(
