@@ -127,17 +127,17 @@ def get_connection():
                 conn = pool.getconn()
                 return PGConnWrapper(conn, pool=pool)
         except Exception as e:
-            print(f">>> [DATABASE] ERROR: No se pudo obtener conexión del pool. Reintentando... {e}", flush=True)
-            # Si falla el pool, intentamos conexión directa una vez
-            import psycopg2
-            url = env_url.strip().replace("postgres://", "postgresql://", 1)
-            conn = psycopg2.connect(url, connect_timeout=10)
-            return PGConnWrapper(conn)
-        except Exception as e:
-            print(f">>> [DATABASE] ERROR: No se pudo conectar a Postgres. Revise si la URL es correcta y si incluye la contraseña. Error: {e}", flush=True)
-            # Si falla Postgres, no hacemos fallback silencioso a SQLite si la URL existe, 
-            # para que el usuario sepa que algo va mal y no pierda datos guardando en el sitio equivocado.
-            raise HTTPException(status_code=500, detail=f"Error de conexión a la base de datos segura: {e}")
+            print(f">>> [DATABASE] ERROR: No se pudo obtener conexión del pool. Reintentando conexión directa... {e}", flush=True)
+            try:
+                # Si falla el pool, intentamos conexión directa una vez
+                import psycopg2
+                url = env_url.strip().replace("postgres://", "postgresql://", 1)
+                conn = psycopg2.connect(url, connect_timeout=10)
+                return PGConnWrapper(conn)
+            except Exception as e2:
+                print(f">>> [DATABASE] ERROR: No se pudo conectar a Postgres de forma directa. Error: {e2}", flush=True)
+                # Si falla Postgres, no hacemos fallback silencioso a SQLite si la URL existe
+                raise HTTPException(status_code=500, detail=f"Error de conexión a la base de datos segura: {e2}")
     
     # Fallback a SQLite (solo si NO hay DATABASE_URL configurada)
     print(">>> [DATABASE] AVISO: Usando SQLite (Temporal). Configure DATABASE_URL en Render para persistencia.", flush=True)
