@@ -190,15 +190,14 @@
                   <div id="spareList" class="d-flex flex-wrap gap-1 p-2 border rounded bg-white"
                     style="max-height: 150px; overflow-y: auto;">
                     {% for rf in repuestos_frecuentes %}
-                    <form action="/instrumentos/{{ inst.id }}/repuesto/{{ rf.id }}/toggle" method="post"
-                      class="m-0 spare-item" data-name="{{ rf.nombre|lower }}">
-                      <button type="submit"
+                    <div class="spare-item" data-name="{{ rf.nombre|lower }}">
+                      <button type="button" onclick="toggleRepuesto({{ rf.id }}, this)"
                         class="btn btn-sm {% if rf.checked %}btn-primary{% else %}btn-outline-secondary{% endif %}"
                         style="font-size: 0.72rem; padding: 2px 8px;">
                         {% if rf.checked %}<i class="fa-solid fa-check"></i>{% endif %}
                         {{ rf.nombre }} ({{ rf.precio }}€)
                       </button>
-                    </form>
+                    </div>
                     {% endfor %}
                   </div>
                 </div>
@@ -216,6 +215,41 @@
                       }
                     });
                   });
+
+                  function toggleRepuesto(repId, btn) {
+                    // Feedback visual inmediato
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+
+                    fetch(`/instrumentos/{{ inst.id }}/repuesto/${repId}/toggle`, {
+                      method: 'POST',
+                      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                      .then(r => r.json())
+                      .then(data => {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        if (data.ok) {
+                          // Actualizar inputs "el sitio" donde deben estar
+                          document.querySelector('input[name="repuesto_info"]').value = data.total_info;
+                          document.querySelector('input[name="repuesto_precio"]').value = data.total_precio;
+
+                          // Actualizar estilo del botón
+                          if (data.exists) {
+                            btn.classList.remove('btn-outline-secondary');
+                            btn.classList.add('btn-primary');
+                            if (!btn.querySelector('.fa-check')) {
+                              btn.insertAdjacentHTML('afterbegin', '<i class="fa-solid fa-check"></i> ');
+                            }
+                          } else {
+                            btn.classList.add('btn-outline-secondary');
+                            btn.classList.remove('btn-primary');
+                            const icon = btn.querySelector('.fa-check');
+                            if (icon) icon.remove();
+                          }
+                        }
+                      });
+                  }
                 </script>
                 <hr class="my-2">
                 {% endif %}
@@ -231,7 +265,8 @@
                     <label class="form-label small mb-1"><strong><i class="fa-solid fa-euro-sign"></i> Total
                         Precio:</strong></label>
                     <input type="number" step="0.01" name="repuesto_precio" class="form-control form-control-sm"
-                      placeholder="0.00" value="{{ inst.repuesto_precio or '' }}">
+                      placeholder="0.00"
+                      value="{{ '%.2f'|format(inst.repuesto_precio) if inst.repuesto_precio is not none else '' }}">
                   </div>
                 </div>
               </div>

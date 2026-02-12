@@ -3214,9 +3214,9 @@ async def cambiar_estado(
     conn.commit()
     conn.close()
 
-    # Volver a la página de origen (envio_detalle o instrumento_detalle)
-    back = request.headers.get("referer") or "/"
-    return RedirectResponse(url=back, status_code=303)
+    if envio_id:
+        return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
+    return RedirectResponse(url="/", status_code=303)
 
 
 
@@ -3453,7 +3453,14 @@ def toggle_instrumento_repuesto(instrumento_id: int, repuesto_id: int, user=Depe
     
     conn.commit()
     conn.close()
-    return RedirectResponse(url=f"/instrumentos/{instrumento_id}", status_code=303)
+    
+    # Soporte para AJAX
+    return {
+        "ok": True, 
+        "total_precio": total_precio, 
+        "total_info": total_info,
+        "exists": not exists
+    }
 
 
 @app.post("/instrumentos/{instrumento_id}/foto_borrar/{slot}")
