@@ -272,10 +272,12 @@ def init_db():
     """)
 
     # Migración: asegurar que existe la columna cantidad
-    try:
-        cur.execute("ALTER TABLE instrumento_repuestos ADD COLUMN cantidad INTEGER DEFAULT 1")
-    except:
-        pass
+    cols_ir = get_table_columns(cur, "instrumento_repuestos")
+    if "cantidad" not in cols_ir:
+        try:
+            cur.execute("ALTER TABLE instrumento_repuestos ADD COLUMN cantidad INTEGER DEFAULT 1")
+        except Exception:
+            if is_pg: conn.rollback()
 
     # Migración: asegurar que existen las columnas de fotos (1-6) tanto entrada como salida
     cols_inst = get_table_columns(cur, "instrumentos")
