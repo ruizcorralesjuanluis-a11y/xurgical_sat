@@ -94,18 +94,24 @@ UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
 # Priorizamos que las fotos estén dentro del disco persistente si estamos en Render
 FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join(UPLOAD_DIR, "fotos"))
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(FOTOS_DIR, exist_ok=True)
-print(f"DEBUG: UPLOAD_DIR = {os.path.abspath(UPLOAD_DIR)}")
-print(f"DEBUG: FOTOS_DIR = {os.path.abspath(FOTOS_DIR)}")
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    os.makedirs(FOTOS_DIR, exist_ok=True)
+    print(f"DEBUG: Directories created/verified. UPLOAD_DIR={UPLOAD_DIR}", flush=True)
+except Exception as e:
+    print(f">>> CRITICAL ERROR creating directories: {e}", flush=True)
 
 # Montaje de estáticos
-# 1. Las fotos van en una ruta dedicada para evitar colisiones
-app.mount("/static/fotos", StaticFiles(directory=FOTOS_DIR), name="fotos_externas")
-# 2. El resto de estáticos (css, js, logos) en /static
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+try:
+    print(">>> Mounting static files...", flush=True)
+    app.mount("/static/fotos", StaticFiles(directory=FOTOS_DIR), name="fotos_externas")
+    app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+    print(">>> Static files mounted.", flush=True)
+except Exception as e:
+    print(f">>> CRITICAL ERROR mounting static files: {e}", flush=True)
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+print(">>> Templates initialized.", flush=True)
 
 def format_fecha(value):
     if not value or value == "-":
