@@ -1601,8 +1601,8 @@ def envio_editar_guardar(
 
 @app.post("/envios/{envio_id}/toggle_aceptado")
 def toggle_aceptado(envio_id: int, user=Depends(get_current_user)):
-    # Solo admin, recepcion o tecnico pueden marcar como aceptado
-    if _user_role(user) not in ["admin", "recepcion", "tecnico"]:
+    # Solo admin o recepcion pueden marcar como aceptado
+    if _user_role(user) not in ["admin", "recepcion"]:
         return JSONResponse({"ok": False, "error": "No tienes permisos"}, status_code=403)
 
     conn = get_conn()

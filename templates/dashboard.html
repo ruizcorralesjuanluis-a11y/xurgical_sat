@@ -566,7 +566,8 @@
                         e.n_instrumentos }}</span></td>
                     <td>
                       <div class="d-flex justify-content-center">
-                        <span style="cursor: pointer;" onclick="toggleAceptado({{ e.id }}, this)">
+                        <span {% if user and user.role in ['admin', 'recepcion' ] %}style="cursor: pointer;"
+                          onclick="toggleAceptado({{ e.id }}, this)" {% endif %}>
                           {% if e.aceptado %}
                           <i class="fa-solid fa-square-check text-success fa-xl"></i>
                           {% else %}
