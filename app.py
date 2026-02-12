@@ -215,6 +215,54 @@ def _reserve_numeros_cliente(cur, cliente_id: int, cantidad: int) -> tuple[str, 
 # moved to top
 
 # -----------------------------
+# CATÁLOGO DE REPUESTOS (admin)
+# -----------------------------
+@app.get("/repuestos_catalogo", response_class=HTMLResponse)
+def view_repuestos_catalogo(request: Request, user=Depends(require_roles("admin"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM repuestos_catalogo ORDER BY nombre")
+    items = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return templates.TemplateResponse("repuestos_catalogo.html", {"request": request, "user": user, "items": items})
+
+@app.post("/repuestos_catalogo/add")
+async def add_repuesto_catalogo(request: Request, user=Depends(require_roles("admin"))):
+    form = await request.form()
+    nombre = (form.get("nombre") or "").strip()
+    precio = float(form.get("precio") or 0)
+    if not nombre:
+        return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO repuestos_catalogo (nombre, precio) VALUES (?, ?)", (nombre, precio))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+
+@app.post("/repuestos_catalogo/{item_id}/update")
+async def update_repuesto_catalogo(item_id: int, request: Request, user=Depends(require_roles("admin"))):
+    form = await request.form()
+    nombre = (form.get("nombre") or "").strip()
+    precio = float(form.get("precio") or 0)
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE repuestos_catalogo SET nombre=?, precio=? WHERE id=?", (nombre, precio, item_id))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+
+@app.post("/repuestos_catalogo/{item_id}/toggle")
+def toggle_repuesto_catalogo(item_id: int, user=Depends(require_roles("admin"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE repuestos_catalogo SET activo = 1 - COALESCE(activo, 1) WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+
+
+# -----------------------------
 # ARTICULOS (catálogo para autocompletar)
 # -----------------------------
 ARTICULOS_XLSX = str(BASE_DIR / 'Articulos.xlsx')
@@ -2323,6 +2371,16 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
         cur.execute(sql_hist, tuple(p_hist))
         historial = [dict(r) for r in cur.fetchall()]
 
+    # --- CHECKLIST DE REPUESTOS ---
+    cur.execute("""
+        SELECT rc.*, 
+               (SELECT 1 FROM instrumento_repuestos ir WHERE ir.instrumento_id=? AND ir.repuesto_id=rc.id) as checked
+        FROM repuestos_catalogo rc
+        WHERE COALESCE(rc.activo,1)=1
+        ORDER BY rc.nombre
+    """, (instrumento_id,))
+    repuestos_frecuentes = [dict(r) for r in cur.fetchall()]
+
     conn.close()
 
     return templates.TemplateResponse(
@@ -2332,6 +2390,7 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
             "user": user,
             "inst": dict(inst),
             "checklist": checklist,
+            "repuestos_frecuentes": repuestos_frecuentes,
             "envio": dict(envio) if envio else None,
             "cliente": dict(cliente) if cliente else None,
             "informe": dict(informe) if informe else None,
@@ -3312,26 +3371,89 @@ async def checklist_admin_update(
     return RedirectResponse(url=f"/checklist_admin?tipo={tipo}", status_code=303)
 
 
-@app.post("/checklist_admin/{item_id}/toggle")
-async def checklist_admin_toggle(
-    item_id: int,
-    request: Request,
-    user=Depends(require_roles("admin")),
-):
-    form = await request.form()
-    tipo = (form.get("tipo") or "REPARACION").strip().upper()
-
+# -----------------------------
+# CATÁLOGO DE REPUESTOS (admin)
+# -----------------------------
+@app.get("/repuestos_catalogo", response_class=HTMLResponse)
+def view_repuestos_catalogo(request: Request, user=Depends(require_roles("admin"))):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT COALESCE(activo,1) AS activo FROM checklist_items WHERE id=?", (item_id,))
-    row = cur.fetchone()
-    if row:
-        activo = int(row["activo"] if isinstance(row, dict) else row[0])
-        nuevo = 0 if activo == 1 else 1
-        cur.execute("UPDATE checklist_items SET activo=? WHERE id=?", (nuevo, item_id))
-        conn.commit()
+    cur.execute("SELECT * FROM repuestos_catalogo ORDER BY nombre")
+    items = [dict(r) for r in cur.fetchall()]
     conn.close()
-    return RedirectResponse(url=f"/checklist_admin?tipo={tipo}", status_code=303)
+    return templates.TemplateResponse("repuestos_catalogo.html", {"request": request, "user": user, "items": items})
+
+@app.post("/repuestos_catalogo/add")
+async def add_repuesto_catalogo(request: Request, user=Depends(require_roles("admin"))):
+    form = await request.form()
+    nombre = (form.get("nombre") or "").strip()
+    precio = float(form.get("precio") or 0)
+    if not nombre:
+        return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO repuestos_catalogo (nombre, precio) VALUES (?, ?)", (nombre, precio))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+
+@app.post("/repuestos_catalogo/{item_id}/update")
+async def update_repuesto_catalogo(item_id: int, request: Request, user=Depends(require_roles("admin"))):
+    form = await request.form()
+    nombre = (form.get("nombre") or "").strip()
+    precio = float(form.get("precio") or 0)
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE repuestos_catalogo SET nombre=?, precio=? WHERE id=?", (nombre, precio, item_id))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+
+@app.post("/repuestos_catalogo/{item_id}/toggle")
+def toggle_repuesto_catalogo(item_id: int, user=Depends(require_roles("admin"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE repuestos_catalogo SET activo = 1 - COALESCE(activo, 1) WHERE id=?", (item_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/repuestos_catalogo", status_code=303)
+
+@app.post("/instrumentos/{instrumento_id}/repuesto/{repuesto_id}/toggle")
+def toggle_instrumento_repuesto(instrumento_id: int, repuesto_id: int, user=Depends(require_roles("admin", "tecnico"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # Check if already linked
+    cur.execute("SELECT 1 FROM instrumento_repuestos WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
+    exists = cur.fetchone()
+    
+    if exists:
+        cur.execute("DELETE FROM instrumento_repuestos WHERE instrumento_id=? AND repuesto_id=?", (instrumento_id, repuesto_id))
+    else:
+        # Get price from catalog
+        cur.execute("SELECT precio FROM repuestos_catalogo WHERE id=?", (repuesto_id,))
+        rep = cur.fetchone()
+        precio = rep["precio"] if rep else 0
+        cur.execute("INSERT INTO instrumento_repuestos (instrumento_id, repuesto_id, precio_aplicado) VALUES (?, ?, ?)", (instrumento_id, repuesto_id, precio))
+    
+    # Recalculate total price and info for the instrument (optional but helpful for the admin view in dashboard)
+    cur.execute("""
+        SELECT SUM(precio_aplicado) as total, GROUP_CONCAT(nombre, ', ') as nombres
+        FROM instrumento_repuestos ir
+        JOIN repuestos_catalogo rc ON ir.repuesto_id = rc.id
+        WHERE ir.instrumento_id = ?
+    """, (instrumento_id,))
+    totals = cur.fetchone()
+    
+    total_precio = totals["total"] or 0
+    total_info = totals["nombres"] or ""
+    
+    # Update instrument with aggregated data
+    cur.execute("UPDATE instrumentos SET repuesto_precio=?, repuesto_info=? WHERE id=?", (total_precio, total_info, instrumento_id))
+    
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url=f"/instrumentos/{instrumento_id}", status_code=303)
 
 
 @app.post("/instrumentos/{instrumento_id}/foto_borrar/{slot}")

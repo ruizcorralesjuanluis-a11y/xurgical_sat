@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Xurgical SAT - Catálogo de Repuestos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-size: 0.9rem;
+            background-image: url("/static/bg.png");
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+
+        .page-overlay {
+            min-height: 100vh;
+            background: rgba(245, 247, 250, 0.86);
+        }
+
+        .topbar {
+            background: #ffffffcc;
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid #e5e7eb;
+            padding: .6rem 1rem;
+        }
+
+        .logo {
+            height: 34px
+        }
+
+        .brand {
+            font-weight: 700
+        }
+
+        .panel {
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .row-disabled {
+            opacity: .55;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-overlay">
+
+        <nav class="navbar topbar d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <img src="/static/logo-xurgical.png" class="logo" alt="Xurgical">
+                <span class="brand">Xurgical SAT</span>
+                <span class="text-secondary">/ Catálogo de Repuestos</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <a href="/" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-house"></i> Dashboard</a>
+                <span class="badge text-bg-dark">{{ user.username }}</span>
+                <form method="post" action="/logout" class="m-0">
+                    <button class="btn btn-danger btn-sm"><i class="fa-solid fa-power-off"></i> Salir</button>
+                </form>
+            </div>
+        </nav>
+
+        <main class="container py-4">
+
+            <div class="panel p-4 mb-4">
+                <h5 class="mb-3"><i class="fa-solid fa-plus-circle text-success"></i> Añadir Repuesto Frecuente</h5>
+                <form method="post" action="/repuestos_catalogo/add" class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre del repuesto</label>
+                        <input class="form-control" name="nombre" placeholder="Ej: Lente ocular 30º" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Precio (€)</label>
+                        <input class="form-control" name="precio" type="number" step="0.01" value="0.00">
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <label class="form-label d-none d-md-block">&nbsp;</label>
+                        <button class="btn btn-success">Añadir al catálogo</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="panel p-0 overflow-hidden">
+                <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">Items en el catálogo</h6>
+                    <span class="badge bg-primary">{{ items|length }} artículos</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:80px;">ID</th>
+                                <th>Nombre</th>
+                                <th style="width:150px;">Precio Sugerido</th>
+                                <th style="width:120px;">Estado</th>
+                                <th style="width:200px;" class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for it in items %}
+                            <tr class="{% if not it.activo %}row-disabled text-muted{% endif %}">
+                                <td>{{ it.id }}</td>
+                                <td>
+                                    <form method="post" action="/repuestos_catalogo/{{ it.id }}/update"
+                                        class="d-flex gap-2">
+                                        <input class="form-control form-control-sm" name="nombre"
+                                            value="{{ it.nombre }}">
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input class="form-control" type="number" step="0.01" name="precio"
+                                            value="{{ it.precio }}">
+                                        <span class="input-group-text">€</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if it.activo %}
+                                    <span class="badge bg-success-subtle text-success">Activo</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-primary btn-sm" title="Guardar cambios"><i
+                                            class="fa-solid fa-save"></i></button>
+                                    </form>
+                                    <form method="post" action="/repuestos_catalogo/{{ it.id }}/toggle"
+                                        class="d-inline">
+                                        <button
+                                            class="btn {% if it.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %} btn-sm"
+                                            title="Activar/Desactivar">
+                                            <i
+                                                class="fa-solid {% if it.activo %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% if items|length == 0 %}
+                            <tr>
+                                <td colspan="5" class="text-center text-secondary py-5">
+                                    <i class="fa-solid fa-box-open fa-3x mb-3 opacity-25"></i>
+                                    <p>No hay repuestos en el catálogo todavía.</p>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</body>
+
+</html>

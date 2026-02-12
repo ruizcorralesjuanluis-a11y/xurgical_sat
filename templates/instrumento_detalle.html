@@ -172,15 +172,37 @@
           <div id="repuestoBlock" class="col-md-7" {% if st !='En proceso' %}style="display:none" {% endif %}>
             <div class="card bg-light border-warning">
               <div class="card-body p-2">
+
+                <!-- CHECKLIST DE REPUESTOS FRECUENTES -->
+                {% if repuestos_frecuentes %}
+                <div class="mb-2">
+                  <label class="form-label small mb-1 text-primary"><strong><i class="fa-solid fa-list-check"></i>
+                      Selección rápida de repuestos:</strong></label>
+                  <div class="d-flex flex-wrap gap-1">
+                    {% for rf in repuestos_frecuentes %}
+                    <form action="/instrumentos/{{ inst.id }}/repuesto/{{ rf.id }}/toggle" method="post" class="m-0">
+                      <button type="submit"
+                        class="btn btn-sm {% if rf.checked %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+                        style="font-size: 0.72rem; padding: 2px 8px;">
+                        {% if rf.checked %}<i class="fa-solid fa-check"></i>{% endif %}
+                        {{ rf.nombre }} ({{ rf.precio }}€)
+                      </button>
+                    </form>
+                    {% endfor %}
+                  </div>
+                </div>
+                <hr class="my-2">
+                {% endif %}
+
                 <div class="row g-2">
                   <div class="col-md-8">
-                    <label class="form-label small mb-1"><strong><i class="fa-solid fa-gears"></i> Info
-                        Repuesto:</strong></label>
+                    <label class="form-label small mb-1"><strong><i class="fa-solid fa-gears"></i> Resumen de
+                        Repuestos:</strong></label>
                     <input type="text" name="repuesto_info" class="form-control form-control-sm"
-                      placeholder="¿Qué pieza falta?" value="{{ inst.repuesto_info or '' }}">
+                      placeholder="¿Qué piezas se han usado?" value="{{ inst.repuesto_info or '' }}">
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label small mb-1"><strong><i class="fa-solid fa-euro-sign"></i>
+                    <label class="form-label small mb-1"><strong><i class="fa-solid fa-euro-sign"></i> Total
                         Precio:</strong></label>
                     <input type="number" step="0.01" name="repuesto_precio" class="form-control form-control-sm"
                       placeholder="0.00" value="{{ inst.repuesto_precio or '' }}">

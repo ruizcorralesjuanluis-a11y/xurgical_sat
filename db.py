@@ -251,6 +251,25 @@ def init_db():
     )
     """)
 
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS repuestos_catalogo (
+        id {pk},
+        nombre TEXT NOT NULL,
+        precio REAL DEFAULT 0,
+        activo INTEGER DEFAULT 1,
+        creado_en {dt}
+    )
+    """)
+
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS instrumento_repuestos (
+        instrumento_id INTEGER NOT NULL,
+        repuesto_id INTEGER NOT NULL,
+        precio_aplicado REAL,
+        PRIMARY KEY (instrumento_id, repuesto_id)
+    )
+    """)
+
     # Migración: asegurar que existen las columnas de fotos (1-6) tanto entrada como salida
     cols_inst = get_table_columns(cur, "instrumentos")
     if "repuesto_info" not in cols_inst:
