@@ -825,7 +825,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
 
     cur.execute(f"""
         SELECT
-            e.id, e.ot_num, e.nombre_archivo, e.cliente, e.fecha,
+            e.id, e.ot_num, e.nombre_archivo, e.cliente, e.fecha, e.aceptado,
             {select_tipo},
             COUNT(i.id) AS n_instrumentos,
             SUM(CASE WHEN i.estado IN ('Pendiente','En proceso') THEN 1 ELSE 0 END) AS n_pendientes,
@@ -1597,6 +1597,27 @@ def envio_editar_guardar(
     except Exception as e:
         import traceback
         return HTMLResponse(f"<h1>Error al editar envio</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
+
+
+@app.post("/envios/{envio_id}/toggle_aceptado")
+def toggle_aceptado(envio_id: int, user=Depends(get_current_user)):
+    # Solo admin, recepcion o tecnico pueden marcar como aceptado
+    if _user_role(user) not in ["admin", "recepcion", "tecnico"]:
+        return JSONResponse({"ok": False, "error": "No tienes permisos"}, status_code=403)
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT aceptado FROM envios WHERE id=?", (envio_id,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse({"ok": False, "error": "Envío no encontrado"}, status_code=404)
+    
+    nuevo_estado = 1 if int(row["aceptado"] or 0) == 0 else 0
+    cur.execute("UPDATE envios SET aceptado=? WHERE id=?", (nuevo_estado, envio_id))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "aceptado": nuevo_estado}
 
 
 @app.get("/ot/{ot_num}")

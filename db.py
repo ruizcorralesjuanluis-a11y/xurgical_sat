@@ -204,9 +204,15 @@ def init_db():
         cliente_id INTEGER,
         tipo_trabajo TEXT DEFAULT 'REPARACION',
         fecha TEXT,
+        aceptado INTEGER DEFAULT 0,
         creado_en {dt}
     )
     """)
+
+    # Migración: asegurar que existe aceptado en envios
+    cols_envios = get_table_columns(cur, "envios")
+    if "aceptado" not in cols_envios:
+        cur.execute("ALTER TABLE envios ADD COLUMN aceptado INTEGER DEFAULT 0")
 
     # 4. Instrumentos (Ítems de cada envío)
     cur.execute(f"""

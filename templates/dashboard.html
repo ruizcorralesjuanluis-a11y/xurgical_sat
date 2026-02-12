@@ -528,6 +528,7 @@
                     <th>Pend.</th>
                     <th>Fotos</th>
                     <th class="d-none d-md-table-cell">Grabados</th>
+                    <th>Aceptado</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -563,6 +564,17 @@
                     <td><span class="dot {{ e.foto_dot }}"></span></td>
                     <td class="d-none d-md-table-cell"><span class="badge text-bg-light">{{ e.n_grabados or 0 }}/{{
                         e.n_instrumentos }}</span></td>
+                    <td>
+                      <div class="d-flex justify-content-center">
+                        <span style="cursor: pointer;" onclick="toggleAceptado({{ e.id }}, this)">
+                          {% if e.aceptado %}
+                          <i class="fa-solid fa-square-check text-success fa-xl"></i>
+                          {% else %}
+                          <i class="fa-regular fa-square text-secondary fa-xl"></i>
+                          {% endif %}
+                        </span>
+                      </div>
+                    </td>
                     <td class="text-end">
                       <div class="d-flex justify-content-end gap-1">
                         {% if user and user.role == "grabado" %}
@@ -1320,6 +1332,33 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
       });
+    }
+
+    async function toggleAceptado(envioId, element) {
+      try {
+        const response = await fetch(`/envios/${envioId}/toggle_aceptado`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await response.json();
+        if (data.ok) {
+          const icon = element.querySelector('i');
+          if (data.aceptado) {
+            icon.classList.remove('fa-regular', 'fa-square', 'text-secondary');
+            icon.classList.add('fa-solid', 'fa-square-check', 'text-success');
+          } else {
+            icon.classList.remove('fa-solid', 'fa-square-check', 'text-success');
+            icon.classList.add('fa-regular', 'fa-square', 'text-secondary');
+          }
+        } else {
+          Swal.fire('Error', data.error || 'No se pudo cambiar el estado', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Error de conexión', 'error');
+      }
     }
 
     // Polling de recogidas
