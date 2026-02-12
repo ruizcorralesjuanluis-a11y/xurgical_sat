@@ -1511,6 +1511,94 @@ def nuevo_envio_crear(
         return HTMLResponse(f"<h1>Error al crear envio</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
 
 
+@app.get("/envios/{envio_id}/editar", response_class=HTMLResponse)
+def envio_editar_form(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM envios WHERE id=?", (envio_id,))
+    envio = cur.fetchone()
+    clientes = _list_clientes(cur)
+    conn.close()
+
+    if not envio:
+        return HTMLResponse("Envío no encontrado", status_code=404)
+
+    return templates.TemplateResponse(
+        "envio_editar.html",
+        {
+            "request": request,
+            "user": user,
+            "envio": dict(envio),
+            "clientes": clientes
+        },
+    )
+
+
+@app.post("/envios/{envio_id}/editar")
+def envio_editar_guardar(
+    envio_id: int,
+    referencia: str = Form(""),
+    cliente_id: str = Form(""),
+    cliente: str = Form(""),
+    tipo_trabajo: str = Form(""),
+    fecha: str = Form(""),
+    user=Depends(require_roles("admin", "recepcion")),
+):
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        
+        # Validar existencia
+        cur.execute("SELECT * FROM envios WHERE id=?", (envio_id,))
+        envio_old = cur.fetchone()
+        if not envio_old:
+            conn.close()
+            return HTMLResponse("Envío no encontrado", status_code=404)
+
+        # Resolución de cliente
+        cli_id_val = None
+        cli_nombre = (cliente or "").strip()
+        if cliente_id:
+            try:
+                cli_id_val = int(cliente_id)
+            except:
+                cli_id_val = None
+        
+        if cli_id_val:
+            cli = _get_cliente(cur, cli_id_val)
+            if cli:
+                cli_nombre = cli["nombre"]
+        
+        # Si no hay nombre manual ni ID válido, error
+        if not cli_nombre and not cli_id_val:
+             conn.close()
+             return RedirectResponse(url=f"/envios/{envio_id}/editar?err=cliente", status_code=303)
+
+        sql = """
+            UPDATE envios 
+            SET nombre_archivo=?, cliente=?, cliente_id=?, tipo_trabajo=?, fecha=?
+            WHERE id=?
+        """
+        params = [
+            (referencia or "").strip(),
+            cli_nombre,
+            cli_id_val,
+            (tipo_trabajo or envio_old["tipo_trabajo"]),
+            (fecha or envio_old["fecha"]),
+            envio_id
+        ]
+        
+        cur.execute(sql, tuple(params))
+        conn.commit()
+        conn.close()
+        
+        return RedirectResponse(url="/", status_code=303)
+
+    except Exception as e:
+        import traceback
+        return HTMLResponse(f"<h1>Error al editar envio</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
+
+
 @app.get("/ot/{ot_num}")
 def ver_ot_directa(ot_num: str, user=Depends(get_current_user)):
     """Busca una OT por su numero y redirige al detalle."""
