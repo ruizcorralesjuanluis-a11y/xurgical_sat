@@ -80,11 +80,12 @@ except Exception:  # pragma: no cover
 app = FastAPI(title="Xurgical SAT")
 
 # Arranque de la aplicación
-print(">>> XURGICAL SAT STARTING UP...")
+print(">>> XURGICAL SAT STARTING UP...", flush=True)
 try:
     init_db()
-except Exception:
-    pass
+    print(">>> [DATABASE] Initialization successful.", flush=True)
+except Exception as e:
+    print(f">>> [DATABASE] CRITICAL ERROR DURING INIT: {e}", flush=True)
 
 app.state.secret_key = os.environ.get("XURGICAL_SECRET_KEY", "dev-secret-change-me")
 app.state.serializer = make_serializer(app.state.secret_key)

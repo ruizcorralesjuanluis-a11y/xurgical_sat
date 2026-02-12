@@ -1,9 +1,9 @@
-
 import os
 import sqlite3
 import threading
 from pathlib import Path
 from psycopg2.pool import ThreadedConnectionPool
+from fastapi import HTTPException
 
 # -------------------------------------------------
 # RUTA BASE DEL PROYECTO
