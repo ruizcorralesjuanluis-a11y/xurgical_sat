@@ -822,8 +822,13 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         where_clauses.append("1=0")
 
     if q:
-        where_clauses.append("(e.ot_num LIKE ? OR e.cliente LIKE ? OR COALESCE(i.codigo_datamatrix,'') LIKE ?)")
-        params_q.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+        is_pg = os.environ.get("DATABASE_URL") is not None
+        if is_pg:
+            where_clauses.append("(e.ot_num ILIKE ? OR e.cliente ILIKE ? OR i.codigo_datamatrix ILIKE ? OR i.num_serie ILIKE ? OR i.codigo_producto ILIKE ?)")
+        else:
+            # SQLite case-insensitive search (default for LIKE on ASCII)
+            where_clauses.append("(e.ot_num LIKE ? OR e.cliente LIKE ? OR i.codigo_datamatrix LIKE ? OR i.num_serie LIKE ? OR i.codigo_producto LIKE ?)")
+        params_q.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
 
     where_q = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 

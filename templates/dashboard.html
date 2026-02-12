@@ -507,7 +507,7 @@
 
             <form class="row g-2 mb-3" method="get" action="/">
               <div class="col-md-6">
-                <input class="form-control" name="q" placeholder="Buscar por OT, cliente o DataMatrix..."
+                <input class="form-control" name="q" placeholder="Buscar por OT, cliente, DataMatrix, S/N o Ref..."
                   value="{{ q or '' }}">
               </div>
               <div class="col-md-3 d-grid">
@@ -654,8 +654,19 @@
 
                   {% if envios|length == 0 %}
                   <tr>
-                    <td colspan="10" class="text-center text-secondary py-3">
-                      No hay partes todavía.
+                    <td colspan="11" class="text-center text-secondary py-5">
+                      <div class="d-flex flex-column align-items-center">
+                        <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-25"></i>
+                        {% if q %}
+                        <h5 class="fw-bold">No se han encontrado resultados</h5>
+                        <p>No hay ningún parte que coincida con "<b>{{ q }}</b>"</p>
+                        <a href="/" class="btn btn-primary mt-2">
+                          <i class="fa-solid fa-rotate-left"></i> Ver todo el listado
+                        </a>
+                        {% else %}
+                        <p class="m-0">No hay partes registrados todavía.</p>
+                        {% endif %}
+                      </div>
                     </td>
                   </tr>
                   {% endif %}
