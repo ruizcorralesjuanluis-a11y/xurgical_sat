@@ -1659,13 +1659,18 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
         conn.close()
         return HTMLResponse("Envío no encontrado", status_code=404)
 
-    # SEGURIDAD: Si es rol 'cliente', solo puede ver sus propios envíos
+    # SEGURIDAD: Si es rol 'cliente', solo puede ver sus propios envíos y si está ACEPTADO
     if _user_role(user) == "cliente":
         u_cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
         e_cli_id = envio.get("cliente_id")
         if not u_cli_id or int(e_cli_id or 0) != int(u_cli_id):
             conn.close()
             return HTMLResponse("Acceso denegado: este envío no pertenece a su centro", status_code=403)
+        
+        # Nueva restricción: debe estar aceptado por recepción/admin para que el cliente lo vea
+        if not bool(envio["aceptado"]):
+            conn.close()
+            return HTMLResponse("<h1>Acceso restringido</h1><p>Este parte aún no ha sido validado/aceptado. Por favor, contacte con recepción para más información.</p>", status_code=403)
 
     cur.execute("""
         SELECT i.*, 

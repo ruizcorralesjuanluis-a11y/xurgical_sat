@@ -612,9 +612,15 @@
                           <i class="fa-solid fa-pen-nib"></i> Grabación
                         </a>
                         {% else %}
+                        {% if user.role == "cliente" and not e.aceptado %}
+                        <button class="btn btn-outline-secondary btn-sm" disabled title="Pendiente de validación">
+                          <i class="fa-solid fa-lock"></i> Pendiente
+                        </button>
+                        {% else %}
                         <a href="/envios/{{ e.id }}" class="btn btn-primary btn-sm">
                           <i class="fa-solid fa-folder-open"></i> Abrir
                         </a>
+                        {% endif %}
                         {% endif %}
 
                         {% if user and user.role in ["admin","recepcion"] %}
