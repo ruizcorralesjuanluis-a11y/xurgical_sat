@@ -1805,7 +1805,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     c = canvas.Canvas(buf, pagesize=(w, h))
 
     # Márgenes y posiciones ajustadas para 29mm de alto
-    x0 = 2 * mm
+    x0 = 12 * mm
     y_top = h - 2 * mm
 
     # Título OT
@@ -1864,7 +1864,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     d.add(qr_code)
     
     # Posicionamos el QR a la derecha
-    renderPDF.draw(d, c, w - size - 1.5*mm, 3.5 * mm)
+    renderPDF.draw(d, c, w - size - 1.5*mm + 10*mm, 3.5 * mm)
     
     c.showPage()
     c.save()
