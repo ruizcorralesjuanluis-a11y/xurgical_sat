@@ -271,6 +271,8 @@
             data-inst-nt="{{ (inst.nombre_trazabilidad or '')|e }}" data-inst-marca="{{ inst.fabricante or '' }}"
             data-inst-modelo="{{ inst.codigo_producto or '' }}" data-inst-denom="{{ inst.denominacion or '' }}"
             data-inst-foto1="{{ inst.foto_entrada_1 or '' }}" data-inst-foto2="{{ inst.foto_entrada_2 or '' }}"
+            data-inst-foto3="{{ inst.foto_entrada_3 or '' }}" data-inst-foto4="{{ inst.foto_entrada_4 or '' }}"
+            data-inst-foto5="{{ inst.foto_entrada_5 or '' }}" data-inst-foto6="{{ inst.foto_entrada_6 or '' }}"
             data-inst-grabado="{{ 1 if is_grabado else 0 }}">
 
             <div class="inst-header">
@@ -284,17 +286,14 @@
 
             <div class="inst-body">
               <div class="img-pair">
-                {% if inst.foto_entrada_1 %}
-                <img src="{{ inst.foto_entrada_1 }}" class="thumb" alt="Foto 1">
+                {% for i in range(1, 7) %}
+                {% set f = 'foto_entrada_' ~ i %}
+                {% if inst[f] %}
+                <img src="{{ inst[f] }}" class="thumb" alt="Foto {{ i }}">
                 {% else %}
-                <div class="placeholder">Falta foto 1</div>
+                <div class="placeholder">Falta {{ i }}</div>
                 {% endif %}
-
-                {% if inst.foto_entrada_2 %}
-                <img src="{{ inst.foto_entrada_2 }}" class="thumb" alt="Foto 2">
-                {% else %}
-                <div class="placeholder">Falta foto 2</div>
-                {% endif %}
+                {% endfor %}
               </div>
 
               <div class="meta">
@@ -331,17 +330,15 @@
         </div>
 
         <div class="modal-body">
-          <div class="modal-img-pair mb-3">
-            <div>
-              <div class="fw-bold mb-2">Foto 1</div>
-              <img id="mFoto1" class="modal-img" alt="Foto 1">
-              <div id="mFoto1Missing" class="text-secondary small mt-2" style="display:none;">No hay foto 1</div>
+          <div class="modal-img-grid mb-3" id="modalPhotosGrid">
+            {% for i in range(1, 7) %}
+            <div id="mFotoContainer{{ i }}" class="modal-img-container">
+              <div class="fw-bold mb-1 small">Foto {{ i }}</div>
+              <img id="mFoto{{ i }}" class="modal-img" alt="Foto {{ i }}">
+              <div id="mFoto{{ i }}Missing" class="text-secondary small text-center py-4" style="display:none;">Falta
+                foto</div>
             </div>
-            <div>
-              <div class="fw-bold mb-2">Foto 2</div>
-              <img id="mFoto2" class="modal-img" alt="Foto 2">
-              <div id="mFoto2Missing" class="text-secondary small mt-2" style="display:none;">No hay foto 2</div>
-            </div>
+            {% endfor %}
           </div>
 
           <div class="row g-3">
@@ -436,6 +433,50 @@
       return v;
     }
   </script>
+
+  <style>
+    /* Estilos extra para 6 fotos */
+    .img-pair {
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 0.25rem !important;
+    }
+
+    .thumb {
+      height: 60px !important;
+    }
+
+    .modal-img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .modal-img-container {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 0.5rem;
+      border: 1px solid #e5e7eb;
+    }
+
+    .modal-img {
+      width: 100%;
+      height: 220px;
+      object-fit: contain;
+      background: #000;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .modal-img-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+      }
+
+      .modal-img {
+        height: 140px;
+      }
+    }
+  </style>
 
   <script>
     // Copiar al portapapeles (DataMatrix / NT)
@@ -562,17 +603,20 @@
 
       document.getElementById('mInstId').textContent = '#' + id;
 
-      // Fotos (si faltan, ocultamos img)
-      const img1 = document.getElementById('mFoto1');
-      const img2 = document.getElementById('mFoto2');
-      const miss1 = document.getElementById('mFoto1Missing');
-      const miss2 = document.getElementById('mFoto2Missing');
+      // Fotos (1 a 6)
+      for (let i = 1; i <= 6; i++) {
+        const fotoUrl = button.getAttribute('data-inst-foto' + i) || '';
+        const img = document.getElementById('mFoto' + i);
+        const miss = document.getElementById('mFoto' + i + 'Missing');
+        const cont = document.getElementById('mFotoContainer' + i);
 
-      if (foto1) { img1.src = foto1; img1.style.display = ''; miss1.style.display = 'none'; }
-      else { img1.removeAttribute('src'); img1.style.display = 'none'; miss1.style.display = 'block'; }
-
-      if (foto2) { img2.src = foto2; img2.style.display = ''; miss2.style.display = 'none'; }
-      else { img2.removeAttribute('src'); img2.style.display = 'none'; miss2.style.display = 'block'; }
+        if (fotoUrl) {
+          img.src = fotoUrl; img.style.display = ''; miss.style.display = 'none'; cont.style.display = '';
+        } else {
+          img.removeAttribute('src'); img.style.display = 'none'; miss.style.display = 'block';
+          // Opcional: cont.style.display = 'none'; // si quieres ocultar el cuadrito
+        }
+      }
 
       // Campos
       const dmEl = document.getElementById('mDM');
