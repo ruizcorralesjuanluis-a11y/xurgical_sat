@@ -241,7 +241,7 @@
             <div class="instrument-list hide-checked" id="instrumentList">
                 {% for inst in instrumentos %}
                 <div class="instrument-item {% if inst.revisado %}checked{% endif %}" id="item-{{ inst.id }}"
-                    onclick="selectInstrument({{ inst|tojson }})"
+                    onclick='selectInstrument({{ inst|tojson|safe }})'
                     data-name="{{ inst.codigo_producto }} {{ inst.denominacion }} {{ inst.num_serie }}">
                     <div>
                         <div class="fw-bold">{{ inst.codigo_producto or 'S/M' }}</div>
