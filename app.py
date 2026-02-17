@@ -2063,6 +2063,74 @@ def desgrabar_instrumento(instrumento_id: int, user=Depends(require_roles("admin
 
     return RedirectResponse(url=f"/envios/{envio_id}/grabacion", status_code=303)
 
+
+# -----------------------------
+# REVISIÓN FINAL (recepción)
+# -----------------------------
+@app.get("/envios/{envio_id}/revision", response_class=HTMLResponse)
+def revision_envio(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion"))):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM envios WHERE id=?", (envio_id,))
+    envio = cur.fetchone()
+    if not envio:
+        conn.close()
+        return HTMLResponse("Envío no encontrado", status_code=404)
+
+    cur.execute(
+        """
+        SELECT i.*, 
+               COALESCE(i.revisado,0) AS revisado
+        FROM instrumentos i
+        WHERE i.envio_id=?
+        ORDER BY i.id ASC
+        """,
+        (envio_id,),
+    )
+    instrumentos = [dict(r) for r in cur.fetchall()]
+    
+    # Conteo
+    n_revisados = sum(1 for i in instrumentos if i["revisado"])
+    total = len(instrumentos)
+
+    conn.close()
+    return templates.TemplateResponse(
+        "envio_revision.html",
+        {
+            "request": request,
+            "user": user,
+            "envio": dict(envio),
+            "instrumentos": instrumentos,
+            "total": total,
+            "n_revisados": n_revisados,
+        },
+    )
+
+@app.post("/instrumentos/{instrumento_id}/revisar")
+def revisar_instrumento(instrumento_id: int, user=Depends(require_roles("admin", "recepcion"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    username = user.get("username") if isinstance(user, dict) else getattr(user, "username", "S/N")
+
+    cur.execute("UPDATE instrumentos SET revisado=1, revisado_por=?, revisado_en=CURRENT_TIMESTAMP WHERE id=?", 
+                (username, instrumento_id))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+@app.post("/instrumentos/{instrumento_id}/desrevisar")
+def desrevisar_instrumento(instrumento_id: int, user=Depends(require_roles("admin", "recepcion"))):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute("UPDATE instrumentos SET revisado=0, revisado_por=NULL, revisado_en=NULL WHERE id=?", 
+                (instrumento_id,))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
 # -----------------------------
 # NUEVO INSTRUMENTO (admin/recepcion)
 # -----------------------------

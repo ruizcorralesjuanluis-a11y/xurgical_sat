@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Revisión Final - {{ envio.ot_num }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #f39c12;
+            --secondary-color: #2c3e50;
+            --bg-color: #f4f7f6;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .topbar {
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: white;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+        }
+
+        .instrument-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .instrument-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .instrument-item:hover {
+            background-color: #fff9f0;
+        }
+
+        .instrument-item.active {
+            background-color: #fff3e0;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .instrument-item.checked {
+            opacity: 0.6;
+            background-color: #f8f9fa;
+        }
+
+        .instrument-item.checked .check-icon {
+            color: #27ae60;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .photo-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eee;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .photo-card img:hover {
+            transform: scale(1.02);
+        }
+
+        .photo-label {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background: #eee;
+            color: #555;
+        }
+
+        .action-bar {
+            background: white;
+            border-top: 1px solid #ddd;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-verify {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-weight: bold;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+
+        .btn-verify:hover {
+            background-color: #219150;
+            transform: scale(1.05);
+            color: white;
+        }
+
+        .btn-verify:disabled {
+            background-color: #ccc;
+            transform: none;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+        }
+
+        .progress-pill {
+            background: #eee;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .badge-info {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #fullImageOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: zoom-out;
+        }
+
+        #fullImageOverlay img {
+            max-width: 95%;
+            max-height: 95%;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .hide-checked .instrument-item.checked {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-3">
+            <a href="/envios/{{ envio.id }}" class="text-dark"><i class="fa-solid fa-arrow-left"></i></a>
+            <span class="h5 mb-0">Revisión Final - {{ envio.ot_num }}</span>
+            <span class="text-muted small">| {{ envio.cliente }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="hideCheckedSwitch" checked>
+                <label class="form-check-label small" for="hideCheckedSwitch">Ocultar revisados</label>
+            </div>
+            <div class="progress-pill">
+                Revisados: <span id="checkedCount">{{ n_revisados }}</span> / {{ total }}
+            </div>
+            <a href="/envios/{{ envio.id }}" class="btn btn-outline-dark btn-sm">Volver al Parte</a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <input type="text" id="sidebarSearch" class="form-control form-control-sm"
+                    placeholder="Buscar instrumento...">
+            </div>
+            <div class="instrument-list hide-checked" id="instrumentList">
+                {% for inst in instrumentos %}
+                <div class="instrument-item {% if inst.revisado %}checked{% endif %}" id="item-{{ inst.id }}"
+                    onclick="selectInstrument({{ inst|tojson }})"
+                    data-name="{{ inst.codigo_producto }} {{ inst.denominacion }} {{ inst.num_serie }}">
+                    <div>
+                        <div class="fw-bold">{{ inst.codigo_producto or 'S/M' }}</div>
+                        <div class="small text-muted text-truncate" style="max-width: 220px;">{{ inst.denominacion or
+                            'Sin denom.' }}</div>
+                        <div class="badge-info text-secondary mt-1">SN: {{ inst.num_serie or '-' }}</div>
+                    </div>
+                    <div class="check-icon">
+                        <i
+                            class="fa-solid {% if inst.revisado %}fa-circle-check{% else %}fa-circle-dot opacity-25{% endif %} fa-lg"></i>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="content-area" id="contentArea">
+            <div class="empty-state">
+                <i class="fa-solid fa-clipboard-check fa-5x mb-3 opacity-25"></i>
+                <h4>Seleccione un instrumento para comenzar la revisión</h4>
+                <p>Utilice la lista de la izquierda para ver las fotos y confirmar el estado final.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-bar" id="actionBar" style="display: none;">
+        <div id="selectedInfo">
+            <span class="fw-bold" id="selectedCode"></span>
+            <span class="text-muted mx-2">|</span>
+            <span id="selectedDenom"></span>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary px-4 rounded-pill" onclick="toggleReview(false)" id="btnUnverify"
+                style="display: none;">
+                <i class="fa-solid fa-undo me-2"></i> Deshacer revisión
+            </button>
+            <button class="btn btn-verify" onclick="toggleReview(true)" id="btnVerify">
+                <i class="fa-solid fa-check me-2"></i> Confirmar y Siguiente
+            </button>
+        </div>
+    </div>
+
+    <div id="fullImageOverlay" onclick="this.style.display='none'">
+        <img src="" id="fullImage">
+    </div>
+
+    <script>
+        let currentInstrument = null;
+        let instrumentos = {{ instrumentos| tojson }};
+
+        function selectInstrument(inst) {
+            currentInstrument = inst;
+            document.querySelectorAll('.instrument-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('item-' + inst.id).classList.add('active');
+
+            const content = document.getElementById('contentArea');
+            const bar = document.getElementById('actionBar');
+
+            // Info bar
+            document.getElementById('selectedCode').textContent = inst.codigo_producto || 'S/M';
+            document.getElementById('selectedDenom').textContent = inst.denominacion || '';
+            bar.style.display = 'flex';
+
+            // Update buttons
+            const isChecked = document.getElementById('item-' + inst.id).classList.contains('checked');
+            document.getElementById('btnVerify').style.display = isChecked ? 'none' : 'block';
+            document.getElementById('btnUnverify').style.display = isChecked ? 'block' : 'none';
+
+            // Photos area
+            let html = `<div class="d-flex justify-content-between align-items-center">
+                    <h3>Detalles del Instrumento</h3>
+                    <div class="badge bg-secondary">ID: ${inst.id}</div>
+                  </div>
+                  <div class="row bg-white p-3 rounded shadow-sm mx-0">
+                    <div class="col-md-4"><b>Fabricante:</b> ${inst.fabricante || '-'}</div>
+                    <div class="col-md-4"><b>Nº Serie:</b> ${inst.num_serie || '-'}</div>
+                    <div class="col-md-4"><b>DataMatrix:</b> ${inst.codigo_datamatrix || '-'}</div>
+                    <div class="col-12 mt-2"><b>Observaciones:</b> <span class="text-danger">${inst.observaciones || 'Ninguna'}</span></div>
+                  </div>
+                  <h4>Fotografías</h4>
+                  <div class="photo-grid">`;
+
+            // Entrada
+            for (let i = 1; i <= 6; i++) {
+                const path = inst['foto_entrada_' + i];
+                if (path) {
+                    html += `<div class="photo-card">
+                    <div class="photo-label">ENTRADA ${i}</div>
+                    <img src="${path}" onclick="zoomImage('${path}')">
+                  </div>`;
+                }
+            }
+
+            // Salida
+            for (let i = 1; i <= 6; i++) {
+                const path = inst['foto_salida_' + i];
+                if (path) {
+                    html += `<div class="photo-card">
+                    <div class="photo-label text-success">SALIDA (REPARADO) ${i}</div>
+                    <img src="${path}" onclick="zoomImage('${path}')">
+                  </div>`;
+                }
+            }
+
+            if (html.indexOf('photo-card') === -1) {
+                html += `<div class="col-12 text-center py-5 text-muted">
+                    <i class="fa-solid fa-camera fa-3x mb-3 opacity-25"></i>
+                    <p>No hay fotografías registradas para este instrumento.</p>
+                   </div>`;
+            }
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        async function toggleReview(checked) {
+            if (!currentInstrument) return;
+
+            const id = currentInstrument.id;
+            const url = checked ? `/instrumentos/${id}/revisar` : `/instrumentos/${id}/desrevisar`;
+
+            try {
+                const resp = await fetch(url, { method: 'POST' });
+                if (resp.ok) {
+                    const item = document.getElementById('item-' + id);
+                    const icon = item.querySelector('.check-icon i');
+
+                    if (checked) {
+                        item.classList.add('checked');
+                        icon.className = 'fa-solid fa-circle-check fa-lg';
+
+                        // Show next automatically if hiding
+                        if (document.getElementById('hideCheckedSwitch').checked) {
+                            selectNext();
+                        } else {
+                            // Just refresh current view state
+                            document.getElementById('btnVerify').style.display = 'none';
+                            document.getElementById('btnUnverify').style.display = 'block';
+                        }
+                    } else {
+                        item.classList.remove('checked');
+                        icon.className = 'fa-solid fa-circle-dot opacity-25 fa-lg';
+                        document.getElementById('btnVerify').style.display = 'block';
+                        document.getElementById('btnUnverify').style.display = 'none';
+                    }
+
+                    updateCount();
+                }
+            } catch (err) {
+                alert('Error al actualizar revisión');
+            }
+        }
+
+        function selectNext() {
+            const items = Array.from(document.querySelectorAll('.instrument-item'));
+            const visibleItems = items.filter(el => {
+                if (document.getElementById('hideCheckedSwitch').checked) {
+                    return !el.classList.contains('checked');
+                }
+                return true;
+            });
+
+            if (visibleItems.length > 0) {
+                // Find current index in visible
+                const currentIndex = visibleItems.findIndex(el => el.classList.contains('active'));
+                let nextIndex = 0;
+                if (currentIndex !== -1 && currentIndex < visibleItems.length - 1) {
+                    nextIndex = currentIndex + 1;
+                } else if (currentIndex === -1 && visibleItems.length > 0) {
+                    nextIndex = 0;
+                }
+
+                // Trigger click on next visible
+                const nextId = visibleItems[nextIndex].id.split('-')[1];
+                const nextInst = instrumentos.find(i => i.id == nextId);
+                selectInstrument(nextInst);
+            } else {
+                document.getElementById('contentArea').innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-party-horn fa-5x mb-3 text-success"></i>
+                    <h4 class="text-success">¡Todo Revisado!</h4>
+                    <p>Has completado la revisión de todos los instrumentos de este parte.</p>
+                    <a href="/envios/${currentInstrument.envio_id}" class="btn btn-primary rounded-pill px-5">Finalizar y Volver</a>
+                </div>
+            `;
+                document.getElementById('actionBar').style.display = 'none';
+            }
+        }
+
+        function updateCount() {
+            const checked = document.querySelectorAll('.instrument-item.checked').length;
+            document.getElementById('checkedCount').textContent = checked;
+        }
+
+        function zoomImage(src) {
+            document.getElementById('fullImage').src = src;
+            document.getElementById('fullImageOverlay').style.display = 'flex';
+        }
+
+        // Filters
+        document.getElementById('hideCheckedSwitch').addEventListener('change', function (e) {
+            const list = document.getElementById('instrumentList');
+            if (e.target.checked) {
+                list.classList.add('hide-checked');
+            } else {
+                list.classList.remove('hide-checked');
+            }
+        });
+
+        document.getElementById('sidebarSearch').addEventListener('input', function (e) {
+            const term = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.instrument-item').forEach(item => {
+                const text = item.getAttribute('data-name').toLowerCase();
+                item.style.display = text.includes(term) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+
+</html>

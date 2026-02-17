@@ -250,7 +250,10 @@ def init_db():
         tecnico_reparacion TEXT,
         tecnico_reparacion_en TEXT,
         repuesto_info TEXT,
-        repuesto_precio REAL
+        repuesto_precio REAL,
+        revisado INTEGER DEFAULT 0,
+        revisado_por TEXT,
+        revisado_en TEXT
     )
     """)
 
@@ -288,6 +291,12 @@ def init_db():
         cur.execute("ALTER TABLE instrumentos ADD COLUMN repuesto_info TEXT")
     if "repuesto_precio" not in cols_inst:
         cur.execute("ALTER TABLE instrumentos ADD COLUMN repuesto_precio REAL")
+    if "revisado" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN revisado INTEGER DEFAULT 0")
+    if "revisado_por" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN revisado_por TEXT")
+    if "revisado_en" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN revisado_en TEXT")
     for i in range(1, 7):
         col_e = f"foto_entrada_{i}"
         if col_e not in cols_inst:

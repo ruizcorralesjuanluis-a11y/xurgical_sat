@@ -470,6 +470,14 @@
               </button>
             </form>
 
+            <a href="/envios/{{ envio.id }}/revision" class="btn btn-warning px-4 py-3 action-card shadow-sm">
+              <i class="fa-solid fa-clipboard-check fa-lg"></i>
+              <div class="text-start">
+                <div class="small opacity-75">Control de</div>
+                <div>Calidad Final</div>
+              </div>
+            </a>
+
             <button class="btn btn-dark px-4 py-3 action-card shadow-sm" onclick="printEtiqueta('{{ envio.id }}')">
               <i class="fa-solid fa-circle-check fa-lg"></i>
               <div class="text-start">
