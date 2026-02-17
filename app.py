@@ -4626,22 +4626,6 @@ def cerrar_consulta(consulta_id: int, user=Depends(require_roles("admin", "recep
     conn.commit()
     conn.close()
     return RedirectResponse(url="/", status_code=303)
-@app.get("/estadisticas_tecnicos", response_class=HTMLResponse)
-def estadisticas_tecnicos(
-    request: Request,
-    fecha_inicio: Optional[str] = None,
-    fecha_fin: Optional[str] = None,
-    user=Depends(require_roles("admin"))
-):
-    conn = get_conn()
-    cur = conn.cursor()
-
-    # Filtros por defecto (mes actual si no se especifica)
-    hoy = datetime.now()
-    if not fecha_inicio:
-        fecha_inicio = hoy.replace(day=1).strftime("%Y-%m-%d")
-    if not fecha_fin:
-        fecha_fin = hoy.strftime("%Y-%m-%d")
 
 @app.get("/estadisticas_tecnicos", response_class=HTMLResponse)
 def estadisticas_tecnicos(
@@ -4660,8 +4644,8 @@ def estadisticas_tecnicos(
     if not fecha_fin:
         fecha_fin = hoy.strftime("%Y-%m-%d")
 
-    # SQL para contar por tÃ©cnico y estado
-    # Ajustamos fecha_fin para incluir todo el dÃ­a (hasta 23:59:59)
+    # SQL para contar por técnico y estado
+    # Ajustamos fecha_fin para incluir todo el día (hasta 23:59:59)
     fecha_fin_ts = f"{fecha_fin} 23:59:59"
     fecha_inicio_ts = f"{fecha_inicio} 00:00:00"
 
