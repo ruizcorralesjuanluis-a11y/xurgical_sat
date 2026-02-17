@@ -2088,7 +2088,13 @@ def revision_envio(request: Request, envio_id: int, user=Depends(require_roles("
         """,
         (envio_id,),
     )
-    instrumentos = [dict(r) for r in cur.fetchall()]
+    instrumentos = []
+    for r in cur.fetchall():
+        d = dict(r)
+        for k, v in d.items():
+            if hasattr(v, "isoformat"): # Más genérico para datetime/date
+                d[k] = v.isoformat()
+        instrumentos.append(d)
     
     # Conteo
     n_revisados = sum(1 for i in instrumentos if i["revisado"])
