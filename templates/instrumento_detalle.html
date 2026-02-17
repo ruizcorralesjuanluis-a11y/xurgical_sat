@@ -156,7 +156,7 @@
       {% if tipo_upper != 'TRAZABILIDAD' %}
       {% if user and user.role in ["admin","tecnico"] %}
       <hr>
-      <form class="mt-3" method="post" action="/instrumentos/{{ inst.id }}/estado">
+      <form class="mt-3" method="post" action="/instrumentos/{{ inst.id }}/estado" id="statusForm">
         <div class="row g-3 align-items-end">
           <div class="col-md-3">
             <label class="form-label"><strong>Estado:</strong></label>
@@ -287,6 +287,24 @@
             block.style.display = 'block';
           } else {
             block.style.display = 'none';
+          }
+        });
+
+        document.getElementById('statusForm').addEventListener('submit', async function (e) {
+          const select = document.getElementById('estadoSelect');
+          if (select.value === 'Baja') {
+            if (confirm('Se recomienda la sustitución de este equipo. ¿Deseas añadir fotos justificativas para la baja?')) {
+              e.preventDefault();
+              const formData = new FormData(this);
+              try {
+                const resp = await fetch(this.action, { method: 'POST', body: formData });
+                if (resp.ok) {
+                  window.location.href = `/instrumentos/{{ inst.id }}/editar`;
+                }
+              } catch (err) {
+                alert('Error al guardar estado');
+              }
+            }
           }
         });
       </script>

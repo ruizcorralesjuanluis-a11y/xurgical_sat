@@ -434,6 +434,14 @@
                     }
                 }
                 loadChecklist(currentInstId);
+            } else if (state === 'Baja') {
+                if (confirm('Se recomienda la sustitución de este equipo. ¿Deseas añadir fotos justificativas para la baja?')) {
+                    updateStatus(currentInstId, 'Baja', true).then(() => {
+                        window.location.href = `/instrumentos/${currentInstId}/editar`;
+                    });
+                } else {
+                    updateStatus(currentInstId, 'Baja');
+                }
             } else {
                 updateStatus(currentInstId, state);
             }
