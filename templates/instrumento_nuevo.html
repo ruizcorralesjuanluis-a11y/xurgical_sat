@@ -1,4 +1,4 @@
-<!doctype html>
+Ôªø<!doctype html>
 <html lang="es">
 
 <head>
@@ -107,7 +107,7 @@
       <div class="panel p-3 mb-3">
         <h5 class="mb-1">{% if inst %}Editar instrumento #{{ inst.id }}{% else %}Nuevo instrumento{% endif %}</h5>
         <div class="muted">
-          Pulsa <span class="kbd">Espacio</span> para capturar. Autom·tico al siguiente slot libre.
+          Pulsa <span class="kbd">Espacio</span> para capturar. Autom√°tico al siguiente slot libre.
           {% if inst %}
           <span class="pill ms-2">Siguiente: <b id="nextSlot">1</b></span>
           {% endif %}
@@ -124,7 +124,7 @@
 
             <div class="row g-2">
               <div class="col-md-3">
-                <label class="form-label">Modelo / CÛdigo producto</label>
+                <label class="form-label">Modelo / C√≥digo producto</label>
                 <input class="form-control" name="codigo_producto" value="{{ inst.codigo_producto if inst else '' }}">
               </div>
               <div class="col-md-3">
@@ -132,7 +132,7 @@
                 <input class="form-control" name="fabricante" value="{{ inst.fabricante if inst else '' }}">
               </div>
               <div class="col-md-3">
-                <label class="form-label">N∫ serie</label>
+                <label class="form-label">N¬∫ serie</label>
                 <input class="form-control" name="num_serie" value="{{ inst.num_serie if inst else '' }}">
               </div>
               <div class="col-md-3">
@@ -142,7 +142,7 @@
               </div>
 
               <div class="col-md-5">
-                <label class="form-label">DenominaciÛn</label>
+                <label class="form-label">Denominaci√≥n</label>
                 <input class="form-control" name="denominacion" value="{{ inst.denominacion if inst else '' }}">
               </div>
               <div class="col-md-5">
@@ -193,12 +193,12 @@
         </div>
 
         <div class="mt-3">
-          <div class="fw-bold mb-2">C·mara</div>
+          <div class="fw-bold mb-2">C√°mara</div>
           <select id="cameraSelect" class="form-select form-select-sm mb-2"></select>
           <video id="video" autoplay playsinline class="w-100"
             style="max-height:320px;border-radius:12px;border:1px solid #e5e7eb;background:#000"></video>
           <canvas id="canvas" style="display:none"></canvas>
-          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Autom·tico al siguiente slot
+          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Autom√°tico al siguiente slot
             libre.</div>
         </div>
 
@@ -261,7 +261,7 @@
       cams.forEach((c, i) => {
         const opt = document.createElement("option");
         opt.value = c.deviceId;
-        opt.text = c.label || ("C·mara " + (i + 1));
+        opt.text = c.label || ("C√°mara " + (i + 1));
         sel.appendChild(opt);
       });
 
@@ -283,11 +283,11 @@
 
 
     function getNextSlot() {
-      // Buscamos el primer slot vacÌo
+      // Buscamos el primer slot vac√≠o
       for (let i = 1; i <= 6; i++) {
         if (!photosStatus[i]) return i;
       }
-      // Si todos est·n llenos, rotamos sobre el ˙ltimo usado o el 1
+      // Si todos est√°n llenos, rotamos sobre el √∫ltimo usado o el 1
       const key = "xurgical_last_slot_" + instId;
       const last = parseInt(localStorage.getItem(key) || "6", 10);
       let next = last + 1;
@@ -309,9 +309,9 @@
       const v = document.getElementById("video");
       const canvas = document.getElementById("canvas");
       const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
-      if (vw === 0 || vh === 0) throw new Error("C·mara no lista todavÌa");
+      if (vw === 0 || vh === 0) throw new Error("C√°mara no lista todav√≠a");
 
-      // ? tamaÒo ìtallerî
+      // ? tama√±o ‚Äútaller‚Äù
       const MAX_W = 960, MAX_H = 540;
       const scale = Math.min(MAX_W / vw, MAX_H / vh, 1);
       const w = Math.round(vw * scale);
@@ -361,12 +361,12 @@
       }
     }
 
-    // Barra espaciadora: capturar SOLO cuando no est·s escribiendo en un campo.
-    // Evita que al rellenar descripciÛn/inputs se dispare otra foto.
+    // Barra espaciadora: capturar SOLO cuando no est√°s escribiendo en un campo.
+    // Evita que al rellenar descripci√≥n/inputs se dispare otra foto.
     document.addEventListener("keydown", (ev) => {
       if (ev.code !== "Space") return;
 
-      // Si el foco est· en un campo de formulario (o editable), NO capturamos.
+      // Si el foco est√° en un campo de formulario (o editable), NO capturamos.
       const el = document.activeElement;
       const typing = el && (
         el.tagName === "INPUT" ||
@@ -376,13 +376,13 @@
       );
       if (typing) return;
 
-      // Solo capturar si existe el vÌdeo (c·mara) y est· visible.
+      // Solo capturar si existe el v√≠deo (c√°mara) y est√° visible.
       const v = document.getElementById("video");
       if (!v) return;
       const visible = !!(v.offsetWidth || v.offsetHeight || v.getClientRects().length);
       if (!visible) return;
 
-      // AquÌ sÌ: evitamos scroll y disparamos captura.
+      // Aqu√≠ s√≠: evitamos scroll y disparamos captura.
       ev.preventDefault();
       captureSpace();
     });
@@ -392,7 +392,7 @@
   </script>
   {% endif %}
 
-  <!-- Autorrelleno desde Articulos.xlsx: al salir de "Modelo / CÛdigo producto" -->
+  <!-- Autorrelleno desde Articulos.xlsx: al salir de "Modelo / C√≥digo producto" -->
   <script>
     (function () {
       window.addEventListener('load', () => { try { lookupNow(); } catch (e) { }});
@@ -408,7 +408,7 @@
       function normCode(s) {
         if (!s) return "";
         let t = String(s).trim();
-        // prefijos rp/mt (insensible a may˙sculas) -> quitar
+        // prefijos rp/mt (insensible a may√∫sculas) -> quitar
         t = t.replace(/^(rp|mt)\s*/i, "");
         t = t.replace(/^[\s\-_]+/, "");
         return t.toUpperCase();
@@ -427,8 +427,8 @@
           if (!data || !data.found) return;
 
           // Relleno controlado:
-          // - si est· vacÌo, rellena
-          // - si fue autofill previo (dataset.autofill="1"), se permite sobreescribir al cambiar el cÛdigo
+          // - si est√° vac√≠o, rellena
+          // - si fue autofill previo (dataset.autofill="1"), se permite sobreescribir al cambiar el c√≥digo
           const canOverwriteDenom = (!inputDenom.value.trim() || inputDenom.dataset.autofill === "1");
           if (canOverwriteDenom && data.descripcion) {
             inputDenom.value = data.descripcion;
@@ -443,10 +443,10 @@
             }
           }
 
-          // Guardamos el ˙ltimo cÛdigo que resolviÛ el cat·logo (para saber cu·ndo limpiar)
+          // Guardamos el √∫ltimo c√≥digo que resolvi√≥ el cat√°logo (para saber cu√°ndo limpiar)
           lastAutoCode = (data.codigo ? normCode(data.codigo) : q);
 
-          // Si el backend devuelve el cÛdigo normalizado, lo ponemos (sin prefijos rp/mt)
+          // Si el backend devuelve el c√≥digo normalizado, lo ponemos (sin prefijos rp/mt)
           if (data.codigo) {
             inputCodigo.value = data.codigo;
           }
@@ -460,22 +460,22 @@
         timer = setTimeout(lookupNow, 200);
       }
 
-      // Si el usuario modifica la denominaciÛn/fabricante a mano, ya no se pisa
+      // Si el usuario modifica la denominaci√≥n/fabricante a mano, ya no se pisa
       inputDenom.addEventListener('input', () => { inputDenom.dataset.autofill = "0"; });
       if (inputFab) { inputFab.addEventListener('input', () => { inputFab.dataset.autofill = "0"; }); }
 
-      // Si cambia el cÛdigo y la denominaciÛn fue autofill, la limpiamos para que se rellene la nueva
+      // Si cambia el c√≥digo y la denominaci√≥n fue autofill, la limpiamos para que se rellene la nueva
       inputCodigo.addEventListener('input', () => {
         const now = normCode(inputCodigo.value);
         if (!now) return;
 
-        // Si la denominaciÛn venÌa del cat·logo, la limpiamos al cambiar referencia para que se rellene la nueva
+        // Si la denominaci√≥n ven√≠a del cat√°logo, la limpiamos al cambiar referencia para que se rellene la nueva
         if (inputDenom.dataset.autofill === "1" && lastAutoCode && now !== lastAutoCode) {
           inputDenom.value = "";
           inputDenom.dataset.autofill = "1";
         }
 
-        // Si el fabricante venÌa del cat·logo, tambiÈn lo limpiamos al cambiar referencia
+        // Si el fabricante ven√≠a del cat√°logo, tambi√©n lo limpiamos al cambiar referencia
         if (inputFab && inputFab.dataset.autofill === "1" && lastAutoCode && now !== lastAutoCode) {
           inputFab.value = "";
           inputFab.dataset.autofill = "1";
@@ -490,3 +490,4 @@
 </body>
 
 </html>
+

@@ -432,6 +432,16 @@
             </div>
           </div>
 
+          {% if envio.observaciones %}
+          <div class="col-12 mt-2">
+            <div class="p-2 rounded" style="background: #fff9db; border: 1px solid #fab005;">
+              <div class="fw-bold small text-uppercase text-muted"><i class="fa-solid fa-circle-info text-warning"></i>
+                Observaciones del parte</div>
+              <div style="white-space: pre-wrap;">{{ envio.observaciones }}</div>
+            </div>
+          </div>
+          {% endif %}
+
           {% if user and user.role in ["admin","recepcion"] %}
           <div
             class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end align-items-center mt-2 mt-md-0"

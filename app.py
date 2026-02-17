@@ -1430,6 +1430,7 @@ def nuevo_envio_crear(
     cliente: str = Form(""),
     tipo_trabajo: str = Form("REPARACION"),
     fecha: str = Form(""),
+    observaciones: str = Form(""),
     user=Depends(require_roles("admin", "recepcion")),
 ):
     try:
@@ -1482,8 +1483,8 @@ def nuevo_envio_crear(
                 return RedirectResponse(url="/envios/nuevo?err=cliente", status_code=303)
 
         sql = """
-            INSERT INTO envios (ot_num, nombre_archivo, cliente, cliente_id, tipo_trabajo, fecha)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO envios (ot_num, nombre_archivo, cliente, cliente_id, tipo_trabajo, fecha, observaciones)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """
         vals = [
             ot_num,
@@ -1492,6 +1493,7 @@ def nuevo_envio_crear(
             cli_id_val,
             tipo_trabajo,
             (fecha or "").strip(),
+            (observaciones or "").strip(),
         ]
 
         is_pg = bool(os.environ.get("DATABASE_URL"))
@@ -1552,8 +1554,9 @@ def envio_editar_guardar(
     referencia: str = Form(""),
     cliente_id: str = Form(""),
     cliente: str = Form(""),
-    tipo_trabajo: str = Form(""),
-    fecha: str = Form(""),
+    tipo_trabajo: str = Form(None),
+    fecha: str = Form(None),
+    observaciones: str = Form(""),
     user=Depends(require_roles("admin", "recepcion")),
 ):
     try:
@@ -1588,7 +1591,7 @@ def envio_editar_guardar(
 
         sql = """
             UPDATE envios 
-            SET nombre_archivo=?, cliente=?, cliente_id=?, tipo_trabajo=?, fecha=?
+            SET nombre_archivo=?, cliente=?, cliente_id=?, tipo_trabajo=?, fecha=?, observaciones=?
             WHERE id=?
         """
         params = [
@@ -1597,6 +1600,7 @@ def envio_editar_guardar(
             cli_id_val,
             (tipo_trabajo or envio_old["tipo_trabajo"]),
             (fecha or envio_old["fecha"]),
+            (observaciones or "").strip(),
             envio_id
         ]
         

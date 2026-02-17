@@ -78,7 +78,8 @@
                 <div class="col-lg-8">
                     <div class="panel p-4">
                         <h1 class="h5 mb-4"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Editar Parte:
-                            <strong>{{ envio.ot_num }}</strong></h1>
+                            <strong>{{ envio.ot_num }}</strong>
+                        </h1>
 
                         <div class="alert alert-warning border-0 shadow-sm mb-4">
                             <i class="fa-solid fa-triangle-exclamation me-2"></i>
@@ -139,6 +140,11 @@
                                     </select>
                                 </div>
 
+                                <div class="col-md-12">
+                                    <label class="form-label">Observaciones / Instrucciones de grabado</label>
+                                    <textarea class="form-control" name="observaciones"
+                                        rows="3">{{ envio.observaciones or '' }}</textarea>
+                                </div>
                             </div>
 
                             <div class="mt-5 d-flex gap-3">

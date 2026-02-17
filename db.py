@@ -205,14 +205,17 @@ def init_db():
         tipo_trabajo TEXT DEFAULT 'REPARACION',
         fecha TEXT,
         aceptado INTEGER DEFAULT 0,
-        creado_en {dt}
+        creado_en {dt},
+        observaciones TEXT
     )
     """)
 
-    # Migración: asegurar que existe aceptado en envios
+    # Migración: asegurar que existe aceptado y observaciones en envios
     cols_envios = get_table_columns(cur, "envios")
     if "aceptado" not in cols_envios:
         cur.execute("ALTER TABLE envios ADD COLUMN aceptado INTEGER DEFAULT 0")
+    if "observaciones" not in cols_envios:
+        cur.execute("ALTER TABLE envios ADD COLUMN observaciones TEXT")
 
     # 4. Instrumentos (Ítems de cada envío)
     cur.execute(f"""
