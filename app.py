@@ -4626,3 +4626,62 @@ def cerrar_consulta(consulta_id: int, user=Depends(require_roles("admin", "recep
     conn.commit()
     conn.close()
     return RedirectResponse(url="/", status_code=303)
+@app.get("/estadisticas_tecnicos", response_class=HTMLResponse)
+def estadisticas_tecnicos(
+    request: Request,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
+    user=Depends(require_roles("admin"))
+):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # Filtros por defecto (mes actual si no se especifica)
+    hoy = datetime.now()
+    if not fecha_inicio:
+        fecha_inicio = hoy.replace(day=1).strftime("%Y-%m-%d")
+    if not fecha_fin:
+        fecha_fin = hoy.strftime("%Y-%m-%d")
+
+    # SQL para contar por tÃ©cnico y estado
+    # Ajustamos fecha_fin para incluir todo el dÃ­a (hasta 23:59:59)
+    fecha_fin_ts = f"{fecha_fin} 23:59:59"
+    fecha_inicio_ts = f"{fecha_inicio} 00:00:00"
+
+    sql = """
+        SELECT 
+            tecnico_reparacion as tecnico,
+            COUNT(CASE WHEN estado = 'Reparado' THEN 1 END) as reparados,
+            COUNT(CASE WHEN estado = 'Baja' THEN 1 END) as bajas,
+            COUNT(*) as total
+        FROM instrumentos
+        WHERE tecnico_reparacion IS NOT NULL 
+          AND tecnico_reparacion != ''
+          AND tecnico_reparacion_en >= ? 
+          AND tecnico_reparacion_en <= ?
+        GROUP BY tecnico_reparacion
+        ORDER BY reparados DESC
+    """
+
+    cur.execute(sql, (fecha_inicio_ts, fecha_fin_ts))
+    stats = [dict(r) for r in cur.fetchall()]
+
+    # Totales globales del periodo
+    total_reparados = sum(s['reparados'] for s in stats)
+    total_bajas = sum(s['bajas'] for s in stats)
+    total_general = sum(s['total'] for s in stats)
+
+    conn.close()
+
+    return templates.TemplateResponse("estadisticas_tecnicos.html", {
+        "request": request,
+        "user": user,
+        "stats": stats,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "totales": {
+            "reparados": total_reparados,
+            "bajas": total_bajas,
+            "total": total_general
+        }
+    })
