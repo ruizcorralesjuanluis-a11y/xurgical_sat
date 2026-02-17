@@ -2266,7 +2266,7 @@ def instrumento_nuevo_crear(
 # EDITAR INSTRUMENTO (admin/recepcion)
 # -----------------------------
 @app.get("/instrumentos/{instrumento_id}/editar", response_class=HTMLResponse)
-def instrumento_editar_form(request: Request, instrumento_id: int, user=Depends(require_roles("admin", "recepcion"))):
+def instrumento_editar_form(request: Request, instrumento_id: int, user=Depends(require_roles("admin", "recepcion", "tecnico"))):
     conn = get_conn()
     cur = conn.cursor()
 
@@ -2301,12 +2301,12 @@ def instrumento_editar_guardar(
     denominacion: str = Form(""),
     observaciones: str = Form(""),
     codigo_datamatrix: str = Form(""),
-    user=Depends(require_roles("admin", "recepcion")),
+    user=Depends(require_roles("admin", "recepcion", "tecnico")),
 ):
-    # Permiso granular (además del rol)
+    # Permiso granular
     conn_perm = get_conn()
     cur_perm = conn_perm.cursor()
-    if not can_action(user, "envio_borrar", cur_perm):
+    if not (can_action(user, "instrumento_editar", cur_perm) or can_action(user, "fotos_gestionar", cur_perm)):
         conn_perm.close()
         return RedirectResponse(url="/?err=perm", status_code=303)
     conn_perm.close()
@@ -2371,7 +2371,7 @@ def instrumento_editar_guardar(
 
 
 @app.post("/instrumentos/{instrumento_id}/finalizar_fotos")
-def instrumento_finalizar_fotos(instrumento_id: int, user=Depends(require_roles("admin", "recepcion"))):
+def instrumento_finalizar_fotos(instrumento_id: int, user=Depends(require_roles("admin", "recepcion", "tecnico"))):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT envio_id FROM instrumentos WHERE id=?", (instrumento_id,))
@@ -3333,7 +3333,7 @@ async def cambiar_estado(
 # Body JSON: { image: "data:image/jpeg;base64,...." }
 # -----------------------------
 @app.post("/instrumentos/{instrumento_id}/foto_webcam/{slot}")
-async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Depends(require_roles("admin", "recepcion"))):
+async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Depends(require_roles("admin", "recepcion", "tecnico"))):
     if slot not in range(1, 7):
         return JSONResponse({"ok": False, "error": "slot inválido"}, status_code=400)
 
