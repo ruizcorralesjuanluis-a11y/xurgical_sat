@@ -2093,6 +2093,7 @@ def instrumento_nuevo_crear(
     denominacion: str = Form(""),
     observaciones: str = Form(""),
     codigo_datamatrix: str = Form(""),
+    unidades: int = Form(1),
     user=Depends(require_roles("admin", "recepcion")),
 ):
     # Permiso granular (además del rol)
@@ -2112,59 +2113,75 @@ def instrumento_nuevo_crear(
         conn.close()
         return HTMLResponse("Envío no encontrado", status_code=404)
 
-    dm_auto = ""
-    nombre_trz_auto = ""
-    if (e["tipo_trabajo"] or "").upper() == "TRAZABILIDAD":
+    unidades = max(1, unidades)
+    is_trazabilidad = (e["tipo_trabajo"] or "").upper() == "TRAZABILIDAD"
+    
+    prefijo_dm = ""
+    prefijo_nombre = ""
+    nums = []
+    
+    if is_trazabilidad:
         if not e["cliente_id"]:
             conn.close()
             return HTMLResponse("OT de trazabilidad sin cliente registrado", status_code=400)
-        prefijo_dm, prefijo_nombre, nums = _reserve_numeros_cliente(cur, int(e["cliente_id"]), 1)
-        dm_auto = f"{prefijo_dm}{str(nums[0]).zfill(5)}"
-        nombre_trz_auto = _build_nombre_trazabilidad(prefijo_nombre, dm_auto)
-
-    vals = [
-        envio_id,
-        (codigo_producto or "").strip(),
-        (fabricante or "").strip(),
-        (num_serie or "").strip(),
-        (denominacion or "").strip(),
-        (observaciones or "").strip(),
-        (dm_auto or (codigo_datamatrix or "").strip()),
-        (nombre_trz_auto or ""),
-    ]
-
-    sql = """
-        INSERT INTO instrumentos
-        (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
-    """
+        # Reservamos N números de golpe
+        prefijo_dm, prefijo_nombre, nums = _reserve_numeros_cliente(cur, int(e["cliente_id"]), unidades)
 
     is_pg = bool(os.environ.get("DATABASE_URL"))
-    inst_id = None
-    
-    if is_pg:
-        sql += " RETURNING id"
-        cur.execute(sql, tuple(vals))
-        row = cur.fetchone()
-        if row:
-            inst_id = int(row["id"])
-    else:
-        cur.execute(sql, tuple(vals))
-        inst_id = cur.lastrowid
+    inst_ids = []
+
+    for i in range(unidades):
+        dm_auto = ""
+        nombre_trz_auto = ""
+        if is_trazabilidad:
+            dm_auto = f"{prefijo_dm}{str(nums[i]).zfill(5)}"
+            nombre_trz_auto = _build_nombre_trazabilidad(prefijo_nombre, dm_auto)
+
+        vals = [
+            envio_id,
+            (codigo_producto or "").strip(),
+            (fabricante or "").strip(),
+            (num_serie or "").strip(),
+            (denominacion or "").strip(),
+            (observaciones or "").strip(),
+            (dm_auto or (codigo_datamatrix or "").strip()),
+            (nombre_trz_auto or ""),
+        ]
+
+        sql = """
+            INSERT INTO instrumentos
+            (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
+        """
         
-    # Fallback por si acaso (ej: driver antiguo)
-    if inst_id is None:
-        cur.execute("SELECT MAX(id) as mid FROM instrumentos WHERE envio_id=?", (envio_id,))
-        row_id = cur.fetchone()
-        if row_id and row_id["mid"]:
-            inst_id = row_id["mid"]
+        inst_id = None
+        if is_pg:
+            cur.execute(sql + " RETURNING id", tuple(vals))
+            row = cur.fetchone()
+            if row: inst_id = int(row["id"])
+        else:
+            cur.execute(sql, tuple(vals))
+            inst_id = cur.lastrowid
+            
+        if inst_id is None:
+            cur.execute("SELECT MAX(id) as mid FROM instrumentos WHERE envio_id=?", (envio_id,))
+            row_id = cur.fetchone()
+            if row_id and row_id["mid"]: inst_id = row_id["mid"]
+        
+        inst_ids.append(inst_id)
 
     conn.commit()
     conn.close()
 
-    if (e["tipo_trabajo"] or "").upper() == "TRAZABILIDAD":
-        return RedirectResponse(url=f"/instrumentos/{inst_id}", status_code=303)
-    return RedirectResponse(url=f"/instrumentos/{inst_id}/editar", status_code=303)
+    if unidades > 1:
+        # Si son varias, volvemos a la lista del parte
+        return RedirectResponse(url=f"/envios/{envio_id}", status_code=303)
+    
+    # Si es solo una, seguimos comportamiento original (ir a fotos/detalle)
+    target_id = inst_ids[0]
+    if is_trazabilidad:
+        return RedirectResponse(url=f"/instrumentos/{target_id}", status_code=303)
+    return RedirectResponse(url=f"/instrumentos/{target_id}/editar", status_code=303)
 
 
 # -----------------------------
