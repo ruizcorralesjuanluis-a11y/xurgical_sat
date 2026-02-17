@@ -140,25 +140,39 @@
             </div>
 
             <div class="row g-3 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="kpi-card bg-reparado">
-                        <div class="kpi-label">Reparados del periodo</div>
+                        <div class="kpi-label">Reparados</div>
                         <div class="kpi-value">{{ totales.reparados }}</div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="kpi-card bg-baja">
-                        <div class="kpi-label">Bajas del periodo</div>
+                        <div class="kpi-label">Bajas</div>
                         <div class="kpi-value">{{ totales.bajas }}</div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="kpi-card bg-curso">
+                        <div class="kpi-label">En curso / Otros</div>
+                        <div class="kpi-value">{{ totales.curso }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="kpi-card bg-total">
-                        <div class="kpi-label">Total instrumentos gestionados</div>
+                        <div class="kpi-label">Total Gestionados</div>
                         <div class="kpi-value">{{ totales.total }}</div>
                     </div>
                 </div>
             </div>
+
+            <style>
+                .bg-curso {
+                    background-color: rgba(254, 249, 195, 0.95);
+                    border-color: #fef08a;
+                    color: #854d0e;
+                }
+            </style>
 
             <div class="panel p-0 overflow-hidden">
                 <div class="p-3 bg-light border-bottom">
@@ -171,8 +185,9 @@
                                 <th class="ps-4">Técnico</th>
                                 <th class="text-center">Reparados</th>
                                 <th class="text-center">Bajas</th>
+                                <th class="text-center">En curso</th>
                                 <th class="text-center">Total</th>
-                                <th class="text-center ps-4" style="width: 200px;">Eficiencia</th>
+                                <th class="text-center ps-4" style="width: 200px;">Eficiencia*</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -193,9 +208,14 @@
                                 <td class="text-center">
                                     <span class="badge bg-danger-subtle text-danger fs-6">{{ s.bajas }}</span>
                                 </td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning-subtle text-warning fs-6"
+                                        style="color: #854d0e !important;">{{ s.curso }}</span>
+                                </td>
                                 <td class="text-center fw-bold">{{ s.total }}</td>
                                 <td class="pe-4">
-                                    {% set per = (s.reparados / s.total * 100)|round(1) if s.total > 0 else 0 %}
+                                    {% set finished = s.reparados + s.bajas %}
+                                    {% set per = (s.reparados / finished * 100)|round(1) if finished > 0 else 0 %}
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="progress w-100" style="height: 6px;">
                                             <div class="progress-bar bg-success" role="progressbar"

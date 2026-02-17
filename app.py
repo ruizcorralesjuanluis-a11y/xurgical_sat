@@ -4643,6 +4643,23 @@ def estadisticas_tecnicos(
     if not fecha_fin:
         fecha_fin = hoy.strftime("%Y-%m-%d")
 
+@app.get("/estadisticas_tecnicos", response_class=HTMLResponse)
+def estadisticas_tecnicos(
+    request: Request,
+    fecha_inicio: Optional[str] = None,
+    fecha_fin: Optional[str] = None,
+    user=Depends(require_roles("admin"))
+):
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # Filtros por defecto (mes actual si no se especifica)
+    hoy = datetime.now()
+    if not fecha_inicio:
+        fecha_inicio = hoy.replace(day=1).strftime("%Y-%m-%d")
+    if not fecha_fin:
+        fecha_fin = hoy.strftime("%Y-%m-%d")
+
     # SQL para contar por tÃ©cnico y estado
     # Ajustamos fecha_fin para incluir todo el dÃ­a (hasta 23:59:59)
     fecha_fin_ts = f"{fecha_fin} 23:59:59"
@@ -4653,6 +4670,7 @@ def estadisticas_tecnicos(
             tecnico_reparacion as tecnico,
             COUNT(CASE WHEN estado = 'Reparado' THEN 1 END) as reparados,
             COUNT(CASE WHEN estado = 'Baja' THEN 1 END) as bajas,
+            COUNT(CASE WHEN estado NOT IN ('Reparado', 'Baja') THEN 1 END) as curso,
             COUNT(*) as total
         FROM instrumentos
         WHERE tecnico_reparacion IS NOT NULL 
@@ -4669,6 +4687,7 @@ def estadisticas_tecnicos(
     # Totales globales del periodo
     total_reparados = sum(s['reparados'] for s in stats)
     total_bajas = sum(s['bajas'] for s in stats)
+    total_curso = sum(s['curso'] for s in stats)
     total_general = sum(s['total'] for s in stats)
 
     conn.close()
@@ -4682,6 +4701,7 @@ def estadisticas_tecnicos(
         "totales": {
             "reparados": total_reparados,
             "bajas": total_bajas,
+            "curso": total_curso,
             "total": total_general
         }
     })
