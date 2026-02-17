@@ -420,13 +420,15 @@
             stateModal.show();
         }
 
+        let isSubstitutionRecommended = 0;
+
         function selectState(state) {
             targetState = state;
             stateModal.hide();
+            isSubstitutionRecommended = 0;
 
             if (state === 'Reparado') {
                 const tipoTrabajo = '{{ envio.tipo_trabajo }}';
-                // Solo preguntamos por el Control de Calidad si el parte es específicamente de Óptica Rígida
                 if (tipoTrabajo === 'OPTICA_RIGIDA') {
                     if (confirm('¿Deseas rellenar el Informe de Control de Calidad ahora?')) {
                         window.location.href = `/instrumentos/${currentInstId}/qc_optica`;
@@ -435,7 +437,12 @@
                 }
                 loadChecklist(currentInstId);
             } else if (state === 'Baja') {
-                if (confirm('Se recomienda la sustitución de este equipo. ¿Deseas añadir fotos justificativas para la baja?')) {
+                // Preguntamos por la recomendación (el "tick" implícito)
+                if (confirm('Se recomienda la sustitución de este equipo. ¿Confirmar recomendación de sustitución?')) {
+                    isSubstitutionRecommended = 1;
+                }
+
+                if (confirm('¿Deseas añadir fotos justificativas para la baja?')) {
                     updateStatus(currentInstId, 'Baja', true).then(() => {
                         window.location.href = `/instrumentos/${currentInstId}/editar`;
                     });
@@ -506,6 +513,9 @@
         async function updateStatus(id, state, silent = false) {
             const formData = new FormData();
             formData.append('estado', state);
+            if (isSubstitutionRecommended) {
+                formData.append('recomendada_sustitucion', '1');
+            }
 
             try {
                 const resp = await fetch(`/instrumentos/${id}/estado`, {

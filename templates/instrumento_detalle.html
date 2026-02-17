@@ -274,6 +274,21 @@
             </div>
           </div>
 
+          <!-- BLOQUE BAJA (Solo visible si Baja) -->
+          <div id="bajaBlock" class="col-md-7" {% if st !='Baja' %}style="display:none" {% endif %}>
+            <div class="card bg-light border-danger">
+              <div class="card-body p-2">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" name="recomendada_sustitucion" id="sustitucionCheck"
+                    {% if inst.recomendada_sustitucion %}checked{% endif %}>
+                  <label class="form-check-label fw-bold text-danger" for="sustitucionCheck">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> SE RECOMIENDA SU SUSTITUCIÓN
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="col-md-2">
             <button class="btn btn-primary w-100" type="submit">Guardar</button>
           </div>
@@ -282,11 +297,14 @@
 
       <script>
         document.getElementById('estadoSelect').addEventListener('change', function () {
-          const block = document.getElementById('repuestoBlock');
-          if (this.value === 'En proceso') {
-            block.style.display = 'block';
-          } else {
-            block.style.display = 'none';
+          const repBlock = document.getElementById('repuestoBlock');
+          const bajBlock = document.getElementById('bajaBlock');
+
+          repBlock.style.display = (this.value === 'En proceso') ? 'block' : 'none';
+          bajBlock.style.display = (this.value === 'Baja') ? 'block' : 'none';
+
+          if (this.value === 'Baja') {
+            document.getElementById('sustitucionCheck').checked = true;
           }
         });
 

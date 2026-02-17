@@ -632,6 +632,14 @@
                     {% endif %}
                   </div>
                   {% endif %}
+
+                  {% if inst.estado == 'Baja' and inst.recomendada_sustitucion %}
+                  <div class="mt-1">
+                    <span class="badge bg-danger text-white" style="font-size: 0.65rem;">
+                      <i class="fa-solid fa-triangle-exclamation"></i> SUSTITUCIÓN
+                    </span>
+                  </div>
+                  {% endif %}
                 </td>
 
                 <!-- Estado -->
@@ -816,14 +824,34 @@
     function handleStateChange(select) {
       const instId = select.getAttribute('data-inst-id');
       const tipoTrabajo = select.getAttribute('data-tipo-trabajo');
+
       if (select.value === 'Reparado' && tipoTrabajo === 'OPTICA_RIGIDA') {
         if (confirm('¿Necesitas hacer un control de calidad?')) {
-          // Redirigir al formulario QC
           window.location.href = '/instrumentos/' + instId + '/qc_optica';
           return;
         }
       }
-      // Si no es óptica o dice que NO, enviar formulario normal (cambiar estado)
+
+      if (select.value === 'Baja') {
+        if (confirm('Se recomienda la sustitución de este equipo. ¿Marcar como recomendación de sustitución?')) {
+          let input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'recomendada_sustitucion';
+          input.value = '1';
+          select.form.appendChild(input);
+        }
+
+        if (confirm('¿Deseas añadir fotos justificativas para la baja?')) {
+          // Guardar con recomendación primero y luego redirigir
+          const formData = new FormData(select.form);
+          fetch(select.form.action, { method: 'POST', body: formData })
+            .then(() => {
+              window.location.href = '/instrumentos/' + instId + '/editar';
+            });
+          return;
+        }
+      }
+
       select.form.submit();
     }
 

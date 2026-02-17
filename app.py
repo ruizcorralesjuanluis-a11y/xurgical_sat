@@ -3306,6 +3306,9 @@ async def cambiar_estado(
         except:
             repuesto_precio = None
 
+    # Recomendación de sustitución
+    sustitucion = 1 if form.get("recomendada_sustitucion") else 0
+
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     username = user.get("username")
 
@@ -3315,9 +3318,10 @@ async def cambiar_estado(
             tecnico_reparacion=?, 
             tecnico_reparacion_en=?,
             repuesto_info=?,
-            repuesto_precio=?
+            repuesto_precio=?,
+            recomendada_sustitucion=?
         WHERE id=?
-    """, (estado, username, ahora, repuesto_info, repuesto_precio, instrumento_id))
+    """, (estado, username, ahora, repuesto_info, repuesto_precio, sustitucion, instrumento_id))
     
     conn.commit()
     conn.close()
