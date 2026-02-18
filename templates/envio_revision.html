@@ -247,7 +247,12 @@
                         <div class="fw-bold">{{ inst.codigo_producto or 'S/M' }}</div>
                         <div class="small text-muted text-truncate" style="max-width: 220px;">{{ inst.denominacion or
                             'Sin denom.' }}</div>
-                        <div class="badge-info text-secondary mt-1">SN: {{ inst.num_serie or '-' }}</div>
+                        <div class="badge-info text-secondary mt-1">
+                            SN: {{ inst.num_serie or '-' }}
+                            {% if inst.has_checklist %}
+                            <i class="fa-solid fa-clipboard-check text-success ms-1" title="Checklist completado"></i>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="check-icon">
                         <i

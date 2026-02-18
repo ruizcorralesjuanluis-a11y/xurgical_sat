@@ -2086,7 +2086,8 @@ def revision_envio(request: Request, envio_id: int, user=Depends(require_roles("
     cur.execute(
         """
         SELECT i.*, 
-               COALESCE(i.revisado,0) AS revisado
+               COALESCE(i.revisado,0) AS revisado,
+               (SELECT 1 FROM instrumento_checklist ic WHERE ic.instrumento_id = i.id LIMIT 1) as has_checklist
         FROM instrumentos i
         WHERE i.envio_id=?
         ORDER BY i.id ASC
@@ -2395,7 +2396,12 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM instrumentos WHERE id=?", (instrumento_id,))
+    cur.execute("""
+        SELECT i.*, 
+               (SELECT 1 FROM instrumento_checklist ic WHERE ic.instrumento_id = i.id LIMIT 1) as has_checklist
+        FROM instrumentos i 
+        WHERE i.id=?
+    """, (instrumento_id,))
     inst = cur.fetchone()
     if not inst:
         conn.close()

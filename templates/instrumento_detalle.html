@@ -85,6 +85,9 @@
           {% else %}bg-dark{% endif %} p-2 px-3">
             {{ st }}
           </span>
+          {% if inst.has_checklist %}
+          <i class="fa-solid fa-clipboard-check text-success ms-1" title="Checklist completado"></i>
+          {% endif %}
         </h3>
 
         <div class="hint">
