@@ -259,11 +259,11 @@
     }
     const photosStatus = {
       1: {{ 1 if inst.foto_entrada_1 else 0 }},
-    2: { { 1 if inst.foto_entrada_2 else 0 } },
-    3: { { 1 if inst.foto_entrada_3 else 0 } },
-    4: { { 1 if inst.foto_entrada_4 else 0 } },
-    5: { { 1 if inst.foto_entrada_5 else 0 } },
-    6: { { 1 if inst.foto_entrada_6 else 0 } }
+    2: {{ 1 if inst.foto_entrada_2 else 0 }},
+    3: {{ 1 if inst.foto_entrada_3 else 0 }},
+    4: {{ 1 if inst.foto_entrada_4 else 0 }},
+    5: {{ 1 if inst.foto_entrada_5 else 0 }},
+    6: {{ 1 if inst.foto_entrada_6 else 0 }}
     };
     let busy = false;
 
@@ -280,7 +280,7 @@
       }
 
       const constraints = deviceId
-        ? { video: { deviceId: { exact: deviceId } }, audio: false }
+        ? { video: { deviceId: { exact: deviceId }}, audio: false }
         : { video: true, audio: false };
 
       try {
@@ -524,7 +524,7 @@
   <!-- Autorrelleno desde Articulos.xlsx: al salir de "Modelo / Código producto" -->
   <script>
     (function () {
-      window.addEventListener('load', () => { try { lookupNow(); } catch (e) { } });
+      window.addEventListener('load', () => { try { lookupNow(); } catch (e) { }});
       const inputCodigo = document.querySelector('input[name="codigo_producto"]');
       const inputDenom = document.querySelector('input[name="denominacion"]');
       const inputFab = document.querySelector('input[name="fabricante"]');
@@ -550,7 +550,7 @@
         lastQ = q;
 
         try {
-          const res = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, { headers: { "Accept": "application/json" } });
+          const res = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, { headers: { "Accept": "application/json" }});
           if (!res.ok) return;
           const data = await res.json();
           if (!data || !data.found) return;
