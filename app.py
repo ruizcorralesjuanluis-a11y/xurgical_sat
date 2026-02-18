@@ -2428,6 +2428,10 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
         tipo_ot = "REPARACION"
     tipo_ot = str(tipo_ot or "REPARACION").strip().upper()
 
+    # Si es TRAZABILIDAD, usamos el checklist de REPARACION
+    if tipo_ot == "TRAZABILIDAD":
+        tipo_ot = "REPARACION"
+
     def _load_checklist(tipo: str):
         cur.execute("""
             SELECT ci.id AS item_id, ci.nombre, ci.orden,
