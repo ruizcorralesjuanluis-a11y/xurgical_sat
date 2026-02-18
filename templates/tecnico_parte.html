@@ -536,11 +536,12 @@
                     if (!silent) window.location.reload();
                     return true;
                 } else {
-                    if (!silent) alert('Error al actualizar estado');
+                    const errText = await resp.text();
+                    if (!silent) alert('Error al actualizar estado: ' + errText);
                     return false;
                 }
             } catch (e) {
-                if (!silent) alert('Error al actualizar estado');
+                if (!silent) alert('Error al actualizar estado: ' + e);
                 return false;
             }
         }
