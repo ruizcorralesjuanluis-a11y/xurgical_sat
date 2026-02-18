@@ -2014,24 +2014,43 @@ def grabar_instrumento(instrumento_id: int, user=Depends(require_roles("admin", 
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT envio_id, COALESCE(grabado,0) AS grabado FROM instrumentos WHERE id=?", (instrumento_id,))
+    cur.execute("""
+        SELECT i.envio_id, COALESCE(e.tipo_trabajo,'REPARACION') as tipo
+        FROM instrumentos i
+        JOIN envios e ON e.id = i.envio_id
+        WHERE i.id=?
+    """, (instrumento_id,))
     row = cur.fetchone()
     if not row:
         conn.close()
         return HTMLResponse("Instrumento no encontrado", status_code=404)
 
     envio_id = int(row["envio_id"])
+    tipo_ot = (row["tipo"] or "").upper()
 
-    cur.execute(
-        """
-        UPDATE instrumentos
-        SET grabado=1,
-            grabado_por=?,
-            grabado_en=CURRENT_TIMESTAMP
-        WHERE id=?
-        """,
-        (int(user["id"]), instrumento_id),
-    )
+    if tipo_ot == "TRAZABILIDAD":
+        cur.execute(
+            """
+            UPDATE instrumentos
+            SET grabado=1,
+                grabado_por=?,
+                grabado_en=CURRENT_TIMESTAMP,
+                estado='Reparado'
+            WHERE id=?
+            """,
+            (int(user["id"]), instrumento_id),
+        )
+    else:
+        cur.execute(
+            """
+            UPDATE instrumentos
+            SET grabado=1,
+                grabado_por=?,
+                grabado_en=CURRENT_TIMESTAMP
+            WHERE id=?
+            """,
+            (int(user["id"]), instrumento_id),
+        )
 
     conn.commit()
     conn.close()
