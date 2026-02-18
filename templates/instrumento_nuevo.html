@@ -258,9 +258,12 @@
       logDebug("ERROR CRÍTICO: Tu navegador no soporta acceso a cámaras (navigator.mediaDevices inexistente).");
     }
     const photosStatus = {
-    {% for i in range(1, 7) %}
-    { { i } }: { { 1 if inst['foto_entrada_' ~i] else 0 } },
-    {% endfor %}
+      1: {{ 1 if inst.foto_entrada_1 else 0 }},
+    2: { { 1 if inst.foto_entrada_2 else 0 } },
+    3: { { 1 if inst.foto_entrada_3 else 0 } },
+    4: { { 1 if inst.foto_entrada_4 else 0 } },
+    5: { { 1 if inst.foto_entrada_5 else 0 } },
+    6: { { 1 if inst.foto_entrada_6 else 0 } }
     };
     let busy = false;
 
