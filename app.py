@@ -3301,9 +3301,9 @@ async def cambiar_estado(
         cur.execute("SELECT tipo_trabajo FROM envios WHERE id=?", (envio_id,))
         e = cur.fetchone()
         tipo = (e["tipo_trabajo"] if e and e["tipo_trabajo"] else "REPARACION")
-        if tipo == "TRAZABILIDAD":
-            conn.close()
-            return HTMLResponse("En OTs de trazabilidad no se cambia el estado de reparación.", status_code=400)
+        # if tipo == "TRAZABILIDAD":
+        #     conn.close()
+        #     return HTMLResponse("En OTs de trazabilidad no se cambia el estado de reparación.", status_code=400)
 
     # Actualiza estado y repuestos
     repuesto_info = form.get("repuesto_info")
