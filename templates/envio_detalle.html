@@ -667,6 +667,10 @@
                   </span>
                   {% endif %}
                   {% endif %}
+                  {% if inst.has_checklist %}
+                  <i class="fa-solid fa-clipboard-check text-success ms-1" title="Checklist completado"
+                    style="font-size: 1.2rem; vertical-align: middle;"></i>
+                  {% endif %}
                 </td>
 
                 {% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}
