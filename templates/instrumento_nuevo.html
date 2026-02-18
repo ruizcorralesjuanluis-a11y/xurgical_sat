@@ -227,7 +227,35 @@
 
   {% if inst %}
   <script>
+    // Placeholder to close previous script if any, but actually we are inside {% if inst %}
+  </script>
+
+  <div id="camera-debug"
+    style="margin-top:10px; padding:10px; background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; display:none; font-size: 0.8em; max-height: 200px; overflow: auto; clear:both;">
+    <strong>Diagnóstico de Cámara:</strong><br>
+    <span id="debug-messages"></span>
+  </div>
+
+  <script>
     const instId = {{ inst.id }};
+
+    function logDebug(msg) {
+      console.log("[CAM]", msg);
+      const box = document.getElementById("camera-debug");
+      const list = document.getElementById("debug-messages");
+      if (box && list) {
+        box.style.display = "block";
+        list.innerHTML += "<div>" + new Date().toLocaleTimeString() + ": " + msg + "</div>";
+      }
+    }
+
+    if (!window.isSecureContext) {
+      logDebug("ADVERTENCIA: No estás en contexto seguro (HTTPS o localhost). El navegador puede bloquear la cámara.");
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      logDebug("ERROR CRÍTICO: Tu navegador no soporta acceso a cámaras (navigator.mediaDevices inexistente).");
+    }
     const photosStatus = {
     {% for i in range(1, 7) %}
     { { i } }: { { 1 if inst['foto_entrada_' ~i] else 0 } },
@@ -278,7 +306,13 @@
 
     async function loadCameras() {
       // pedir permisos para que aparezcan labels
-      try { await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); } catch (e) { }
+      try {
+        const tmpStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        // IMPORTANTE: liberar la cámara inmediatamente para no bloquearla
+        tmpStream.getTracks().forEach(track => track.stop());
+      } catch (e) {
+        console.warn("Fallo al pedir permisos iniciales:", e);
+      }
 
       let devices = [];
       try {
