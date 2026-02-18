@@ -232,7 +232,12 @@
                         <div class="inst-desc">{{ inst.fabricante or "" }} - {{ inst.codigo_producto or "" }}</div>
                     </div>
                     {% if inst.estado == 'Reparado' %}
-                    <span class="badge bg-success badge-status">REPARADO</span>
+                    <span class="badge bg-success badge-status">
+                        REPARADO
+                        {% if inst.has_checklist %}
+                        <i class="fa-solid fa-clipboard-check ms-1" title="Checklist completado"></i>
+                        {% endif %}
+                    </span>
                     {% elif inst.estado == 'Baja' %}
                     <span class="badge bg-danger badge-status">BAJA</span>
                     {% elif inst.estado == 'En proceso' %}

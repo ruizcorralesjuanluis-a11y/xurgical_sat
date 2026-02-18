@@ -1679,7 +1679,8 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
     cur.execute("""
         SELECT i.*, 
                (SELECT 1 FROM instrumento_informes ii WHERE ii.instrumento_id = i.id LIMIT 1) as has_archived,
-               (SELECT 1 FROM instrumento_qc_optica qc WHERE qc.instrumento_id = i.id LIMIT 1) as has_qc_data
+               (SELECT 1 FROM instrumento_qc_optica qc WHERE qc.instrumento_id = i.id LIMIT 1) as has_qc_data,
+               (SELECT 1 FROM instrumento_checklist ic WHERE ic.instrumento_id = i.id LIMIT 1) as has_checklist
         FROM instrumentos i 
         WHERE i.envio_id=? 
         ORDER BY i.id DESC
@@ -1758,6 +1759,10 @@ def api_get_checklist(instrumento_id: int, user=Depends(get_current_user)):
     """, (instrumento_id,))
     row = cur.fetchone()
     tipo_ot = (row["tipo_trabajo"] if row else "REPARACION") or "REPARACION"
+
+    # Si es TRAZABILIDAD, permitimos usar el checklist de REPARACION
+    if tipo_ot == "TRAZABILIDAD":
+        tipo_ot = "REPARACION"
     
     cur.execute("""
         SELECT ci.id AS item_id, ci.nombre, 
