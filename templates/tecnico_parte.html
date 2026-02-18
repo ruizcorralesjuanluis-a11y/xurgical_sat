@@ -496,7 +496,11 @@
             });
 
             // Primero actualizamos el estado a Reparado
-            await updateStatus(currentInstId, 'Reparado', true);
+            const statusOk = await updateStatus(currentInstId, 'Reparado', true);
+            if (!statusOk) {
+                alert("No se pudo actualizar el estado a Reparado. Inténtalo de nuevo.");
+                return;
+            }
 
             // Luego guardamos el checklist
             try {
@@ -528,11 +532,16 @@
                     body: formData
                 });
 
-                if (resp.ok && !silent) {
-                    window.location.reload();
+                if (resp.ok) {
+                    if (!silent) window.location.reload();
+                    return true;
+                } else {
+                    if (!silent) alert('Error al actualizar estado');
+                    return false;
                 }
             } catch (e) {
                 if (!silent) alert('Error al actualizar estado');
+                return false;
             }
         }
 
