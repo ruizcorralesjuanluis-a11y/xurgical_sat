@@ -239,6 +239,7 @@
 
     async function startCamera(deviceId) {
       const v = document.getElementById("video");
+      if (!v) return;
 
       // parar stream anterior
       if (currentStream) {
@@ -250,26 +251,63 @@
         ? { video: { deviceId: { exact: deviceId } }, audio: false }
         : { video: true, audio: false };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      currentStream = stream;
-      v.srcObject = stream;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream;
+        v.srcObject = stream;
+        try { await v.play(); } catch (e) { console.error("Error .play(), user interaction needed?", e); }
+      } catch (e) {
+        console.error("Fallo startCamera:", e);
+        // Si falla con deviceId específico, intentar genérico
+        if (deviceId) {
+          console.log("Reintentando con constraints genéricos...");
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            currentStream = stream;
+            v.srcObject = stream;
+            try { await v.play(); } catch (e2) { }
+            return;
+          } catch (e2) {
+            console.error("Fallo reintento:", e2);
+            throw e2;
+          }
+        }
+        throw e;
+      }
     }
 
     async function loadCameras() {
       // pedir permisos para que aparezcan labels
       try { await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); } catch (e) { }
 
-      const devices = await navigator.mediaDevices.enumerateDevices();
+      let devices = [];
+      try {
+        devices = await navigator.mediaDevices.enumerateDevices();
+      } catch (e) {
+        console.warn("enumerateDevices failed", e);
+      }
+
       const cams = devices.filter(d => d.kind === "videoinput");
 
       const sel = document.getElementById("cameraSelect");
       if (!sel) {
         // fallback
-        await startCamera();
+        try {
+          await startCamera();
+        } catch (e) {
+          console.error(e);
+          alert("No se pudo acceder a la cámara. Revisa permisos.\nError: " + e.message);
+        }
         return;
       }
 
       sel.innerHTML = "";
+      if (cams.length === 0) {
+        const opt = document.createElement("option");
+        opt.text = "Sin cámaras detectadas o permiso denegado";
+        sel.appendChild(opt);
+      }
+
       cams.forEach((c, i) => {
         const opt = document.createElement("option");
         opt.value = c.deviceId;
@@ -280,16 +318,27 @@
       const saved = localStorage.getItem("xurgical_camera_id");
       const initial = cams.find(c => c.deviceId === saved)?.deviceId || cams[0]?.deviceId;
 
-      if (initial) {
-        sel.value = initial;
-        await startCamera(initial);
-      } else {
-        await startCamera();
+      try {
+        if (initial) {
+          sel.value = initial;
+          await startCamera(initial);
+        } else {
+          // Intentar genérico
+          await startCamera();
+        }
+      } catch (e) {
+        console.error("Error startCamera initial:", e);
+        alert("No se pudo iniciar la cámara: " + (e.message || "Error desconocido") + "\n\nVerifica:\n1. Permisos del navegador (candado en la barra de direcciones).\n2. Que la cámara no esté usada por otra app.\n3. Si es USB, que esté bien conectada.");
       }
 
       sel.addEventListener("change", async () => {
+        if (!sel.value) return;
         localStorage.setItem("xurgical_camera_id", sel.value);
-        await startCamera(sel.value);
+        try {
+          await startCamera(sel.value);
+        } catch (e) {
+          alert("Error al cambiar cámara: " + e.message);
+        }
       });
     }
 
