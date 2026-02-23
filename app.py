@@ -2975,21 +2975,28 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     def _get_pdf_img(p):
         if not p: return Paragraph("<br/><br/><i>Sin imagen</i>", ParagraphStyle('si', alignment=TA_CENTER, fontSize=8, textColor=colors.gray))
         
-        # Intentar resolver ruta. p suele ser '/static/fotos/...'
+        # Intentar extraer el nombre del archivo si es una URL/ruta
         fname = p.split("/")[-1]
-        # Ruta en Render/Local suele ser BASE_DIR / static / fotos / fname
-        loc = os.path.join(str(BASE_DIR), "static", "fotos", fname)
+        
+        # 1. Probar en FOTOS_DIR (disco persistente o carpeta configurada)
+        loc = os.path.join(FOTOS_DIR, fname)
         
         if not os.path.exists(loc):
-            # Fallback 2: ruta directa quitando el / inicial
-            loc = p.lstrip("/")
+            # 2. Probar en BASE_DIR/static/fotos (ruta por defecto de Reportlab en algunos entornos)
+            loc = os.path.join(str(BASE_DIR), "static", "fotos", fname)
+            
             if not os.path.exists(loc):
-                return "N/A"
+                # 3. Fallback: probar quitando el '/' de la ruta almacenada
+                loc = p.lstrip("/")
+                if not os.path.exists(loc):
+                    # No se encuentra el archivo físico
+                    return Paragraph("<br/><br/><i>Imagen no encontrada</i>", ParagraphStyle('err', alignment=TA_CENTER, fontSize=8, textColor=colors.gray))
         
         try:
             return Image(loc, width=7.5*cm, height=5.5*cm, kind='proportional')
-        except:
-            return "Error carga"
+        except Exception as e:
+            print(f"Error cargando imagen PDF: {e}")
+            return Paragraph("<br/><br/><i>Error de carga</i>", ParagraphStyle('err', alignment=TA_CENTER, fontSize=8, textColor=colors.gray))
 
     foto_data = [
         [Paragraph("<b>ESTADO INICIAL / ENTRADA</b>", style_normal), Paragraph("<b>ESTADO FINAL / SALIDA</b>", style_normal)],
