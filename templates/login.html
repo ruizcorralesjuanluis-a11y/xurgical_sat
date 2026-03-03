@@ -40,6 +40,16 @@
       <div class="alert alert-danger py-2">{{ error }}</div>
     {% endif %}
 
+    {% set msg = request.query_params.get('msg') %}
+    {% set err = request.query_params.get('err') %}
+
+    {% if msg == 'solicitud_enviada' %}
+      <div class="alert alert-success py-2">✅ Solicitud enviada. Te contactaremos pronto.</div>
+    {% endif %}
+    {% if err == 'missing_fields' %}
+      <div class="alert alert-warning py-2">⚠️ Rellena todos los campos obligatorios.</div>
+    {% endif %}
+
     <form method="post" action="/login">
       <div class="mb-2">
         <label class="form-label">Usuario</label>
@@ -49,8 +59,37 @@
         <label class="form-label">Contraseña</label>
         <input class="form-control" type="password" name="password" required />
       </div>
-      <button class="btn btn-dark w-100">Entrar</button>
+      <button class="btn btn-dark w-100 mb-3">Entrar</button>
     </form>
+
+    <hr>
+
+    <div class="text-center">
+      <p class="small text-muted mb-2">¿Eres un centro nuevo o no tienes acceso?</p>
+      <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#requestAccess">
+        Solicitar credenciales
+      </button>
+    </div>
+
+    <div class="collapse mt-3" id="requestAccess">
+      <div class="p-3 border rounded bg-white shadow-sm">
+        <form method="post" action="/solicitar_acceso">
+          <div class="mb-2">
+            <input class="form-control form-control-sm" name="nombre" placeholder="Nombre completo *" required />
+          </div>
+          <div class="mb-2">
+            <input class="form-control form-control-sm" name="centro" placeholder="Centro / Hospital *" required />
+          </div>
+          <div class="mb-2">
+            <input class="form-control form-control-sm" name="telefono" placeholder="Teléfono de contacto" />
+          </div>
+          <div class="mb-2">
+            <input class="form-control form-control-sm" type="email" name="email" placeholder="Email de contacto *" required />
+          </div>
+          <button class="btn btn-primary btn-sm w-100">Enviar solicitud</button>
+        </form>
+      </div>
+    </div>
   </div>
 </body>
 </html>

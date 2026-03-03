@@ -57,3 +57,54 @@ def send_finish_notification(dest_email, client_name, ot_num, items_count):
     except Exception as e:
         print(f"Error enviando email: {e}")
         return False, str(e)
+
+def send_credentials_request(name, center, phone, email):
+    """
+    Envía una solicitud de credenciales a administración.
+    """
+    smtp_server = os.environ.get("SMTP_SERVER")
+    smtp_port = os.environ.get("SMTP_PORT", "587")
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_pass = os.environ.get("SMTP_PASS")
+    smtp_from = os.environ.get("SMTP_FROM", smtp_user)
+    admin_email = "administracion@sorumedic.com"
+
+    if not all([smtp_server, smtp_user, smtp_pass]):
+        return False, "Configuración de correo incompleta"
+
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = f"Sistema Web <{smtp_from}>"
+        msg['To'] = admin_email
+        msg['Subject'] = f"Nueva solicitud de acceso - {center}"
+
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+                <h2 style="color: #2c3e50;">Solicitud de Credenciales</h2>
+                <p>Se ha recibido una nueva solicitud de acceso a la plataforma Xurgical SAT:</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Nombre:</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{name}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Centro:</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{center}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Teléfono:</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{phone}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><b>Email:</b></td><td style="padding: 8px; border-bottom: 1px solid #eee;">{email}</td></tr>
+                </table>
+
+                <p style="font-size: 0.9rem; color: #666;">Puedes dar de alta a este usuario desde el panel de administración.</p>
+            </div>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(body, 'html'))
+
+        server = smtplib.SMTP(smtp_server, int(smtp_port))
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        return True, "Solicitud enviada correctamente"
+    except Exception as e:
+        print(f"Error enviando solicitud: {e}")
+        return False, str(e)

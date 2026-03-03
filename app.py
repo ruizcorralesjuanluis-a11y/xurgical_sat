@@ -630,6 +630,25 @@ def login_form(request: Request):
     return templates.TemplateResponse("login.html", {"request": request, "error": None})
 
 
+from mail_utils import send_finish_notification, send_credentials_request
+
+@app.post("/solicitar_acceso")
+async def handle_solicitud_acceso(request: Request):
+    form = await request.form()
+    nombre = (form.get("nombre") or "").strip()
+    centro = (form.get("centro") or "").strip()
+    telefono = (form.get("telefono") or "").strip()
+    email = (form.get("email") or "").strip()
+
+    if not all([nombre, centro, email]):
+        return RedirectResponse(url="/login?err=missing_fields", status_code=303)
+
+    success, msg = send_credentials_request(nombre, centro, telefono, email)
+    if success:
+        return RedirectResponse(url="/login?msg=solicitud_enviada", status_code=303)
+    else:
+        return RedirectResponse(url=f"/login?err={msg}", status_code=303)
+
 @app.post("/login")
 async def login(request: Request):
     form = await request.form()
