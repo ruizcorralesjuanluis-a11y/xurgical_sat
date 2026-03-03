@@ -236,13 +236,13 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <input type="text" id="sidebarSearch" class="form-control form-control-sm"
-                    placeholder="Buscar instrumento...">
+                    placeholder="Buscar instrumento..." autofocus>
             </div>
             <div class="instrument-list hide-checked" id="instrumentList">
                 {% for inst in instrumentos %}
                 <div class="instrument-item {% if inst.revisado %}checked{% endif %}" id="item-{{ inst.id }}"
                     onclick='selectInstrument({{ inst|tojson|safe }})'
-                    data-name="{{ inst.codigo_producto }} {{ inst.denominacion }} {{ inst.num_serie }}">
+                    data-name="{{ inst.codigo_producto }} {{ inst.denominacion }} {{ inst.num_serie }} {{ inst.codigo_datamatrix }} {{ inst.codigo_cliente }}">
                     <div>
                         <div class="fw-bold">{{ inst.codigo_producto or 'S/M' }}</div>
                         <div class="small text-muted text-truncate" style="max-width: 220px;">{{ inst.denominacion or
@@ -459,10 +459,28 @@
 
         document.getElementById('sidebarSearch').addEventListener('input', function (e) {
             const term = e.target.value.toLowerCase().trim();
-            document.querySelectorAll('.instrument-item').forEach(item => {
+            const items = document.querySelectorAll('.instrument-item');
+            let visibleCount = 0;
+            let lastVisible = null;
+
+            items.forEach(item => {
                 const text = item.getAttribute('data-name').toLowerCase();
-                item.style.display = text.includes(term) ? '' : 'none';
+                const isVisible = text.includes(term);
+                item.style.display = isVisible ? '' : 'none';
+                if (isVisible) {
+                    visibleCount++;
+                    lastVisible = item;
+                }
             });
+
+            // Auto-select if ONLY one result remains (great for scanners)
+            if (visibleCount === 1 && term.length > 3) {
+                const id = lastVisible.id.split('-')[1];
+                const inst = instrumentos.find(i => i.id == id);
+                if (inst && (!currentInstrument || currentInstrument.id != inst.id)) {
+                    selectInstrument(inst);
+                }
+            }
         });
     </script>
 </body>

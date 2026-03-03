@@ -258,7 +258,7 @@
               <span class="input-group-text bg-white border-end-0">
                 <i class="fa-solid fa-magnifying-glass text-muted"></i>
               </span>
-              <input type="text" id="mosaicSearch" class="form-control border-start-0 ps-0" placeholder="Buscar...">
+              <input type="text" id="mosaicSearch" class="form-control border-start-0 ps-0" placeholder="Buscar..." autofocus>
             </div>
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="onlyPending" checked>
@@ -279,6 +279,7 @@
         <div class="col-12 col-sm-6 col-lg-4 col-xl-3 inst-item" data-grabado="{{ 1 if is_grabado else 0 }}">
           <div class="inst-card" role="button" data-bs-toggle="modal" data-bs-target="#instModal"
             data-inst-id="{{ inst.id }}" data-inst-dm="{{ inst.codigo_datamatrix or '' }}"
+            data-inst-ge="{{ inst.codigo_cliente or '' }}"
             data-inst-nt="{{ (inst.nombre_trazabilidad or '')|e }}" data-inst-marca="{{ inst.fabricante or '' }}"
             data-inst-modelo="{{ inst.codigo_producto or '' }}" data-inst-denom="{{ inst.denominacion or '' }}"
             data-inst-foto1="{{ inst.foto_entrada_1 or '' }}" data-inst-foto2="{{ inst.foto_entrada_2 or '' }}"
@@ -583,23 +584,51 @@
       const searchTerm = (document.getElementById('mosaicSearch')?.value || "").toLowerCase().trim();
       const items = mosaic.querySelectorAll('.inst-item');
 
+      let visibleCount = 0;
+      let lastVisible = null;
+
       items.forEach(it => {
         const isGrabado = it.getAttribute('data-grabado') === '1';
-        const text = it.innerText.toLowerCase();
+        // Buscamos en todo el texto del instrumento + data attributes especiales
+        // El innerText a veces no es suficiente si el dato no es visible
+        const dm = it.querySelector('.inst-card').getAttribute('data-inst-dm') || "";
+        const ge = it.querySelector('.inst-card').getAttribute('data-inst-ge') || "";
+        const text = (it.innerText + " " + dm + " " + ge).toLowerCase();
 
         let matchesSearch = !searchTerm || text.includes(searchTerm);
         let matchesStatus = true;
 
         if (showPending && showDone) {
-          matchesStatus = false; // Si ambos están marcados como "solo", no mostramos nada
+          matchesStatus = false;
         } else if (showPending) {
           matchesStatus = !isGrabado;
         } else if (showDone) {
           matchesStatus = isGrabado;
         }
 
-        it.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        const isVisible = matchesSearch && matchesStatus;
+        it.style.display = isVisible ? '' : 'none';
+        if (isVisible) {
+          visibleCount++;
+          lastVisible = it;
+        }
       });
+
+      // Auto-open if ONLY one result remains and it's a "solid" search (scanned DM/GE)
+      if (visibleCount === 1 && searchTerm.length > 3) {
+        const card = lastVisible.querySelector('.inst-card');
+        const modalEl = document.getElementById('instModal');
+        // Solo abrir si no hay otro modal abierto ya (evitar bucles)
+        const isModalOpen = modalEl.classList.contains('show');
+        if (!isModalOpen) {
+          // Trigger click using Bootstrap API or native
+          const btn = card;
+          const modal = new bootstrap.Modal(modalEl);
+          // Necesitamos simular el evento de mostrar para que se carguen los datos
+          // La forma más fácil es llamar al click manual
+          btn.click();
+        }
+      }
     }
 
     if (onlyPending) onlyPending.addEventListener('change', applyFilter);
