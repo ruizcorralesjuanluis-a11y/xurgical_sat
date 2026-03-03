@@ -414,14 +414,25 @@ def init_db():
         if col not in cols_qc:
             cur.execute(f"ALTER TABLE instrumento_qc_optica ADD COLUMN {col} TEXT")
 
-    # 9. ÍNDICES DE RENDIMIENTO (NUEVO)
+    # 9. ÍNDICES DE RENDIMIENTO (OPTIMIZADOS)
     # Estos índices aceleran drásticamente las búsquedas en tablas con muchos datos
+    # Aceleramos el Dashboard y filtrados por cliente/estado
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_estado ON instrumentos(estado)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_envios_cliente_id ON envios(cliente_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_envios_ot_num ON envios(ot_num)")
+    
+    # Aceleramos la búsqueda de trazabilidad (DM y S/N)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_dm ON instrumentos(codigo_datamatrix)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_sn ON instrumentos(num_serie)")
+    
+    # Índices para checklist e informes
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_checklist_instrumento_id ON instrumento_checklist(instrumento_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_informes_instrumento_id ON instrumento_informes(instrumento_id)")
+    
     if is_pg:
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_checklist_instrumento_id ON instrumento_checklist(instrumento_id)")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_informes_instrumento_id ON instrumento_informes(instrumento_id)")
-    else:
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_instrumentos_envio_id ON instrumentos(envio_id)")
+        # Postgres específicos si hiciera falta (de momento con los de arriba sobra)
+        pass
 
     # 10. PETICIONES DE RECOGIDA
     cur.execute(f"""
