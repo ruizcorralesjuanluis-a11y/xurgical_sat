@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
 
 <head>
@@ -196,10 +196,17 @@
           <div class="fw-bold mb-2">Cámara (Modo PC / USB)</div>
           <select id="cameraSelect" class="form-select form-select-sm mb-2"></select>
           <video id="video" autoplay playsinline class="w-100"
-            style="max-height:320px;border-radius:12px;border:1px solid #e5e7eb;background:#000"></video>
+            style="max-height:380px;border-radius:12px;border:1px solid #e5e7eb;background:#000;transition: transform 0.1s ease; transform-origin: center center;"></video>
           <canvas id="canvas" style="display:none"></canvas>
-          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot
-            libre.</div>
+          
+          <div class="mt-2 bg-dark text-white p-2 rounded d-flex align-items-center gap-3">
+             <i class="fa-solid fa-magnifying-glass-plus"></i>
+             <label for="zoomRange" class="small fw-bold">Zoom: <span id="zoomVal">1.0x</span></label>
+             <input type="range" class="form-range" id="zoomRange" min="1" max="4" step="0.1" value="1">
+             <button class="btn btn-sm btn-outline-light" onclick="resetZoom()">Reset</button>
+          </div>
+
+          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot libre.</div>
         </div>
 
         <div class="mt-4 p-3 bg-light border rounded">
@@ -404,21 +411,53 @@
       if (b) b.innerText = s;
     }
 
+    let zoomLevel = 1.0;
+
+    const zRange = document.getElementById("zoomRange");
+    const zVal = document.getElementById("zoomVal");
+    const videoEl = document.getElementById("video");
+
+    if (zRange) {
+      zRange.addEventListener("input", (e) => {
+        zoomLevel = parseFloat(e.target.value);
+        if (zVal) zVal.innerText = zoomLevel.toFixed(1) + "x";
+        if (videoEl) videoEl.style.transform = `scale(${zoomLevel})`;
+      });
+    }
+
+    function resetZoom() {
+       zoomLevel = 1.0;
+       if (zRange) zRange.value = 1;
+       if (zVal) zVal.innerText = "1.0x";
+       if (videoEl) videoEl.style.transform = "scale(1)";
+    }
+
     function captureToDataUrl() {
       const v = document.getElementById("video");
       const canvas = document.getElementById("canvas");
       const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
       if (vw === 0 || vh === 0) throw new Error("Cámara no lista todavía");
 
-      // ? tamaño “taller”
-      const MAX_W = 960, MAX_H = 540;
-      const scale = Math.min(MAX_W / vw, MAX_H / vh, 1);
-      const w = Math.round(vw * scale);
-      const h = Math.round(vh * scale);
+      // Dimensiones finales deseadas
+      const MAX_W = 1200, MAX_H = 900;
+      const scaleBase = Math.min(MAX_W / vw, MAX_H / vh, 1);
+      const w = Math.round(vw * scaleBase);
+      const h = Math.round(vh * scaleBase);
 
-      canvas.width = w; canvas.height = h;
-      canvas.getContext("2d").drawImage(v, 0, 0, w, h);
-      return canvas.toDataURL("image/jpeg", 0.65);
+      canvas.width = w; 
+      canvas.height = h;
+      
+      const ctx = canvas.getContext("2d");
+
+      // Si hay zoom, calculamos el área de recorte (source rectangle)
+      // Centramos el recorte
+      const sw = vw / zoomLevel;
+      const sh = vh / zoomLevel;
+      const sx = (vw - sw) / 2;
+      const sy = (vh - sh) / 2;
+
+      ctx.drawImage(v, sx, sy, sw, sh, 0, 0, w, h);
+      return canvas.toDataURL("image/jpeg", 0.75);
     }
 
     async function uploadToSlot(slot) {
