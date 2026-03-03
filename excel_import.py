@@ -64,99 +64,96 @@ def leer_excel_envio(path_excel: str):
 
     cliente, fecha = _extract_cliente_y_fecha(raw)
 
-    # 2) localizar fila de cabecera (en tu excel está en la fila 5)
+    # 2) localizar fila de cabecera (escanear hasta 100 filas buscando palabras clave)
     header_row = None
-    for i in range(min(80, len(raw))):
+    kw_c = ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA", "MODELO", "PN", "PART NUMBER", "ARTICULO"]
+    kw_d = ["DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO", "INSTRUMENTO"]
+
+    for i in range(min(100, len(raw))):
         row = raw.iloc[i].tolist()
-        row_norm = {_norm(v) for v in row if v is not None and str(v).strip() != ""}
-        # Buscamos columnas clave
-        has_code = any(k in row_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA", "MODELO"])
-        has_desc = any(k in row_norm for k in ["DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO"])
+        # Normalizamos cada celda de la fila para comparar
+        row_norm = [_norm(str(v)) for v in row if v is not None and str(v).strip() != ""]
+        
+        has_code = any(k in row_norm for k in kw_c)
+        has_desc = any(k in row_norm for k in kw_d)
         
         if has_code and has_desc:
             header_row = i
             break
 
     if header_row is None:
-        # Fallback: Check if row 0 has the columns directly (simple table)
-        row0 = raw.iloc[0].tolist()
-        row0_norm = {_norm(v) for v in row0 if v is not None}
-        has_code_0 = any(k in row0_norm for k in ["CODIGO PRODUCTO", "CODIGO", "COD", "REF", "REFERENCIA", "MODELO"])
-        has_desc_0 = any(k in row0_norm for k in ["DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO"])
-        
-        if has_code_0 and has_desc_0:
-            header_row = 0
-        else:
-            # Fallback EXTREMO: Si no encuentro cabeceras, asumo que es una tabla plana donde:
-            # Columna 0 = Código
-            # Columna 1 = Descripción
-            # (Y si hay más de 2 columnas, la 2 sea num serie, etc. pero vamos a lo mínimo)
-            if len(raw.columns) >= 2:
-                # Forzamos cabecera manual
-                raw.columns = ["CODIGO", "DESCRIPCION"] + [f"COL_{i}" for i in range(2, len(raw.columns))]
-                # Devolvemos esto procesado directamtente (saltándonos el paso 3 y 4 de lectura con header)
-                df = raw.copy()
-                # Limpieza básica
-                df["CODIGO"] = df["CODIGO"].astype(str).str.strip().replace("nan", "")
-                df = df[df["CODIGO"] != ""]
-                
-                df_final = pd.DataFrame()
-                df_final["codigo_producto"] = df["CODIGO"]
-                df_final["denominacion"] = df["DESCRIPCION"].astype(str).str.strip()
-                df_final["fabricante"] = ""
-                df_final["num_serie"] = ""
-                df_final["observaciones"] = ""
-                df_final["codigo_datamatrix"] = ""
-                return cliente, fecha, df_final
+        # Fallback: Si no encuentro cabeceras, intento ver si es una tabla plana básica (col 0 y col 1)
+        if len(raw.columns) >= 2:
+            # Forzamos cabecera manual para que el resto del script no explote
+            raw.columns = ["CODIGO", "DESCRIPCION"] + [f"COL_{i}" for i in range(2, len(raw.columns))]
+            df = raw.copy()
+            df["CODIGO"] = df["CODIGO"].astype(str).str.strip().replace("nan", "")
+            df = df[df["CODIGO"] != ""]
             
-            preview = raw.head(15).fillna("").astype(str).values.tolist()
-            raise ValueError(
-                "No encuentro la fila de cabecera ni estructura válida.\n"
-                f"Vista previa (15 primeras filas): {preview}"
-            )
+            df_final = pd.DataFrame()
+            df_final["codigo_producto"] = df["CODIGO"]
+            df_final["denominacion"] = df["DESCRIPCION"].astype(str).str.strip()
+            df_final["fabricante"] = ""
+            df_final["num_serie"] = ""
+            df_final["observaciones"] = ""
+            df_final["codigo_datamatrix"] = ""
+            return cliente, fecha, df_final
+        
+        preview = raw.head(15).fillna("").astype(str).values.tolist()
+        raise ValueError(
+            "No se ha podido localizar la tabla de datos.\n"
+            "Asegúrese de que el Excel tenga columnas llamadas 'Modelo/Código' y 'Denominación/Descripción'."
+        )
 
-    # 3) leer con cabecera correcta
+    # 3) leer con cabecera detectada
     df = pd.read_excel(path_excel, header=header_row, dtype=str)
     df = df.dropna(how="all")
     if df.empty:
-        raise ValueError("He encontrado la cabecera, pero no hay filas de datos debajo.")
+        raise ValueError("Se detectó la cabecera, pero no hay filas con datos debajo.")
 
-    # 4) mapear columnas
+    # 4) mapear columnas de forma flexible (Búsqueda por coincidencia o contenido)
     colmap = {_norm(c): c for c in df.columns}
+    all_cols_norm = list(colmap.keys())
 
-    def pick(*names):
-        for n in names:
-            k = _norm(n)
-            if k in colmap:
-                return colmap[k]
+    def pick(*keywords):
+        # 1. Intento: Coincidencia exacta (normalizada)
+        for kw in keywords:
+            kn = _norm(kw)
+            if kn in colmap:
+                return colmap[kn]
+        # 2. Intento: ¿Alguna columna CONTIENE la palabra clave?
+        for kw in keywords:
+            kn = _norm(kw)
+            if not kn: continue
+            for cn in all_cols_norm:
+                if kn in cn:
+                    return colmap[cn]
         return None
 
-    c_codigo = pick("CODIGO PRODUCTO", "CODIGO", "CÓDIGO", "REF", "REFERENCIA", "MODELO")
-    c_fab   = pick("FABRICANTE", "MARCA")
-    c_ns    = pick("N/S", "NS", "N SERIE", "Nº SERIE", "NUMERO SERIE", "SERIE")
-    c_deno  = pick("DENOMINACION", "DESCRIPCION", "DESCRIPCIÓN", "NOMBRE")
-    c_obs   = pick("OBSERVACIONES", "OBSERVACION", "OBS")
-    c_dm = pick("CODIGO DATAMATRIX", "DATAMATRIX", "QR", "CODIGO MATRIZ")
+    c_codigo = pick("CODIGO PRODUCTO", "CODIGO", "MODELO", "REF", "REFERENCIA", "PN", "PART NUMBER", "ARTICULO")
+    c_fab    = pick("FABRICANTE", "MARCA", "MANUFACTURER", "BRAND", "FAB")
+    c_ns     = pick("N/S", "NS", "SN", "S/N", "N SERIE", "NUMERO SERIE", "SERIE", "SERIAL")
+    c_deno   = pick("DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO", "INSTRUMENTO")
+    c_obs    = pick("OBSERVACIONES", "OBSERVACION", "OBS", "COMENTARIOS", "NOTAS")
+    c_dm     = pick("CODIGO DATAMATRIX", "DATAMATRIX", "DATA MATRIX", "QR", "CODIGO MATRIZ", "DM")
 
     if not c_codigo or not c_deno:
-        raise ValueError(f"Columnas detectadas: {list(df.columns)}")
+        raise ValueError(f"No se encontraron las columnas Modelo/Denominación. Columnas detectadas: {list(df.columns)}")
 
-    # 5) limpiar
-    def clean_series(s):
-        return s.where(s.notna(), "").astype(str).str.strip()
+    # 5) Limpieza de datos
+    def clean_series(series):
+        return series.where(series.notna(), "").astype(str).str.strip().replace("nan", "")
 
-    codigo = clean_series(df[c_codigo])
-    df = df[codigo != ""].copy()
+    codigo_s = clean_series(df[c_codigo])
+    df = df[codigo_s != ""].copy()
 
-    # 6) DF FINAL con los nombres EXACTOS que app.py usa
-    df_final = pd.DataFrame()
-    df_final["codigo_producto"] = clean_series(df[c_codigo])
-    df_final["fabricante"] = clean_series(df[c_fab]) if c_fab else ""
-    df_final["num_serie"] = clean_series(df[c_ns]) if c_ns else ""
-    df_final["denominacion"] = clean_series(df[c_deno])
-    df_final["observaciones"] = clean_series(df[c_obs]) if c_obs else ""
-    
-    # Leemos DataMatrix si existe
-    df_final["codigo_datamatrix"] = clean_series(df[c_dm]) if c_dm else ""
+    # 6) Creación del DF FINAL con los nombres que app.py espera
+    df_result = pd.DataFrame()
+    df_result["codigo_producto"] = clean_series(df[c_codigo])
+    df_result["fabricante"] = clean_series(df[c_fab]) if c_fab else ""
+    df_result["num_serie"] = clean_series(df[c_ns]) if c_ns else ""
+    df_result["denominacion"] = clean_series(df[c_deno])
+    df_result["observaciones"] = clean_series(df[c_obs]) if c_obs else ""
+    df_result["codigo_datamatrix"] = clean_series(df[c_dm]) if c_dm else ""
 
-    return cliente, fecha, df_final
+    return cliente, fecha, df_result
