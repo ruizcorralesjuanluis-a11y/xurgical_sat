@@ -615,10 +615,10 @@
                           {% if e.aviso_enviado %}
                             <i class="fa-solid fa-envelope text-info fa-lg" title="Aviso enviado al centro"></i>
                           {% else %}
-                            <i class="fa-solid fa-envelope text-secondary opacity-25 fa-lg" title="Parte listo. Pendiente avisar al cliente."></i>
+                            <i class="fa-solid fa-envelope text-secondary fa-lg" style="opacity: 0.6;" title="Parte listo. Pendiente avisar al cliente."></i>
                           {% endif %}
                         {% else %}
-                          <i class="fa-solid fa-envelope-open text-light fa-lg" title="En proceso"></i>
+                          <i class="fa-solid fa-envelope-open text-secondary fa-lg" style="opacity: 0.15;" title="En proceso"></i>
                         {% endif %}
                       </div>
                     </td>
@@ -1410,11 +1410,11 @@
         if (data.ok) {
           const icon = element.querySelector('i');
           if (data.aceptado) {
-            icon.classList.remove('fa-regular', 'fa-square', 'text-secondary');
-            icon.classList.add('fa-solid', 'fa-square-check', 'text-success');
+            icon.classList.remove('fa-circle-xmark', 'text-danger');
+            icon.classList.add('fa-circle-check', 'text-success');
           } else {
-            icon.classList.remove('fa-solid', 'fa-square-check', 'text-success');
-            icon.classList.add('fa-regular', 'fa-square', 'text-secondary');
+            icon.classList.remove('fa-circle-check', 'text-success');
+            icon.classList.add('fa-circle-xmark', 'text-danger');
           }
         } else {
           Swal.fire('Error', data.error || 'No se pudo cambiar el estado', 'error');
