@@ -141,11 +141,15 @@
                   value="{{ inst.codigo_datamatrix if inst else '' }}">
               </div>
 
-              <div class="col-md-5">
+              <div class="col-md-3">
                 <label class="form-label">Denominación</label>
                 <input class="form-control" name="denominacion" value="{{ inst.denominacion if inst else '' }}">
               </div>
-              <div class="col-md-5">
+              <div class="col-md-3">
+                <label class="form-label">Ref. Cliente (HUCA, etc.)</label>
+                <input class="form-control border-primary" name="codigo_cliente" value="{{ inst.codigo_cliente if inst else '' }}" placeholder="Código HUCA o similar">
+              </div>
+              <div class="col-md-4">
                 <label class="form-label">Observaciones</label>
                 <input class="form-control" name="observaciones" value="{{ inst.observaciones if inst else '' }}">
               </div>

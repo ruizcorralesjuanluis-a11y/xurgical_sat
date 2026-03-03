@@ -140,11 +140,45 @@
         <div class="col-md-4"><strong>Producto:</strong> {{ inst.codigo_producto or "-" }}</div>
         <div class="col-md-4"><strong>Nº Serie:</strong> {{ inst.num_serie or "-" }}</div>
 
-        <div class="col-md-6"><strong>Denominación:</strong> {{ inst.denominacion or "-" }}</div>
-        <div class="col-md-6"><strong>DataMatrix:</strong> {{ inst.codigo_datamatrix or "-" }}</div>
+        <div class="col-md-4"><strong>Denominación:</strong> {{ inst.denominacion or "-" }}</div>
+        <div class="col-md-4"><strong>DataMatrix:</strong> {{ inst.codigo_datamatrix or "-" }}</div>
+        <div class="col-md-4">
+          <strong class="text-primary">Ref. Cliente:</strong>
+          <span class="badge bg-primary-subtle text-primary border border-primary">{{ inst.codigo_cliente or "-" }}</span>
+        </div>
 
         {% if inst.nombre_trazabilidad %}
         <div class="col-12"><strong>Nombre trazabilidad:</strong> {{ inst.nombre_trazabilidad }}</div>
+        {% endif %}
+
+        {% if user and user.role in ["admin", "grabado", "recepcion", "tecnico"] %}
+        <div class="col-12 mt-3">
+          <div class="p-3 border rounded bg-light d-flex align-items-center justify-content-between">
+            <div>
+              <div class="small fw-bold text-uppercase text-muted mb-1">Texto para Grabado:</div>
+              <div class="h5 mb-0 font-monospace" id="engravingText">{% if inst.codigo_cliente %}{{ inst.codigo_cliente }} {% endif %}{{ inst.codigo_datamatrix or "" }}</div>
+            </div>
+            <button class="btn btn-success" onclick="copyEngraving()">
+              <i class="fa-solid fa-copy"></i> Copiar para Grabado
+            </button>
+          </div>
+        </div>
+        <script>
+          function copyEngraving() {
+            const text = document.getElementById('engravingText').innerText;
+            if(!text.trim()) return;
+            navigator.clipboard.writeText(text).then(() => {
+              Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Copiado: ' + text,
+                showConfirmButton: false,
+                timer: 2000
+              });
+            });
+          }
+        </script>
         {% endif %}
 
         {% if inst.observaciones %}

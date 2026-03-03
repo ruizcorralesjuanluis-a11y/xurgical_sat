@@ -263,7 +263,8 @@ def init_db():
         revisado INTEGER DEFAULT 0,
         revisado_por TEXT,
         revisado_en TEXT,
-        recomendada_sustitucion INTEGER DEFAULT 0
+        recomendada_sustitucion INTEGER DEFAULT 0,
+        codigo_cliente TEXT
     )
     """)
 
@@ -309,6 +310,8 @@ def init_db():
         cur.execute("ALTER TABLE instrumentos ADD COLUMN revisado_en TEXT")
     if "recomendada_sustitucion" not in cols_inst:
         cur.execute("ALTER TABLE instrumentos ADD COLUMN recomendada_sustitucion INTEGER DEFAULT 0")
+    if "codigo_cliente" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN codigo_cliente TEXT")
     for i in range(1, 7):
         col_e = f"foto_entrada_{i}"
         if col_e not in cols_inst:

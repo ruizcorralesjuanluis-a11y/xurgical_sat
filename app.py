@@ -2256,6 +2256,7 @@ def instrumento_nuevo_crear(
     denominacion: str = Form(""),
     observaciones: str = Form(""),
     codigo_datamatrix: str = Form(""),
+    codigo_cliente: str = Form(""),
     unidades: int = Form(1),
     user=Depends(require_roles("admin", "recepcion")),
 ):
@@ -2309,12 +2310,13 @@ def instrumento_nuevo_crear(
             (observaciones or "").strip(),
             (dm_auto or (codigo_datamatrix or "").strip()),
             (nombre_trz_auto or ""),
+            (codigo_cliente or "").strip(), # NEW FIELD
         ]
 
         sql = """
             INSERT INTO instrumentos
-            (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
+            (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, codigo_cliente, estado, creado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
         """
         
         inst_id = None
@@ -2386,6 +2388,7 @@ def instrumento_editar_guardar(
     denominacion: str = Form(""),
     observaciones: str = Form(""),
     codigo_datamatrix: str = Form(""),
+    codigo_cliente: str = Form(""), # NEW FIELD
     user=Depends(require_roles("admin", "recepcion", "tecnico")),
 ):
     # Permiso granular
@@ -2434,6 +2437,7 @@ def instrumento_editar_guardar(
             observaciones=?,
             codigo_datamatrix=?,
             nombre_trazabilidad=?,
+            codigo_cliente=?,
             actualizado_en=CURRENT_TIMESTAMP
         WHERE id=?
         """,
@@ -2445,6 +2449,7 @@ def instrumento_editar_guardar(
             (observaciones or "").strip(),
             dm,
             nombre_trz,
+            (codigo_cliente or "").strip(), # NEW FIELD
             instrumento_id,
         ),
     )
@@ -2790,7 +2795,7 @@ async def qc_optica_save(
             insert_cols.append(k)
             params.append(v)
             
-        placeholders = ", ".join(["?"] * len(params))
+        placeholders = ", ".join(["?"] * len(insert_cols))
         sql = f"INSERT INTO instrumento_qc_optica ({', '.join(insert_cols)}) VALUES ({placeholders})"
         cur.execute(sql, tuple(params))
 
@@ -2967,7 +2972,7 @@ def _generate_qc_optica_pdf_bytes(instrumento_id: int):
     obs_extra_tab = Table(obs_extra_data, colWidths=[3.5*cm, 14.5*cm])
     obs_extra_tab.setStyle(TableStyle([
         ('GRID', (0,0), (-1,-1), 0.5, c_border),
-        ('BACKGROUND', (0,0), (0,-1), c_light_bg),
+        ('BACKGROUND', (0,0), (-1,-1), c_light_bg),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('TOPPADDING', (0,0), (-1,-1), 4),
         ('BOTTOMPADDING', (0,0), (-1,-1), 4),
@@ -3808,6 +3813,7 @@ async def envio_importar_excel(
             str(r.get("denominacion") or "").strip(),
             str(r.get("observaciones") or "").strip(),
             str(r.get("codigo_datamatrix") or "").strip(),
+            str(r.get("codigo_cliente") or "").strip(),
             "", # nombre_trazabilidad
             "Pendiente",
             now_str,
@@ -3816,8 +3822,8 @@ async def envio_importar_excel(
     if rows:
         cur.executemany("""
             INSERT INTO instrumentos
-            (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, codigo_cliente, nombre_trazabilidad, estado, creado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, rows)
         conn.commit()
 
@@ -3882,16 +3888,17 @@ async def importar_excel(
             r.get("num_serie"),
             r.get("denominacion"),
             r.get("observaciones"),
-            r.get("codigo_datamatrix"),
-            "",  # nombre_trazabilidad (faltaba para que el INSERT tenga 10 valores)
+            str(r.get("codigo_datamatrix") or "").strip(),
+            str(r.get("codigo_cliente") or "").strip(),
+            "", # nombre_trazabilidad
             "Pendiente",
             now_str,
         ))
 
     cur.executemany("""
         INSERT INTO instrumentos
-        (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, nombre_trazabilidad, estado, creado_en)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (envio_id, codigo_producto, fabricante, num_serie, denominacion, observaciones, codigo_datamatrix, codigo_cliente, nombre_trazabilidad, estado, creado_en)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, rows)
 
     conn.commit()

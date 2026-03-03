@@ -136,6 +136,7 @@ def leer_excel_envio(path_excel: str):
     c_deno   = pick("DENOMINACION", "DESCRIPCION", "NOMBRE", "PRODUCTO", "INSTRUMENTO")
     c_obs    = pick("OBSERVACIONES", "OBSERVACION", "OBS", "COMENTARIOS", "NOTAS")
     c_dm     = pick("CODIGO DATAMATRIX", "DATAMATRIX", "DATA MATRIX", "QR", "CODIGO MATRIZ", "DM")
+    c_cli_ref = pick("HUCA", "CODIGO HUCA", "REF CLIENTE", "CODIGO CLIENTE", "REFERENCIA CLIENTE", "CODIGO EXTERNO")
 
     if not c_codigo or not c_deno:
         raise ValueError(f"No se encontraron las columnas Modelo/Denominación. Columnas detectadas: {list(df.columns)}")
@@ -155,5 +156,6 @@ def leer_excel_envio(path_excel: str):
     df_result["denominacion"] = clean_series(df[c_deno])
     df_result["observaciones"] = clean_series(df[c_obs]) if c_obs else ""
     df_result["codigo_datamatrix"] = clean_series(df[c_dm]) if c_dm else ""
+    df_result["codigo_cliente"] = clean_series(df[c_cli_ref]) if c_cli_ref else ""
 
     return cliente, fecha, df_result
