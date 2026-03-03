@@ -3836,12 +3836,21 @@ async def envio_importar_excel(
 # -----------------------------
 @app.get("/importar", response_class=HTMLResponse)
 def importar_form(request: Request, user=Depends(require_roles("admin", "recepcion"))):
-    return templates.TemplateResponse("importar.html", {"request": request, "user": user})
+    conn = get_conn()
+    cur = conn.cursor()
+    clientes = _list_clientes(cur)
+    conn.close()
+    return templates.TemplateResponse("importar.html", {"request": request, "user": user, "clientes": clientes})
 
 
 @app.post("/importar")
 async def importar_excel(
     tipo_trabajo: str = Form("REPARACION"),
+    referencia: str = Form(""),
+    cliente_id: str = Form(""),
+    cliente_manual: str = Form("", alias="cliente"),
+    fecha_manual: str = Form("", alias="fecha"),
+    observaciones: str = Form(""),
     file: UploadFile = File(...),
     user=Depends(require_roles("admin", "recepcion")),
 ):
@@ -3850,32 +3859,60 @@ async def importar_excel(
         f.write(await file.read())
 
     try:
-        cliente, fecha, df = leer_excel_envio(path)
+        cliente_auto, fecha_auto, df = leer_excel_envio(path)
     except Exception as e:
         return RedirectResponse(url=f"/importar?err=excel&msg={str(e)}", status_code=303)
 
-    if not cliente or not str(cliente).strip():
-        return RedirectResponse(url="/importar?err=cliente", status_code=303)
-
     conn = get_conn()
     cur = conn.cursor()
+
+    # Procesar cliente
+    final_cliente = ""
+    target_cliente_id = None
+    
+    if cliente_id:
+        cur.execute("SELECT nombre FROM clientes WHERE id=?", (cliente_id,))
+        row = cur.fetchone()
+        if row:
+            final_cliente = row[0]
+            target_cliente_id = int(cliente_id)
+    elif cliente_manual:
+        final_cliente = cliente_manual.strip()
+    else:
+        final_cliente = str(cliente_auto).strip()
+
+    if not final_cliente:
+        conn.close()
+        return RedirectResponse(url="/importar?err=cliente", status_code=303)
+
+    # Procesar fecha
+    final_fecha = fecha_manual if fecha_manual else fecha_auto
+
+    # Procesar nombre archivo / referencia
+    final_ref = referencia.strip() if referencia.strip() else file.filename
 
     ot_num = _next_ot_num(cur)
     tipo_trabajo = (tipo_trabajo or "REPARACION").strip().upper()
     if tipo_trabajo not in ("REPARACION", "TRAZABILIDAD", "OPTICA_RIGIDA"):
         tipo_trabajo = "REPARACION"
 
-    has_tipo = _envios_has_column(cur, "tipo_trabajo")
-    if has_tipo:
-        cur.execute(
-            "INSERT INTO envios (ot_num, nombre_archivo, cliente, fecha, tipo_trabajo) VALUES (?, ?, ?, ?, ?)",
-            (ot_num, file.filename, cliente, fecha, tipo_trabajo),
-        )
-    else:
-        cur.execute(
-            "INSERT INTO envios (ot_num, nombre_archivo, cliente, fecha) VALUES (?, ?, ?, ?)",
-            (ot_num, file.filename, cliente, fecha),
-        )
+    cols = ["ot_num", "nombre_archivo", "cliente", "fecha"]
+    vals = [ot_num, final_ref, final_cliente, final_fecha]
+
+    if _envios_has_column(cur, "tipo_trabajo"):
+        cols.append("tipo_trabajo")
+        vals.append(tipo_trabajo)
+    
+    if _envios_has_column(cur, "cliente_id") and target_cliente_id:
+        cols.append("cliente_id")
+        vals.append(target_cliente_id)
+        
+    if _envios_has_column(cur, "observaciones"):
+        cols.append("observaciones")
+        vals.append(observaciones)
+
+    qs = ", ".join(["?"] * len(vals))
+    cur.execute(f"INSERT INTO envios ({', '.join(cols)}) VALUES ({qs})", tuple(vals))
     envio_id = cur.lastrowid
 
     rows = []

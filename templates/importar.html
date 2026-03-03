@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Importar Excel · Xurgical SAT</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body class="bg-light">
@@ -22,28 +23,87 @@
     <div class="alert alert-danger">❌ No se pudo detectar el cliente en el Excel. Revisa el archivo.</div>
     {% endif %}
 
-    <div class="card">
-      <div class="card-body">
+    <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+      <div class="card-body p-4">
         <form action="/importar" method="post" enctype="multipart/form-data">
-          <div class="mb-3">
-            <label class="form-label">Tipo de parte</label>
-            <select class="form-select" name="tipo_trabajo" required>
-              <option value="REPARACION" selected>Reparación</option>
-              <option value="OPTICA_RIGIDA">Óptica rígida</option>
-              <option value="TRAZABILIDAD">Trazabilidad</option>
-            </select>
+          <div class="row g-3">
+            <!-- ARCHIVO -->
+            <div class="col-12">
+              <label class="form-label fw-bold">1. Selecciona el archivo .xlsx</label>
+              <input class="form-control" type="file" name="file" accept=".xlsx" required>
+              <div class="form-text mt-1">
+                Consejo: usa tu plantilla habitual (con columna “GRABADO ESPECIAL” o “CODIGO PRODUCTO”).
+              </div>
+            </div>
+
+            <hr class="mt-4">
+
+            <!-- DATOS DEL PARTE (OPCIONALES SI VIENEN EN EXCEL) -->
+            <div class="col-12 mt-2">
+              <label class="form-label fw-bold text-primary">2. Datos del parte (Sobrescriben los del Excel)</label>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Referencia del parte</label>
+              <input class="form-control" name="referencia" placeholder="Si se deja vacío, se usará el nombre del archivo">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Tipo de OT</label>
+              <select class="form-select" name="tipo_trabajo" required>
+                <option value="REPARACION" selected>Reparación</option>
+                <option value="OPTICA_RIGIDA">Óptica rígida</option>
+                <option value="TRAZABILIDAD">Trazabilidad</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Fecha del parte</label>
+              <input class="form-control" type="date" name="fecha" id="fechaInput">
+            </div>
+
+            <div class="col-md-8">
+              <label class="form-label">Cliente</label>
+              <div class="row g-2">
+                <div class="col-6">
+                  <select class="form-select" name="cliente_id">
+                    <option value="">-- Cliente Registrado --</option>
+                    {% for c in clientes %}
+                    <option value="{{ c.id }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-6">
+                  <input class="form-control" name="cliente" placeholder="O nombre manual">
+                </div>
+              </div>
+              <div class="form-text">Si dejas ambos vacíos, el sistema intentará detectarlo en el Excel.</div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Observaciones / Instrucciones de grabado</label>
+              <textarea class="form-control" name="observaciones" rows="2" placeholder="Opcional..."></textarea>
+            </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Selecciona el archivo .xlsx</label>
-            <input class="form-control" type="file" name="file" accept=".xlsx" required>
+
+          <div class="mt-4 border-top pt-3 d-flex gap-2">
+            <button class="btn btn-success px-4" type="submit">
+              <i class="fa-solid fa-cloud-arrow-up me-1"></i> Iniciar Importación
+            </button>
+            <a href="/" class="btn btn-outline-secondary">Cancelar</a>
           </div>
-          <button class="btn btn-primary">Importar</button>
         </form>
-        <div class="text-secondary small mt-3">
-          Consejo: usa tu plantilla habitual (con columna “CODIGO PRODUCTO”).
-        </div>
       </div>
     </div>
+
+    <script>
+      // Fecha de hoy por defecto
+      document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        const input = document.getElementById('fechaInput');
+        if(input) input.value = today;
+      });
+    </script>
   </main>
 </body>
 
