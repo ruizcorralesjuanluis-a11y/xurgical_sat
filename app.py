@@ -3874,7 +3874,7 @@ async def importar_excel(
         cur.execute("SELECT nombre FROM clientes WHERE id=?", (cliente_id,))
         row = cur.fetchone()
         if row:
-            final_cliente = row[0]
+            final_cliente = row["nombre"]
             target_cliente_id = int(cliente_id)
     elif cliente_manual:
         final_cliente = cliente_manual.strip()
