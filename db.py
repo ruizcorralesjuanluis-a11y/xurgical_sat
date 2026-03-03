@@ -447,6 +447,7 @@ def init_db():
     cur.execute(f"""
     CREATE TABLE IF NOT EXISTS peticiones_recogida (
         id {pk},
+        num_peticion TEXT UNIQUE,
         cliente_id INTEGER NOT NULL,
         usuario_id INTEGER,
         n_instrumentos INTEGER DEFAULT 0,
@@ -493,6 +494,8 @@ def init_db():
         cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN contacto TEXT")
     if "telefono" not in cols_pr:
         cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN telefono TEXT")
+    if "num_peticion" not in cols_pr:
+        cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN num_peticion TEXT UNIQUE")
 
     # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
     cur.execute("""

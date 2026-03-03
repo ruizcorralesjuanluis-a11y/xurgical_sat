@@ -511,8 +511,13 @@
               <div class="fw-bold">Partes (OT)</div>
               {% if user and user.role in ["admin","recepcion"] %}
               <div class="d-flex align-items-center gap-2">
-                <a href="/envios/nuevo" class="btn btn-success btn-sm">
-                  <i class="fa-solid fa-plus"></i> Nuevo parte
+                <a href="/recogidas" class="btn btn-outline-dark btn-sm position-relative">
+                  <i class="fa-solid fa-truck-ramp-box"></i> Recogidas
+                  {% if n_peticiones_pendientes > 0 %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem; border: 2px solid white; z-index: 10;">
+                    {{ n_peticiones_pendientes }}
+                  </span>
+                  {% endif %}
                 </a>
                 <a href="/export" class="btn btn-outline-primary btn-sm">
                   <i class="fa-solid fa-file-export"></i> Exportar
@@ -1366,10 +1371,10 @@
     {% if request.query_params.get('msg') == 'recogida_ok' %}
     Swal.fire({
       title: '¡Solicitud Enviada!',
-      text: 'Hemos registrado tu petición de recogida correctamente.',
+      text: 'Hemos registrado tu petición con el número {{ request.query_params.get("num") or "" }}.',
       icon: 'success',
       confirmButtonColor: '#0d6efd',
-      timer: 5000,
+      timer: 8000,
       timerProgressBar: true
     }).then(() => {
       window.history.replaceState(null, '', window.location.pathname);

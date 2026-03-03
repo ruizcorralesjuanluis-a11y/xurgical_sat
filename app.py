@@ -858,11 +858,11 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     if q:
         is_pg = os.environ.get("DATABASE_URL") is not None
         if is_pg:
-            where_clauses.append("(e.ot_num ILIKE ? OR e.cliente ILIKE ? OR i.codigo_datamatrix ILIKE ? OR i.num_serie ILIKE ? OR i.codigo_producto ILIKE ?)")
+            where_clauses.append("(e.ot_num ILIKE ? OR e.cliente ILIKE ? OR i.codigo_datamatrix ILIKE ? OR i.num_serie ILIKE ? OR i.codigo_producto ILIKE ? OR EXISTS (SELECT 1 FROM peticiones_recogida pr WHERE pr.num_peticion ILIKE ? AND pr.cliente_id=e.cliente_id))")
         else:
             # SQLite case-insensitive search (default for LIKE on ASCII)
-            where_clauses.append("(e.ot_num LIKE ? OR e.cliente LIKE ? OR i.codigo_datamatrix LIKE ? OR i.num_serie LIKE ? OR i.codigo_producto LIKE ?)")
-        params_q.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
+            where_clauses.append("(e.ot_num LIKE ? OR e.cliente LIKE ? OR i.codigo_datamatrix LIKE ? OR i.num_serie LIKE ? OR i.codigo_producto LIKE ? OR EXISTS (SELECT 1 FROM peticiones_recogida pr WHERE pr.num_peticion LIKE ? AND pr.cliente_id=e.cliente_id))")
+        params_q.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
 
     where_q = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
@@ -4556,14 +4556,47 @@ async def peticion_recogida(
 
     conn = get_conn()
     cur = conn.cursor()
+
+    # Generar número de petición: REC-YYMM-XXX
+    now = datetime.now()
+    prefix = f"REC-{now.strftime('%y%m')}-"
+    
+    # Buscar el último número del mes actual
+    cur.execute("SELECT num_peticion FROM peticiones_recogida WHERE num_peticion LIKE ? ORDER BY id DESC LIMIT 1", (f"{prefix}%",))
+    row = cur.fetchone()
+    if row and row["num_peticion"]:
+        try:
+            last_num = int(row["num_peticion"].split("-")[-1])
+            new_num = last_num + 1
+        except:
+            new_num = 1
+    else:
+        new_num = 1
+    
+    num_peticion = f"{prefix}{str(new_num).zfill(3)}"
+
     cur.execute("""
-        INSERT INTO peticiones_recogida (cliente_id, usuario_id, n_instrumentos, contacto, telefono, observaciones, estado, creado_en)
-        VALUES (?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
-    """, (int(cli_id or 0), u_id, n_instrumentos, contacto, telefono, observaciones))
+        INSERT INTO peticiones_recogida (num_peticion, cliente_id, usuario_id, n_instrumentos, contacto, telefono, observaciones, estado, creado_en)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'Pendiente', CURRENT_TIMESTAMP)
+    """, (num_peticion, int(cli_id or 0), u_id, n_instrumentos, contacto, telefono, observaciones))
     conn.commit()
     conn.close()
 
-    return RedirectResponse(url="/?msg=recogida_ok", status_code=303)
+    return RedirectResponse(url=f"/?msg=recogida_ok&num={num_peticion}", status_code=303)
+
+@app.get("/recogidas", response_class=HTMLResponse)
+def recogidas_list(request: Request, user=Depends(require_roles("admin", "recepcion"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT pr.*, c.nombre as cliente_nombre 
+        FROM peticiones_recogida pr
+        JOIN clientes c ON pr.cliente_id = c.id
+        ORDER BY pr.creado_en DESC
+    """)
+    items = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return templates.TemplateResponse("recogidas_list.html", {"request": request, "user": user, "items": items})
 
 
 @app.post("/peticion_recogida/{peticion_id}/completar")
