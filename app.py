@@ -933,6 +933,24 @@ def dashboard(request: Request, user=Depends(get_current_user)):
             perms_by_user[int(u["id"])] = _get_user_permissions_map(cur, int(u["id"]))
         clientes_list_global = _list_clientes(cur)
 
+    # --- Búsqueda de RECOGIDAS ---
+    found_recogidas = []
+    if q:
+        rec_where = ["(num_peticion LIKE ? OR observaciones LIKE ? OR contacto LIKE ?)"]
+        rec_params = [f"%{q}%", f"%{q}%", f"%{q}%"]
+        if _user_role(user) == "cliente":
+            rec_where.append("cliente_id = ?")
+            rec_params.append(int(user.get("cliente_id") or 0))
+        
+        cur.execute(f"""
+            SELECT pr.*, c.nombre as cliente_nombre 
+            FROM peticiones_recogida pr
+            JOIN clientes c ON pr.cliente_id = c.id
+            WHERE {" AND ".join(rec_where)}
+            ORDER BY pr.creado_en DESC
+        """, tuple(rec_params))
+        found_recogidas = [dict(r) for r in cur.fetchall()]
+
     conn.close()
     context = {
         "request": request,
@@ -949,6 +967,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         "clientes_list_global": clientes_list_global,
         "n_peticiones_pendientes": n_peticiones_pendientes,
         "peticiones_recogida": peticiones_recogida,
+        "found_recogidas": found_recogidas,
         "consultas_list": consultas_list,
         "n_consultas_pendientes": n_consultas_pendientes,
         "n_consultas_activas": n_consultas_activas or 0,
@@ -4585,15 +4604,28 @@ async def peticion_recogida(
     return RedirectResponse(url=f"/?msg=recogida_ok&num={num_peticion}", status_code=303)
 
 @app.get("/recogidas", response_class=HTMLResponse)
-def recogidas_list(request: Request, user=Depends(require_roles("admin", "recepcion"))):
+def recogidas_list(request: Request, user=Depends(get_current_user)):
+    role = _user_role(user)
+    if role not in ["admin", "recepcion", "cliente"]:
+        return RedirectResponse(url="/?err=perm", status_code=303)
+
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("""
+    
+    where_sql = ""
+    params = []
+    if role == "cliente":
+        cli_id = (user.get("cliente_id") if isinstance(user, dict) else getattr(user, "cliente_id", None))
+        where_sql = "WHERE pr.cliente_id = ?"
+        params = [int(cli_id or 0)]
+
+    cur.execute(f"""
         SELECT pr.*, c.nombre as cliente_nombre 
         FROM peticiones_recogida pr
         JOIN clientes c ON pr.cliente_id = c.id
+        {where_sql}
         ORDER BY pr.creado_en DESC
-    """)
+    """, tuple(params))
     items = [dict(r) for r in cur.fetchall()]
     conn.close()
     return templates.TemplateResponse("recogidas_list.html", {"request": request, "user": user, "items": items})

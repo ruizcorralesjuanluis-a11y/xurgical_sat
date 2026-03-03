@@ -52,8 +52,11 @@
 
     <main class="container py-4">
       <div class="panel p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <h4 class="mb-0"><i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i> Historial de Recogidas</h4>
+          <div style="width: 300px;">
+            <input type="text" id="filterInput" class="form-control" placeholder="🔍 Buscar en este listado...">
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -88,7 +91,7 @@
                   {% endif %}
                 </td>
                 <td class="text-end">
-                  {% if item.estado == 'Pendiente' %}
+                  {% if item.estado == 'Pendiente' and (user.role == 'admin' or user.role == 'recepcion') %}
                   <form method="post" action="/peticion_recogida/{{ item.id }}/completar" style="display:inline;">
                     <button class="btn btn-success btn-sm">Marcar Recibida</button>
                   </form>
@@ -117,5 +120,15 @@
     </main>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('filterInput').addEventListener('keyup', function() {
+      const val = this.value.toLowerCase();
+      const rows = document.querySelectorAll('tbody tr:not(.collapse)');
+      rows.forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(val) ? '' : 'none';
+      });
+    });
+  </script>
 </body>
 </html>
