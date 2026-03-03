@@ -195,7 +195,7 @@
         <div class="mt-3">
           <div class="fw-bold mb-2">Cámara (Modo PC / USB)</div>
           <select id="cameraSelect" class="form-select form-select-sm mb-2"></select>
-          <div style="width:100%; max-height:380px; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb; background:#000;">
+          <div style="width:100%; max-height:320px; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb; background:#000;">
             <video id="video" autoplay playsinline style="width:100%; height:auto; display:block; transition: transform 0.1s ease; transform-origin: center center;"></video>
           </div>
           <canvas id="canvas" style="display:none"></canvas>
@@ -439,26 +439,29 @@
       const vw = v.videoWidth || 0, vh = v.videoHeight || 0;
       if (vw === 0 || vh === 0) throw new Error("Cámara no lista todavía");
 
-      // Dimensiones finales deseadas
-      const MAX_W = 1200, MAX_H = 900;
-      const scaleBase = Math.min(MAX_W / vw, MAX_H / vh, 1);
-      const w = Math.round(vw * scaleBase);
-      const h = Math.round(vh * scaleBase);
+      // Dimensiones finales razonables para no saturar memoria
+      const w = 960;
+      const h = Math.round((vh / vw) * w);
 
       canvas.width = w; 
       canvas.height = h;
       
       const ctx = canvas.getContext("2d");
 
-      // Si hay zoom, calculamos el área de recorte (source rectangle)
-      // Centramos el recorte
+      // Calculamos área de recorte central basada en el zoom
       const sw = vw / zoomLevel;
       const sh = vh / zoomLevel;
       const sx = (vw - sw) / 2;
       const sy = (vh - sh) / 2;
 
-      ctx.drawImage(v, sx, sy, sw, sh, 0, 0, w, h);
-      return canvas.toDataURL("image/jpeg", 0.75);
+      try {
+        ctx.drawImage(v, sx, sy, sw, sh, 0, 0, w, h);
+      } catch (e) {
+        // Fallback si el recorte falla por algún motivo (raro)
+        ctx.drawImage(v, 0, 0, w, h);
+      }
+
+      return canvas.toDataURL("image/jpeg", 0.6);
     }
 
     async function uploadToSlot(slot) {
