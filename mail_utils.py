@@ -19,7 +19,12 @@ def send_finish_notification(dest_email, client_name, ot_num, items_count):
 
     try:
         msg = MIMEMultipart()
-        msg['From'] = f"Xurgical SAT <{smtp_from}>"
+        # Evitar doble anidación si smtp_from ya tiene formato "Nombre <email>"
+        if "<" in smtp_from and ">" in smtp_from:
+            msg['From'] = smtp_from
+        else:
+            msg['From'] = f"Xurgical SAT <{smtp_from}>"
+            
         msg['To'] = dest_email
         msg['Subject'] = f"Finalización de revisión - Parte {ot_num}"
 
@@ -48,8 +53,13 @@ def send_finish_notification(dest_email, client_name, ot_num, items_count):
         """
         msg.attach(MIMEText(body, 'html'))
 
-        server = smtplib.SMTP(smtp_server, int(smtp_port))
-        server.starttls()
+        port = int(smtp_port)
+        if port == 465:
+            server = smtplib.SMTP_SSL(smtp_server, port)
+        else:
+            server = smtplib.SMTP(smtp_server, port)
+            server.starttls()
+
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
@@ -74,7 +84,11 @@ def send_credentials_request(name, center, phone, email):
 
     try:
         msg = MIMEMultipart()
-        msg['From'] = f"Sistema Web <{smtp_from}>"
+        if "<" in smtp_from and ">" in smtp_from:
+            msg['From'] = smtp_from
+        else:
+            msg['From'] = f"Sistema Web <{smtp_from}>"
+
         msg['To'] = admin_email
         msg['Subject'] = f"Nueva solicitud de acceso - {center}"
 
@@ -99,8 +113,13 @@ def send_credentials_request(name, center, phone, email):
         """
         msg.attach(MIMEText(body, 'html'))
 
-        server = smtplib.SMTP(smtp_server, int(smtp_port))
-        server.starttls()
+        port = int(smtp_port)
+        if port == 465:
+            server = smtplib.SMTP_SSL(smtp_server, port)
+        else:
+            server = smtplib.SMTP(smtp_server, port)
+            server.starttls()
+
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
