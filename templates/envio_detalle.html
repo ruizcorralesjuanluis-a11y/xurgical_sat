@@ -1052,7 +1052,11 @@
         // Actualizar visualmente el botón
         btn.classList.remove("btn-info");
         btn.classList.add("btn-outline-info");
-        btn.querySelector(".small").textContent = "Aviso Enviado";
+        btn.innerHTML = `<i class="fa-solid fa-check fa-lg"></i>
+              <div class="text-start">
+                <div class="small opacity-75">Aviso Enviado</div>
+                <div>Ok</div>
+              </div>`;
       } else {
         alert("❌ Error: " + (data.error || "No se pudo enviar el email."));
       }
