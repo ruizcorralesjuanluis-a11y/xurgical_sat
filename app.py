@@ -842,18 +842,9 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     where_q = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
     cur.execute(f"""
-        SELECT
-            e.id, e.ot_num, e.nombre_archivo, e.cliente, e.fecha, e.aceptado,
-            {select_tipo},
+        SELECT 
+            e.*,
             COUNT(i.id) AS n_instrumentos,
-            SUM(CASE WHEN i.estado IN ('Pendiente','En proceso') THEN 1 ELSE 0 END) AS n_pendientes,
-            SUM(CASE WHEN 
-                (i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_1 != '') AND 
-                (i.foto_entrada_2 IS NOT NULL AND i.foto_entrada_2 != '') AND 
-                (i.foto_entrada_3 IS NOT NULL AND i.foto_entrada_3 != '') AND 
-                (i.foto_entrada_4 IS NOT NULL AND i.foto_entrada_4 != '') AND 
-                (i.foto_entrada_5 IS NOT NULL AND i.foto_entrada_5 != '') AND 
-                (i.foto_entrada_6 IS NOT NULL AND i.foto_entrada_6 != '') THEN 1 ELSE 0 END) AS n_fotos_completas,
             SUM(CASE WHEN 
                 (i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_1 != '') OR 
                 (i.foto_entrada_2 IS NOT NULL AND i.foto_entrada_2 != '') OR 
@@ -863,7 +854,12 @@ def dashboard(request: Request, user=Depends(get_current_user)):
                 (i.foto_entrada_6 IS NOT NULL AND i.foto_entrada_6 != '') THEN 1 ELSE 0 END) AS n_con_alguna_foto,
             SUM(CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END) AS n_grabados,
             SUM(CASE WHEN i.estado = 'En proceso' THEN 1 ELSE 0 END) AS n_en_proceso,
-            SUM(CASE WHEN COALESCE(i.repuesto_precio, 0) > 0 THEN 1 ELSE 0 END) AS n_con_repuesto
+            SUM(CASE WHEN COALESCE(i.repuesto_precio, 0) > 0 THEN 1 ELSE 0 END) AS n_con_repuesto,
+            -- Cálculo de 'done' según tipo de trabajo
+            SUM(CASE 
+                WHEN COALESCE(e.tipo_trabajo,'REPARACION') = 'TRAZABILIDAD' THEN (CASE WHEN COALESCE(i.grabado,0)=1 THEN 1 ELSE 0 END)
+                ELSE (CASE WHEN COALESCE(i.estado,'') IN ('Reparado','Baja') THEN 1 ELSE 0 END)
+            END) AS n_done
         FROM envios e
         LEFT JOIN instrumentos i ON i.envio_id = e.id
         {where_q}
@@ -875,65 +871,27 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     envios = []
     for r in cur.fetchall():
         d = dict(r)
+        
+        total = int(d.get("n_instrumentos") or 0)
+        done = int(d.get("n_done") or 0)
+        
+        # Lógica de cierre y pendientes
+        d["is_closed"] = (total > 0 and done == total)
+        d["n_pendientes"] = max(total - done, 0)
+        d["color"] = "green" if d["is_closed"] else "red"
 
-        # Cierre:
-        # - REPARACION: cerrado si todos están en Reparado o Baja
-        # - TRAZABILIDAD: cerrado si todos están grabados (grabado=1)
-        if (d.get("tipo_trabajo") or "REPARACION") == "TRAZABILIDAD":
-            cur.execute(
-                """
-                SELECT
-                  COUNT(*) AS total,
-                  SUM(CASE WHEN COALESCE(grabado,0)=1 THEN 1 ELSE 0 END) AS done
-                FROM instrumentos
-                WHERE envio_id=?
-                """,
-                (d["id"],),
-            )
-            rr = cur.fetchone()
-            total = int(rr["total"] or 0) if rr else 0
-            done = int(rr["done"] or 0) if rr else 0
-            d["is_closed"] = (total > 0 and done == total)
-            # En trazabilidad, los "pendientes" son los no grabados
-            d["n_pendientes"] = max(total - done, 0)
-        else:
-            cur.execute(
-                """
-                SELECT
-                  COUNT(*) AS total,
-                  SUM(CASE WHEN COALESCE(estado,'') IN ('Reparado','Baja') THEN 1 ELSE 0 END) AS done
-                FROM instrumentos
-                WHERE envio_id=?
-                """,
-                (d["id"],),
-            )
-            rr = cur.fetchone()
-            total = int(rr["total"] or 0) if rr else 0
-            done = int(rr["done"] or 0) if rr else 0
-            d["is_closed"] = (total > 0 and done == total)
-            d["n_pendientes"] = max(total - done, 0)
-
-        # Color de la OT en dashboard: verde si cerrada, rojo si abierta
-        d["color"] = "green" if d.get("is_closed") else "red"
-
-        n_inst = int(d.get("n_instrumentos") or 0)
-        n_fotos_completas = int(d.get("n_fotos_completas") or 0)
+        # Indicador de fotos (dot)
         n_con_alguna_foto = int(d.get("n_con_alguna_foto") or 0)
-
-        # 🔴 ninguno tiene fotos
-        if n_inst == 0 or n_con_alguna_foto == 0:
+        if total == 0 or n_con_alguna_foto == 0:
             d["foto_dot"] = "red"
-        # 🟢 todos los instrumentos tienen al menos una foto (COMPLETO según feedback usuario)
-        elif n_con_alguna_foto == n_inst:
+        elif n_con_alguna_foto == total:
             d["foto_dot"] = "green"
-        # 🟡 mezcla
         else:
             d["foto_dot"] = "yellow"
 
         envios.append(d)
 
-    # Mostrar primero las OTs abiertas (rojo) y enviar las cerradas al final.
-    # Dentro de cada grupo, más recientes primero.
+    # Ordenar: primero abiertas (rojo), luego cerradas. Dentro de cada grupo, ID descendente.
     envios.sort(key=lambda x: (1 if x.get('is_closed') else 0, -int(x.get('id') or 0)))
 
     # --- Usuarios modal y datos auxiliares ---
