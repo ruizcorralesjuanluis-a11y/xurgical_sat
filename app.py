@@ -1814,8 +1814,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     """
     # Etiqueta térmica 29x62 mm (Brother QL-700).
     # Usamos 62mm de ancho y 29mm de alto (paisaje).
-    # Etiqueta térmica de 29mm (alto) x 90mm (ancho)
-    w, h = 90 * mm, 29 * mm
+    w, h = 62 * mm, 29 * mm
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(w, h))
 
@@ -1830,16 +1829,16 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     c.setFont("Helvetica", 7.5)
     
-    # Recorta texto si es muy largo
-    def truncate(s, limit=35):
+    # Recorta texto si es muy largo (ajustado para ancho de 62mm)
+    def truncate(s, limit=22):
         s = (s or "").strip()
         return s[:limit-3] + "…" if len(s) > limit else s
 
-    cli = truncate(cliente, 35)
-    ref = truncate(referencia, 35)
-    fab = truncate(fabricante, 35)
-    mod = truncate(modelo, 35)
-    sn = truncate(serie, 35)
+    cli = truncate(cliente, 22)
+    ref = truncate(referencia, 22)
+    fab = truncate(fabricante, 22)
+    mod = truncate(modelo, 22)
+    sn = truncate(serie, 22)
 
     # Distribución compacta (line_h = 3mm)
     curr_y = y_top - 7.5 * mm
@@ -1879,7 +1878,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     d = Drawing(size, size, transform=[size/qr_w, 0, 0, size/qr_h, 0, 0])
     d.add(qr_code)
     
-    # Posicionamos el QR a la derecha con margen de 3mm respecto al final de los 90mm
+    # Posicionamos el QR a la derecha con margen de 3mm respecto al final de los 62mm
     renderPDF.draw(d, c, w - size - 3 * mm, 3.5 * mm)
     
     c.showPage()
