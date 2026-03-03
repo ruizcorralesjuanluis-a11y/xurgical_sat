@@ -143,7 +143,7 @@
         <div class="col-md-4"><strong>Denominación:</strong> {{ inst.denominacion or "-" }}</div>
         <div class="col-md-4"><strong>DataMatrix:</strong> {{ inst.codigo_datamatrix or "-" }}</div>
         <div class="col-md-4">
-          <strong class="text-primary">Ref. Cliente:</strong>
+          <strong class="text-primary">Grabado Especial:</strong> 
           <span class="badge bg-primary-subtle text-primary border border-primary">{{ inst.codigo_cliente or "-" }}</span>
         </div>
 
@@ -163,10 +163,10 @@
                 <div class="col-md-6">
                   <div class="p-2 border rounded bg-white d-flex align-items-center justify-content-between h-100">
                     <div class="overflow-hidden">
-                      <div class="small fw-bold text-muted" style="font-size: 0.7rem;">REF. CLIENTE / HUCA:</div>
+                      <div class="small fw-bold text-muted" style="font-size: 0.7rem;">GRABADO ESPECIAL:</div>
                       <div class="h6 mb-0 font-monospace text-nowrap text-primary" id="copyTextCli">{{ inst.codigo_cliente }}</div>
                     </div>
-                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="copyToClipboard('copyTextCli', 'Ref. Cliente')">
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="copyToClipboard('copyTextCli', 'Grabado Especial')">
                       <i class="fa-solid fa-copy"></i>
                     </button>
                   </div>
