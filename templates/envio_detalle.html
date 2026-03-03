@@ -478,6 +478,17 @@
               </div>
             </a>
 
+            {% if is_finished %}
+            <button class="btn {% if envio.aviso_enviado %}btn-outline-info{% else %}btn-info{% endif %} px-4 py-3 action-card shadow-sm" 
+                    onclick="enviarAvisoEmail('{{ envio.id }}')" id="btnAvisoEmail">
+              <i class="fa-solid fa-envelope fa-lg"></i>
+              <div class="text-start">
+                <div class="small opacity-75">{% if envio.aviso_enviado %}Aviso Enviado{% else %}Avisar{% endif %}</div>
+                <div>Cliente (Email)</div>
+              </div>
+            </button>
+            {% endif %}
+
             <button class="btn btn-dark px-4 py-3 action-card shadow-sm" onclick="printEtiqueta('{{ envio.id }}')">
               <i class="fa-solid fa-circle-check fa-lg"></i>
               <div class="text-start">
@@ -1022,5 +1033,43 @@
     if (!el) return;
     const val = el.value || el.textContent || "";
     navigator.clipboard.writeText(val);
+  }
+
+  async function enviarAvisoEmail(envioId) {
+    if (!confirm("¿Deseas enviar el aviso de finalización por email al cliente ahora?")) return;
+    
+    const btn = document.getElementById("btnAvisoEmail");
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+    
+    try {
+      const resp = await fetch(`/envios/${envioId}/aviso_finalizacion`, { method: "POST" });
+      const data = await resp.json();
+      
+      if (data.ok) {
+        alert("✅ " + (data.message || "Aviso enviado correctamente."));
+        // Actualizar visualmente el botón
+        btn.classList.remove("btn-info");
+        btn.classList.add("btn-outline-info");
+        btn.querySelector(".small").textContent = "Aviso Enviado";
+      } else {
+        alert("❌ Error: " + (data.error || "No se pudo enviar el email."));
+      }
+    } catch (e) {
+      alert("❌ Error de conexión al servidor.");
+    } finally {
+      btn.disabled = false;
+      if (!btn.classList.contains("btn-outline-info")) {
+        btn.innerHTML = originalHtml;
+      } else {
+        // Dejar el icono normal si se marcó como enviado
+        btn.innerHTML = `<i class="fa-solid fa-envelope fa-lg"></i>
+              <div class="text-start">
+                <div class="small opacity-75">Aviso Enviado</div>
+                <div>Cliente (Email)</div>
+              </div>`;
+      }
+    }
   }
 </script>

@@ -46,6 +46,12 @@
             </div>
 
             <div class="col-md-6">
+              <label class="form-label">Email de Notificaciones</label>
+              <input class="form-control" type="email" name="email" value="{{ cliente.email if cliente else '' }}" placeholder="ejemplo@centro.com">
+              <div class="form-text">A este correo se enviarán los avisos de partes terminados.</div>
+            </div>
+
+            <div class="col-md-6">
               <label class="form-label">Último número usado</label>
               <input class="form-control" type="number" min="0" name="ultimo_numero" value="{{ cliente.ultimo_numero if cliente else 0 }}">
               <div class="form-text">Si ya habéis grabado códigos antes, pon aquí el último utilizado.</div>

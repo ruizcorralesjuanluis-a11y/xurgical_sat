@@ -190,9 +190,15 @@ def init_db():
         nombre TEXT UNIQUE NOT NULL,
         prefijo TEXT,
         prefijo_nombre TEXT,
+        email TEXT,
         ultimo_numero INTEGER DEFAULT 0
     )
     """)
+
+    # Migración: asegurar que existe email en clientes
+    cols_clientes = get_table_columns(cur, "clientes")
+    if "email" not in cols_clientes:
+        cur.execute("ALTER TABLE clientes ADD COLUMN email TEXT")
 
     # 3. Envíos (Partes de trabajo)
     cur.execute(f"""
@@ -205,6 +211,7 @@ def init_db():
         tipo_trabajo TEXT DEFAULT 'REPARACION',
         fecha TEXT,
         aceptado INTEGER DEFAULT 0,
+        aviso_enviado INTEGER DEFAULT 0,
         creado_en {dt},
         observaciones TEXT
     )
@@ -214,6 +221,8 @@ def init_db():
     cols_envios = get_table_columns(cur, "envios")
     if "aceptado" not in cols_envios:
         cur.execute("ALTER TABLE envios ADD COLUMN aceptado INTEGER DEFAULT 0")
+    if "aviso_enviado" not in cols_envios:
+        cur.execute("ALTER TABLE envios ADD COLUMN aviso_enviado INTEGER DEFAULT 0")
     if "observaciones" not in cols_envios:
         cur.execute("ALTER TABLE envios ADD COLUMN observaciones TEXT")
 

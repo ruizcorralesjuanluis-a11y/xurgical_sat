@@ -35,3 +35,4 @@ et_xmlfile
 # Utilities
 six
 colorama
+python-dotenv

@@ -33,12 +33,17 @@ def _build_nombre_trazabilidad(prefijo_nombre: str, codigo_datamatrix: str) -> s
     return f"{pref}{suf}"
 
 import os
-import base64
-import sqlite3
+import re
+import time
 import io
 import csv
+import json
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
+from dotenv import load_dotenv
+
+# Carga variables de entorno desde .env (útil para desarrollo local)
+load_dotenv()
 
 # Etiquetas (PDF) + código de barras / QR
 from reportlab.pdfgen import canvas
@@ -157,7 +162,7 @@ def _list_clientes(cur) -> list[dict]:
     except ImportError:
         PG_ERR = Exception
 
-    sql = "SELECT id, nombre, prefijo, prefijo_nombre, ultimo_numero FROM clientes ORDER BY LOWER(nombre) ASC"
+    sql = "SELECT id, nombre, prefijo, prefijo_nombre, email, ultimo_numero FROM clientes ORDER BY LOWER(nombre) ASC"
     try:
         cur.execute(sql)
         return [dict(r) for r in cur.fetchall()]
@@ -181,7 +186,7 @@ def _envios_has_column(cur, col: str) -> bool:
 
 def _get_cliente(cur, cliente_id: int) -> dict | None:
     cur.execute(
-        "SELECT id, nombre, prefijo, prefijo_nombre, ultimo_numero FROM clientes WHERE id=?",
+        "SELECT id, nombre, prefijo, prefijo_nombre, email, ultimo_numero FROM clientes WHERE id=?",
         (int(cliente_id),),
     )
     r = cur.fetchone()
@@ -1315,6 +1320,7 @@ def clientes_nuevo_form(request: Request, user=Depends(require_roles("admin", "r
 def clientes_nuevo_crear(
     nombre: str = Form(""),
     prefijo: str = Form(""),
+    email: str = Form(""),
     prefijo_nombre: str = Form(""),
     ultimo_numero: int = Form(0),
     user=Depends(require_roles("admin", "recepcion")),
@@ -1333,8 +1339,8 @@ def clientes_nuevo_crear(
         return RedirectResponse(url="/clientes?err=exists", status_code=303)
 
     cur.execute(
-        "INSERT INTO clientes (nombre, prefijo, prefijo_nombre, ultimo_numero) VALUES (?, ?, ?, ?)",
-        (nombre, (prefijo or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0)),
+        "INSERT INTO clientes (nombre, prefijo, email, prefijo_nombre, ultimo_numero) VALUES (?, ?, ?, ?, ?)",
+        (nombre, (prefijo or "").strip(), (email or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0)),
     )
     conn.commit()
     conn.close()
@@ -1360,6 +1366,7 @@ def clientes_editar_guardar(
     cliente_id: int,
     nombre: str = Form(""),
     prefijo: str = Form(""),
+    email: str = Form(""),
     prefijo_nombre: str = Form(""),
     ultimo_numero: int = Form(0),
     user=Depends(require_roles("admin", "recepcion")),
@@ -1370,8 +1377,8 @@ def clientes_editar_guardar(
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "UPDATE clientes SET nombre=?, prefijo=?, prefijo_nombre=?, ultimo_numero=? WHERE id=?",
-        (nombre, (prefijo or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0), int(cliente_id)),
+        "UPDATE clientes SET nombre=?, prefijo=?, email=?, prefijo_nombre=?, ultimo_numero=? WHERE id=?",
+        (nombre, (prefijo or "").strip(), (email or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0), int(cliente_id)),
     )
     conn.commit()
     conn.close()
@@ -1617,6 +1624,60 @@ def ver_ot_directa(ot_num: str, user=Depends(get_current_user)):
     # Mejor centralizar en /envios/{id} o crear una ruta específica.
     return RedirectResponse(url=f"/envios/{e['id']}", status_code=303)
 
+@app.post("/envios/{envio_id}/aviso_finalizacion")
+def envio_aviso_finalizacion(envio_id: int, user=Depends(require_roles("admin", "recepcion"))):
+    """Envía un aviso por email al cliente si el parte está terminado."""
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # 1. Obtener datos del envío y cliente
+    cur.execute("""
+        SELECT e.*, c.email as cliente_email, c.nombre as cliente_nombre
+        FROM envios e
+        LEFT JOIN clientes c ON e.cliente_id = c.id
+        WHERE e.id=?
+    """, (envio_id,))
+    envio = cur.fetchone()
+    
+    if not envio:
+        conn.close()
+        return {"ok": False, "error": "Envío no encontrado"}
+        
+    if not envio["cliente_email"]:
+        conn.close()
+        return {"ok": False, "error": "El cliente no tiene un email configurado para notificaciones"}
+
+    # 2. Verificar si está terminado (todas las piezas reparadas o baja)
+    cur.execute("SELECT COUNT(*) as total FROM instrumentos WHERE envio_id=?", (envio_id,))
+    total = cur.fetchone()["total"]
+    
+    cur.execute("SELECT COUNT(*) as done FROM instrumentos WHERE envio_id=? AND estado IN ('Reparado', 'Baja')", (envio_id,))
+    done = cur.fetchone()["done"]
+    
+    if total == 0 or done < total:
+        conn.close()
+        return {"ok": False, "error": "El parte aún no está totalmente terminado (faltan piezas por revisar)"}
+
+    # 3. Enviar email
+    from mail_utils import send_finish_notification
+    success, msg = send_finish_notification(
+        envio["cliente_email"], 
+        envio["cliente_nombre"] or envio["cliente"], 
+        envio["ot_num"], 
+        total
+    )
+    
+    if success:
+        # Marcar como enviado (necesitaremos esta columna en DB)
+        try:
+            cur.execute("UPDATE envios SET aviso_enviado=1 WHERE id=?", (envio_id,))
+            conn.commit()
+        except:
+            pass # Si falla no bloqueamos la respuesta
+            
+    conn.close()
+    return {"ok": success, "message": msg}
+
 
 @app.get("/envios/{envio_id}", response_class=HTMLResponse)
 def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
@@ -1652,10 +1713,11 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
         ORDER BY i.id DESC
     """, (envio_id,))
     instrumentos = [dict(r) for r in cur.fetchall()]
-
-    if _user_role(user) == "tecnico":
-        # Aseguramos que los técnicos vean todo para poder acceder al PDF
-        pass
+    
+    # Calcular si está totalmente terminado (todas las piezas reparadas o baja)
+    total_inst = len(instrumentos)
+    done_inst = sum(1 for i in instrumentos if i["estado"] in ["Reparado", "Baja"])
+    is_finished = (total_inst > 0 and done_inst == total_inst)
 
     for r in instrumentos:
         # Limpieza de trazabilidad
@@ -1663,7 +1725,6 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
             r["nombre_trazabilidad"] = _clean_trz(r["nombre_trazabilidad"])
         
         # Bandera para mostrar icono PDF (informe)
-        # Se muestra si hay un archivo archivado O si al menos hay datos de QC guardados
         r["has_informe"] = bool(r.get("has_archived") or r.get("has_qc_data"))
 
     # DEF_TRZ_NOMBRE_OK: prepara nombre_trazabilidad SOLO para pantalla de grabación (copiar/pegar)
@@ -1677,13 +1738,9 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
 
     for r in instrumentos:
         nt = (r.get("nombre_trazabilidad") or "").strip()
-        # limpia comillas accidentales tipo "'00015'"
-        if nt:
-            nt = nt.strip().strip("'").strip('"')
-        # si es solo 5 dígitos y hay prefijo, lo completamos
+        if nt: nt = nt.strip().strip("'").strip('"')
         if nt and prefijo and re.fullmatch(r"\d{5}", nt):
             nt = f"{prefijo}{nt}"
-        # si no hay nt pero hay DM y prefijo, lo calculamos
         if (not nt) and prefijo:
             dm = (r.get("codigo_datamatrix") or "").strip()
             if dm:
@@ -1695,16 +1752,15 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
 
     conn.close()
 
-    # Si es técnico, le mostramos la vista simplificada/móvil
     if _user_role(user) == "tecnico":
         return templates.TemplateResponse(
             "tecnico_parte.html",
-            {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos},
+            {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos, "is_finished": is_finished},
         )
 
     return templates.TemplateResponse(
         "envio_detalle.html",
-        {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos},
+        {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos, "is_finished": is_finished},
     )
 
 

@@ -548,6 +548,7 @@
                     <th>Fotos</th>
                     <th class="d-none d-md-table-cell">Grabados</th>
                     <th>Aceptado</th>
+                    <th>Aviso</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -601,11 +602,24 @@
                         <span {% if user and user.role in ['admin', 'recepcion' ] %}style="cursor: pointer;"
                           onclick="toggleAceptado({{ e.id }}, this)" {% endif %}>
                           {% if e.aceptado %}
-                          <i class="fa-solid fa-square-check text-success fa-xl"></i>
+                          <i class="fa-solid fa-circle-check text-success fa-lg" id="aceptado-icon-{{ e.id }}"></i>
                           {% else %}
-                          <i class="fa-regular fa-square text-secondary fa-xl"></i>
+                          <i class="fa-solid fa-circle-xmark text-danger fa-lg" id="aceptado-icon-{{ e.id }}"></i>
                           {% endif %}
                         </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="d-flex justify-content-center">
+                        {% if e.is_closed %}
+                          {% if e.aviso_enviado %}
+                            <i class="fa-solid fa-envelope text-info fa-lg" title="Aviso enviado al centro"></i>
+                          {% else %}
+                            <i class="fa-solid fa-envelope text-secondary opacity-25 fa-lg" title="Parte listo. Pendiente avisar al cliente."></i>
+                          {% endif %}
+                        {% else %}
+                          <i class="fa-solid fa-envelope-open text-light fa-lg" title="En proceso"></i>
+                        {% endif %}
                       </div>
                     </td>
                     <td class="text-end">
