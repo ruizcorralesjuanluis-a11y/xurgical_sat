@@ -764,6 +764,10 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         n_consultas_pendientes = sum(1 for c in consultas_list if c["estado"] == "Respondida")
         n_consultas_activas = len(consultas_list)
 
+    if _user_role(user) in ["admin", "recepcion"]:
+        cur.execute("DELETE FROM instrumentos WHERE envio_id IS NULL OR envio_id = 0 OR envio_id NOT IN (SELECT id FROM envios)")
+        conn.commit()
+
     # --- 1. KPIs Globales (Instrumentos) ---
     kpi_where = ""
     kpi_params = []
@@ -779,7 +783,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
             SUM(CASE WHEN i.estado='Reparado' THEN 1 ELSE 0 END) as reparados,
             SUM(CASE WHEN i.estado='Baja' THEN 1 ELSE 0 END) as baja
         FROM instrumentos i
-        LEFT JOIN envios e ON e.id = i.envio_id
+        JOIN envios e ON e.id = i.envio_id
         {kpi_where}
     """, tuple(kpi_params))
     
@@ -3929,6 +3933,10 @@ async def importar_excel(
     else:
         cur.execute(sql, tuple(vals))
         envio_id = cur.lastrowid
+
+    if not envio_id or envio_id == 0:
+        conn.close()
+        raise Exception("No se pudo crear el envío o recuperar su ID. Abortando importación de instrumentos.")
 
     rows = []
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
