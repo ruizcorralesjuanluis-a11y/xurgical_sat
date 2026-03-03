@@ -3912,8 +3912,23 @@ async def importar_excel(
         vals.append(observaciones)
 
     qs = ", ".join(["?"] * len(vals))
-    cur.execute(f"INSERT INTO envios ({', '.join(cols)}) VALUES ({qs})", tuple(vals))
-    envio_id = cur.lastrowid
+    sql = f"INSERT INTO envios ({', '.join(cols)}) VALUES ({qs})"
+    
+    is_pg = os.environ.get("DATABASE_URL") is not None
+    if is_pg:
+        sql += " RETURNING id"
+        cur.execute(sql, tuple(vals))
+        row = cur.fetchone()
+        if row:
+            envio_id = int(row["id"])
+        else:
+            # Fallback robusto
+            cur.execute("SELECT id FROM envios WHERE ot_num=?", (ot_num,))
+            row_f = cur.fetchone()
+            envio_id = int(row_f["id"]) if row_f else 0
+    else:
+        cur.execute(sql, tuple(vals))
+        envio_id = cur.lastrowid
 
     rows = []
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
