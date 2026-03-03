@@ -309,6 +309,9 @@
               </div>
 
               <div class="meta">
+                {% if inst.codigo_cliente %}
+                <div class="text-primary"><span class="muted">Grabado Especial:</span> <span class="fw-bold">{{ inst.codigo_cliente }}</span></div>
+                {% endif %}
                 <div><span class="muted">DataMatrix:</span> <span class="fw-bold">{{ inst.codigo_datamatrix or '-'
                     }}</span></div>
                 <div><span class="muted">Marca:</span> {{ inst.fabricante or '-' }}</div>
@@ -368,12 +371,19 @@
               <div class="fw-bold">DataMatrix</div>
               <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
                 <span class="badge text-bg-dark" id="mDM"></span>
-
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyDM" title="Copiar código">
                   Copiar
                 </button>
-
                 <span class="text-success small" id="dmCopiedMsg" style="display:none;">Copiado</span>
+              </div>
+            </div>
+
+            <div class="col-md-6" id="mSecGE" style="display:none;">
+              <div class="fw-bold text-primary">Grabado Especial</div>
+              <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge text-bg-primary" id="mGE"></span>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnCopyGE" title="Copiar código">Copiar</button>
+                <span class="text-success small" id="geCopiedMsg" style="display:none;">Copiado</span>
               </div>
             </div>
 
@@ -512,23 +522,20 @@
     const dmCopiedMsg = document.getElementById('dmCopiedMsg');
     const btnCopyNT = document.getElementById('btnCopyNT');
     const ntCopiedMsg = document.getElementById('ntCopiedMsg');
-
-    function flashCopied() {
-      if (!dmCopiedMsg) return;
-      dmCopiedMsg.style.display = '';
-      window.clearTimeout(window.__dmCopyT);
-      window.__dmCopyT = window.setTimeout(() => {
-        dmCopiedMsg.style.display = 'none';
+    const btnCopyGE = document.getElementById('btnCopyGE');
+    const geCopiedMsg = document.getElementById('geCopiedMsg');
+ 
+    function flashCopied(msgEl) {
+      if (!msgEl) return;
+      msgEl.style.display = '';
+      window.clearTimeout(msgEl.__copyT);
+      msgEl.__copyT = window.setTimeout(() => {
+        msgEl.style.display = 'none';
       }, 900);
     }
-    function flashCopiedNT() {
-      if (!ntCopiedMsg) return;
-      ntCopiedMsg.style.display = '';
-      window.clearTimeout(window.__ntCopyT);
-      window.__ntCopyT = window.setTimeout(() => {
-        ntCopiedMsg.style.display = 'none';
-      }, 900);
-    }
+ 
+    function flashCopiedNT() { flashCopied(ntCopiedMsg); }
+    function flashCopiedGE() { flashCopied(geCopiedMsg); }
     async function copyToClipboard(text) {
       if (!text) return false;
       // navigator.clipboard funciona en https o localhost
@@ -560,14 +567,21 @@
       btnCopyDM.addEventListener('click', async () => {
         const val = btnCopyDM.getAttribute('data-dm') || '';
         const ok = await copyToClipboard(val);
-        if (ok) flashCopied();
+        if (ok) flashCopied(dmCopiedMsg);
       });
     }
     if (btnCopyNT) {
       btnCopyNT.addEventListener('click', async () => {
         const val = btnCopyNT.getAttribute('data-nt') || '';
         const ok = await copyToClipboard(val);
-        if (ok) flashCopiedNT();
+        if (ok) flashCopied(ntCopiedMsg);
+      });
+    }
+    if (btnCopyGE) {
+      btnCopyGE.addEventListener('click', async () => {
+        const val = btnCopyGE.getAttribute('data-ge') || '';
+        const ok = await copyToClipboard(val);
+        if (ok) flashCopied(geCopiedMsg);
       });
     }
 
@@ -647,9 +661,10 @@
       const id = button.getAttribute('data-inst-id');
 
       const dm = button.getAttribute('data-inst-dm') || '';
+      const ge = button.getAttribute('data-inst-ge') || '';
       const ntRaw = button.getAttribute('data-inst-nt') || '';
       const nt = __cleanTrz(ntRaw);
-
+ 
       const marca = button.getAttribute('data-inst-marca') || '';
       const modelo = button.getAttribute('data-inst-modelo') || '';
       const denom = button.getAttribute('data-inst-denom') || '';
@@ -682,6 +697,24 @@
       const ntEl = document.getElementById('mNT');
       if (ntEl) { ntEl.textContent = nt ? nt : '—'; }
 
+      const geEl = document.getElementById('mGE');
+      const geSec = document.getElementById('mSecGE');
+      if (geEl && geSec) {
+        if (ge) {
+          geEl.textContent = ge;
+          geSec.style.display = '';
+          if (btnCopyGE) {
+            btnCopyGE.setAttribute('data-ge', ge);
+            btnCopyGE.disabled = false;
+          }
+        } else {
+          geSec.style.display = 'none';
+          if (btnCopyGE) {
+            btnCopyGE.disabled = true;
+          }
+        }
+      }
+ 
       const obsEl = document.getElementById('mObs');
       if (obsEl) { obsEl.textContent = obs ? obs : 'Sin observaciones específicas'; }
 
@@ -698,7 +731,8 @@
         btnCopyNT.disabled = !nt;
       }
       if (ntCopiedMsg) { ntCopiedMsg.style.display = 'none'; }
-
+      if (geCopiedMsg) { geCopiedMsg.style.display = 'none'; }
+ 
       document.getElementById('mMarca').textContent = marca ? marca : '—';
       document.getElementById('mModelo').textContent = modelo ? modelo : '—';
       document.getElementById('mDenom').textContent = denom ? denom : '—';
