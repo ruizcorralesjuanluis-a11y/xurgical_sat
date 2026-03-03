@@ -1812,7 +1812,7 @@ def api_get_checklist(instrumento_id: int, user=Depends(get_current_user)):
         FROM checklist_items ci
         LEFT JOIN instrumento_checklist ic ON ic.item_id = ci.id AND ic.instrumento_id = ?
         WHERE ci.activo = 1 AND ci.tipo_trabajo = ?
-        ORDER BY ci.nombre ASC
+        ORDER BY LOWER(ci.nombre) ASC
     """, (instrumento_id, tipo_ot))
     
     checklist = [dict(r) for r in cur.fetchall()]
@@ -2508,7 +2508,7 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
               ON ic.item_id = ci.id AND ic.instrumento_id = ?
             WHERE COALESCE(ci.activo,1)=1
               AND COALESCE(ci.tipo_trabajo,'REPARACION') = ?
-            ORDER BY ci.nombre ASC
+            ORDER BY LOWER(ci.nombre) ASC
         """, (instrumento_id, tipo))
         return [dict(r) for r in cur.fetchall()]
 
@@ -3487,7 +3487,7 @@ def checklist_admin(request: Request, tipo: str = "REPARACION", user=Depends(req
                COALESCE(tipo_trabajo,'REPARACION') AS tipo_trabajo
         FROM checklist_items
         WHERE COALESCE(tipo_trabajo,'REPARACION') = ?
-        ORDER BY nombre ASC
+        ORDER BY LOWER(nombre) ASC
     """, (tipo,))
     items = [dict(r) for r in cur.fetchall()]
     conn.close()
