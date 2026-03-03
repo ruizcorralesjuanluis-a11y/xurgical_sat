@@ -102,13 +102,9 @@
       <div class="panel p-3 mb-3">
         <div class="fw-bold mb-2">➕ Añadir paso</div>
         <form method="post" action="/checklist_admin/add" class="row g-2 align-items-end">
-          <div class="col-md-6">
+          <div class="col-md-8">
             <label class="form-label">Nombre</label>
             <input class="form-control" name="nombre" required>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Orden</label>
-            <input class="form-control" name="orden" type="number" value="0">
           </div>
           <div class="col-md-2">
             <label class="form-label">Tipo OT</label>
@@ -130,8 +126,7 @@
             <thead class="table-light">
               <tr>
                 <th style="width:70px;">ID</th>
-                <th>Nombre</th>
-                <th style="width:120px;">Orden</th>
+                <th>Nombre (Orden A-Z)</th>
                 <th style="width:190px;">Tipo OT</th>
                 <th style="width:130px;">Estado</th>
                 <th style="width:260px;"></th>
@@ -145,10 +140,6 @@
                 <td>
                   <form method="post" action="/checklist_admin/{{ it.id }}/update" class="m-0">
                     <input class="form-control form-control-sm" name="nombre" value="{{ it.nombre }}">
-                </td>
-
-                <td>
-                  <input class="form-control form-control-sm" type="number" name="orden" value="{{ it.orden }}">
                 </td>
 
                 <td>
