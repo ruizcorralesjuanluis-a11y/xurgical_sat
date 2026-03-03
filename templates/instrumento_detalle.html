@@ -153,26 +153,51 @@
 
         {% if user and user.role in ["admin", "grabado", "recepcion", "tecnico"] %}
         <div class="col-12 mt-3">
-          <div class="p-3 border rounded bg-light d-flex align-items-center justify-content-between">
-            <div>
-              <div class="small fw-bold text-uppercase text-muted mb-1">Texto para Grabado:</div>
-              <div class="h5 mb-0 font-monospace" id="engravingText">{% if inst.codigo_cliente %}{{ inst.codigo_cliente }} {% endif %}{{ inst.codigo_datamatrix or "" }}</div>
+          <div class="card border-primary shadow-sm">
+            <div class="card-header bg-primary text-white py-1 small fw-bold text-uppercase">
+              <i class="fa-solid fa-file-pen me-2"></i> Zona de Grabado
             </div>
-            <button class="btn btn-success" onclick="copyEngraving()">
-              <i class="fa-solid fa-copy"></i> Copiar para Grabado
-            </button>
+            <div class="card-body p-2">
+              <div class="row g-2">
+                {% if inst.codigo_cliente %}
+                <div class="col-md-6">
+                  <div class="p-2 border rounded bg-white d-flex align-items-center justify-content-between h-100">
+                    <div class="overflow-hidden">
+                      <div class="small fw-bold text-muted" style="font-size: 0.7rem;">REF. CLIENTE / HUCA:</div>
+                      <div class="h6 mb-0 font-monospace text-nowrap text-primary" id="copyTextCli">{{ inst.codigo_cliente }}</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="copyToClipboard('copyTextCli', 'Ref. Cliente')">
+                      <i class="fa-solid fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                {% endif %}
+                
+                <div class="col-md-6">
+                  <div class="p-2 border rounded bg-white d-flex align-items-center justify-content-between h-100">
+                    <div class="overflow-hidden">
+                      <div class="small fw-bold text-muted" style="font-size: 0.7rem;">DATAMATRIX:</div>
+                      <div class="h6 mb-0 font-monospace text-nowrap text-dark" id="copyTextDM">{{ inst.codigo_datamatrix or "--" }}</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-dark ms-2" onclick="copyToClipboard('copyTextDM', 'DataMatrix')" {% if not inst.codigo_datamatrix %}disabled{% endif %}>
+                      <i class="fa-solid fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <script>
-          function copyEngraving() {
-            const text = document.getElementById('engravingText').innerText;
-            if(!text.trim()) return;
+          function copyToClipboard(elementId, label) {
+            const text = document.getElementById(elementId).innerText;
+            if(!text || text === "--") return;
             navigator.clipboard.writeText(text).then(() => {
               Swal.fire({
                 toast: true,
                 position: 'top-end',
                 icon: 'success',
-                title: 'Copiado: ' + text,
+                title: 'Copiado ' + label + ': ' + text,
                 showConfirmButton: false,
                 timer: 2000
               });
