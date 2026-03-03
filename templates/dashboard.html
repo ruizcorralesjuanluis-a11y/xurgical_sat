@@ -515,6 +515,12 @@
               <div class="fw-bold">Partes (OT)</div>
               {% if user and user.role in ["admin","recepcion"] %}
               <div class="d-flex align-items-center gap-2">
+                <a href="/importar" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-file-import"></i> Nuevo Parte (Excel)
+                </a>
+                <a href="/envios/nuevo" class="btn btn-outline-primary btn-sm text-nowrap">
+                  <i class="fa-solid fa-plus"></i> Alta Manual
+                </a>
                 <a href="/recogidas" class="btn btn-outline-dark btn-sm position-relative">
                   <i class="fa-solid fa-truck-ramp-box"></i> Recogidas
                   {% if n_peticiones_pendientes > 0 %}
@@ -523,7 +529,7 @@
                   </span>
                   {% endif %}
                 </a>
-                <a href="/export" class="btn btn-outline-primary btn-sm">
+                <a href="/export" class="btn btn-outline-secondary btn-sm">
                   <i class="fa-solid fa-file-export"></i> Exportar
                 </a>
               </div>
