@@ -38,6 +38,7 @@ import time
 import io
 import csv
 import json
+import base64
 from datetime import datetime
 from typing import List, Optional
 from dotenv import load_dotenv
