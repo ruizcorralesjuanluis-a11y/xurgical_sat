@@ -434,6 +434,14 @@ def can_action(user, action: str, cur=None) -> bool:
 
 @app.on_event("startup")
 def on_startup():
+    # Pre-carga del catálogo de Articulos para evitar LAG en el primer uso
+    try:
+        from app import load_articulos_map
+        load_articulos_map()
+        print(">>> [INIT] Catálogo de Artículos pre-cargado con éxito.", flush=True)
+    except Exception as e:
+        print(f">>> [INIT] Error pre-cargando catálogo: {e}", flush=True)
+
     init_db()
 
     # Tabla de permisos por acción (granularidad extra a roles)
