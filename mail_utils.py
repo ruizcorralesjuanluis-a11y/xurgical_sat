@@ -38,7 +38,7 @@ def send_finish_notification(dest_email, client_name, ot_num, items_count):
                 <p>Ya puedes consultar todos los detalles, fotos y estados en nuestra aplicación web.</p>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://xurgical-sat.onrender.com/" 
+                    <a href="https://xurgical-sat-btuk.onrender.com/" 
                        style="background-color: #f39c12; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                        Acceder a la App
                     </a>
