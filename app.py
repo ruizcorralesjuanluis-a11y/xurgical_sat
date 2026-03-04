@@ -4006,7 +4006,7 @@ def usuarios_new(
 ):
     username = (username or "").strip()
 
-    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente"):
+    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente", "socio"):
         return templates.TemplateResponse(
             "user_form.html",
             {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Rol inválido"},
@@ -4211,7 +4211,7 @@ def dash_users_nuevo(
     if not username:
         return RedirectResponse(url="/?users=1&uerr=username", status_code=303)
 
-    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente"):
+    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente", "socio"):
         return RedirectResponse(url="/?users=1&uerr=role", status_code=303)
 
     if not (password or "").strip():
@@ -4296,7 +4296,7 @@ def dash_users_set_role(
     role: str = Form(...),
     user=Depends(require_roles("admin")),
 ):
-    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente"):
+    if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente", "socio"):
         return RedirectResponse(url="/?users=1&uerr=role", status_code=303)
 
     conn = get_conn()
@@ -4462,7 +4462,7 @@ def dash_users_set_role(
     role: str = Form(...),
     user=Depends(require_roles("admin")),
 ):
-    if role not in ("admin", "recepcion", "tecnico", "grabado"):
+    if role not in ("admin", "recepcion", "tecnico", "grabado", "socio"):
         return RedirectResponse(url="/?users=1&uerr=role", status_code=303)
 
     conn = get_conn()
@@ -4676,7 +4676,7 @@ async def peticion_recogida(
 @app.get("/recogidas", response_class=HTMLResponse)
 def recogidas_list(request: Request, user=Depends(get_current_user)):
     role = _user_role(user)
-    if role not in ["admin", "recepcion", "cliente"]:
+    if role not in ["admin", "recepcion", "cliente", "socio"]:
         return RedirectResponse(url="/?err=perm", status_code=303)
 
     conn = get_conn()
