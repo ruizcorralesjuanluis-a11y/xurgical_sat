@@ -99,6 +99,7 @@
         </div>
       </div>
 
+      {% if user.role != 'socio' %}
       <div class="panel p-3 mb-3">
         <div class="fw-bold mb-2">➕ Añadir paso</div>
         <form method="post" action="/checklist_admin/add" class="row g-2 align-items-end">
@@ -119,6 +120,7 @@
           </div>
         </form>
       </div>
+      {% endif %}
 
       <div class="panel p-2">
         <div class="table-responsive">
@@ -139,11 +141,13 @@
 
                 <td>
                   <form method="post" action="/checklist_admin/{{ it.id }}/update" class="m-0">
-                    <input class="form-control form-control-sm" name="nombre" value="{{ it.nombre }}">
+                    <input class="form-control form-control-sm" name="nombre" value="{{ it.nombre }}" {% if
+                      user.role=="socio" %}readonly{% endif %}>
                 </td>
 
                 <td>
-                  <select class="form-select form-select-sm" name="tipo_trabajo">
+                  <select class="form-select form-select-sm" name="tipo_trabajo" {% if user.role=="socio" %}disabled{%
+                    endif %}>
                     {% for t in tipos %}
                     <option value="{{ t }}" {% if it.tipo_trabajo==t %}selected{% endif %}>{{ t }}</option>
                     {% endfor %}
@@ -159,6 +163,7 @@
                 </td>
 
                 <td class="text-end">
+                  {% if user.role != 'socio' %}
                   <button class="btn btn-outline-primary btn-sm">Guardar</button>
                   </form>
 
@@ -176,6 +181,10 @@
                     <input type="hidden" name="tipo" value="{{ tipo }}">
                     <button class="btn btn-outline-danger btn-sm">Borrar</button>
                   </form>
+                  {% else %}
+                  </form>
+                  <span class="text-muted small">Sólo consulta</span>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}

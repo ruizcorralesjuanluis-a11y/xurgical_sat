@@ -362,19 +362,19 @@
           <i class="fa-solid fa-house"></i> Dashboard
         </a>
 
-        {% if user and user.role != "cliente" %}
+        {% if user and user.role not in ["cliente", "socio"] %}
         <button class="btn btn-outline-success btn-sm" onclick="printEtiqueta('{{ envio.id }}')">
           <i class="fa-solid fa-tag"></i> Etiqueta
         </button>
         {% endif %}
 
-        {% if user and user.role in ["admin", "recepcion", "cliente"] %}
+        {% if user and user.role in ["admin", "recepcion", "cliente", "socio"] %}
         <a class="btn btn-outline-primary btn-sm" href="/export/download?scope=parte&envio_id={{ envio.id }}&fmt=xlsx">
           <i class="fa-solid fa-file-export"></i> Exportar OT
         </a>
         {% endif %}
 
-        {% if user and user.role in ["admin","grabado"] %}
+        {% if user and user.role in ["admin","grabado", "socio"] %}
         <a class="btn btn-outline-dark btn-sm" href="/envios/{{ envio.id }}/grabacion">
           <i class="fa-solid fa-pen-nib"></i> Grabación
         </a>
@@ -442,10 +442,11 @@
           </div>
           {% endif %}
 
-          {% if user and user.role in ["admin","recepcion"] %}
+          {% if user and user.role in ["admin","recepcion","socio"] %}
           <div
             class="d-flex flex-wrap gap-2 justify-content-start justify-content-md-end align-items-center mt-2 mt-md-0"
             style="flex: 1;">
+            {% if user.role != "socio" %}
             <button class="btn btn-success p-3 action-card shadow-sm" type="button" data-bs-toggle="collapse"
               data-bs-target="#addInst">
               <i class="fa-solid fa-plus fa-lg"></i>
@@ -469,6 +470,7 @@
                 </div>
               </button>
             </form>
+            {% endif %}
 
             <a href="/envios/{{ envio.id }}/revision" class="btn btn-warning px-4 py-3 action-card shadow-sm">
               <i class="fa-solid fa-clipboard-check fa-lg"></i>
@@ -478,9 +480,10 @@
               </div>
             </a>
 
-            {% if is_finished %}
-            <button class="btn {% if envio.aviso_enviado %}btn-outline-info{% else %}btn-info{% endif %} px-4 py-3 action-card shadow-sm" 
-                    onclick="enviarAvisoEmail('{{ envio.id }}')" id="btnAvisoEmail">
+            {% if is_finished and user.role != "socio" %}
+            <button
+              class="btn {% if envio.aviso_enviado %}btn-outline-info{% else %}btn-info{% endif %} px-4 py-3 action-card shadow-sm"
+              onclick="enviarAvisoEmail('{{ envio.id }}')" id="btnAvisoEmail">
               <i class="fa-solid fa-envelope fa-lg"></i>
               <div class="text-start">
                 <div class="small opacity-75">{% if envio.aviso_enviado %}Aviso Enviado{% else %}Avisar{% endif %}</div>
@@ -489,11 +492,12 @@
             </button>
             {% endif %}
 
-            <button class="btn btn-dark px-4 py-3 action-card shadow-sm" onclick="printEtiqueta('{{ envio.id }}')">
+            <button class="btn btn-dark px-4 py-3 action-card shadow-sm" {% if user.role !='socio'
+              %}onclick="printEtiqueta('{{ envio.id }}')" {% endif %}>
               <i class="fa-solid fa-circle-check fa-lg"></i>
               <div class="text-start">
                 <div class="small opacity-75">Finalizar</div>
-                <div>Imprimir Etiqueta</div>
+                <div>{% if user.role == 'socio' %}Solo Consulta{% else %}Imprimir Etiqueta{% endif %}</div>
               </div>
             </button>
           </div>
@@ -711,11 +715,18 @@
                       <i class="fa-solid fa-eye"></i>
                     </a>
 
-                    {% if user and user.role in ["admin","recepcion"] %}
-                    <a class="btn btn-primary btn-sm" href="/instrumentos/{{ inst.id }}/editar" title="Editar">
+                    {% if user and user.role in ["admin","recepcion","tecnico","socio"] %}
+                    <a class="btn btn-primary btn-sm" href="/instrumentos/{{ inst.id }}/editar"
+                      title="{% if user.role == 'socio' %}Ver detalles{% else %}Editar{% endif %}">
+                      {% if user.role == 'socio' %}
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                      {% else %}
                       <i class="fa-solid fa-pen"></i>
+                      {% endif %}
                     </a>
+                    {% endif %}
 
+                    {% if user and user.role in ["admin","recepcion"] and user.role != "socio" %}
                     <button class="btn btn-danger btn-sm" type="button" data-bs-toggle="modal"
                       data-bs-target="#delInst{{ inst.id }}" title="Borrar">
                       <i class="fa-solid fa-trash-can"></i>
@@ -1037,16 +1048,16 @@
 
   async function enviarAvisoEmail(envioId) {
     if (!confirm("¿Deseas enviar el aviso de finalización por email al cliente ahora?")) return;
-    
+
     const btn = document.getElementById("btnAvisoEmail");
     const originalHtml = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
-    
+
     try {
       const resp = await fetch(`/envios/${envioId}/aviso_finalizacion`, { method: "POST" });
       const data = await resp.json();
-      
+
       if (data.ok) {
         alert("✅ " + (data.message || "Aviso enviado correctamente."));
         // Actualizar visualmente el botón

@@ -38,7 +38,9 @@
         <h1 class="h5 mb-1">Registro de clientes</h1>
         <div class="text-secondary small">Prefijo + contador (últimos 5 dígitos) por cliente.</div>
       </div>
+      {% if user.role != 'socio' %}
       <a href="/clientes/nuevo" class="btn btn-success">➕ Nuevo cliente</a>
+      {% endif %}
     </div>
 
     <div class="card shadow-sm">
@@ -61,7 +63,9 @@
               <td class="small">{{ c.email or '-' }}</td>
               <td class="text-end">{{ c.ultimo_numero }}</td>
               <td class="text-end">
-                <a class="btn btn-outline-primary btn-sm" href="/clientes/{{ c.id }}/editar">Editar</a>
+                <a class="btn btn-outline-primary btn-sm" href="/clientes/{{ c.id }}/editar">
+                  {% if user.role == 'socio' %}Ver{% else %}Editar{% endif %}
+                </a>
               </td>
             </tr>
             {% endfor %}

@@ -148,12 +148,18 @@
                             </div>
 
                             <div class="mt-5 d-flex gap-3">
+                                {% if user.role != 'socio' %}
                                 <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
                                     <i class="fa-solid fa-save me-2"></i> Guardar Cambios
                                 </button>
                                 <a class="btn btn-outline-secondary btn-lg px-4" href="/">
                                     Descartar
                                 </a>
+                                {% else %}
+                                <a class="btn btn-outline-secondary btn-lg px-4" href="/">
+                                    Volver
+                                </a>
+                                {% endif %}
                             </div>
                         </form>
                     </div>

@@ -90,6 +90,9 @@
         <img src="/static/logo-xurgical.png" class="logo" alt="Xurgical">
         <strong>Xurgical SAT</strong>
         <span class="text-secondary">/ {% if inst %}Editar{% else %}Nuevo{% endif %} instrumento</span>
+        {% if user.role == "socio" %}
+        <span class="badge bg-info text-white">MODO CONSULTA</span>
+        {% endif %}
       </div>
 
       <div class="d-flex align-items-center gap-2">
@@ -116,6 +119,12 @@
 
       <!-- FORM DATOS -->
       <div class="panel p-3 mb-3">
+        {% if user.role == 'socio' %}
+        <div class="alert alert-info py-2">
+          <i class="fa-solid fa-circle-info me-2"></i> <b>Modo Socio:</b> Puedes consultar los datos pero no se permite
+          guardar cambios.
+        </div>
+        {% endif %}
         {% if inst %}
         <form method="post" action="/instrumentos/{{ inst.id }}/editar">
           {% else %}
@@ -147,7 +156,8 @@
               </div>
               <div class="col-md-3">
                 <label class="form-label">Grabado Especial</label>
-                <input class="form-control border-primary" name="codigo_cliente" value="{{ inst.codigo_cliente if inst else '' }}" placeholder="Código HUCA, etc.">
+                <input class="form-control border-primary" name="codigo_cliente"
+                  value="{{ inst.codigo_cliente if inst else '' }}" placeholder="Código HUCA, etc.">
               </div>
               <div class="col-md-4">
                 <label class="form-label">Observaciones</label>
@@ -162,9 +172,12 @@
             </div>
 
             <div class="mt-3 d-flex gap-2">
+              {% if user.role != 'socio' %}
               <button class="btn btn-primary">{% if inst %}Guardar cambios{% else %}Guardar y pasar a fotos{% endif
                 %}</button>
-              <a class="btn btn-outline-secondary" href="/envios/{{ envio.id }}">Cancelar</a>
+              {% endif %}
+              <a class="btn btn-outline-secondary" href="/envios/{{ envio.id }}">{% if user.role == 'socio' %}Volver{%
+                else %}Cancelar{% endif %}</a>
             </div>
           </form>
       </div>
@@ -182,7 +195,9 @@
           <div class="col-12 col-md-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <b>Foto {{ i }}</b>
+              {% if user.role != 'socio' %}
               <button class="btn btn-outline-danger btn-sm" type="button" onclick="deletePhoto({{ i }})">Borrar</button>
+              {% endif %}
             </div>
             <div class="photo-box">
               {% set foto_url = inst['foto_entrada_' ~ i] %}
@@ -199,21 +214,27 @@
         <div class="mt-3">
           <div class="fw-bold mb-2">Cámara (Modo PC / USB)</div>
           <select id="cameraSelect" class="form-select form-select-sm mb-2"></select>
-          <div style="width:100%; height:300px; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb; background:#000; position:relative;">
-            <video id="video" autoplay playsinline style="width:100%; height:100%; object-fit:contain; display:block; transition: transform 0.1s ease; transform-origin: center center;"></video>
+          <div
+            style="width:100%; height:300px; border-radius:12px; overflow:hidden; border:1px solid #e5e7eb; background:#000; position:relative;">
+            <video id="video" autoplay playsinline
+              style="width:100%; height:100%; object-fit:contain; display:block; transition: transform 0.1s ease; transform-origin: center center;"></video>
           </div>
           <canvas id="canvas" style="display:none"></canvas>
-          
+
           <div class="mt-2 bg-dark text-white p-2 rounded d-flex align-items-center gap-3">
-             <i class="fa-solid fa-magnifying-glass-plus"></i>
-             <label for="zoomRange" class="small fw-bold">Zoom: <span id="zoomVal">1.0x</span></label>
-             <input type="range" class="form-range" id="zoomRange" min="1" max="4" step="0.1" value="1">
-             <button class="btn btn-sm btn-outline-light" onclick="resetZoom()">Reset</button>
+            <i class="fa-solid fa-magnifying-glass-plus"></i>
+            <label for="zoomRange" class="small fw-bold">Zoom: <span id="zoomVal">1.0x</span></label>
+            <input type="range" class="form-range" id="zoomRange" min="1" max="4" step="0.1" value="1">
+            <button class="btn btn-sm btn-outline-light" onclick="resetZoom()">Reset</button>
           </div>
 
-          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot libre.</div>
+          {% if user.role != 'socio' %}
+          <div class="muted mt-2">Pulsa <span class="kbd">Espacio</span> para capturar. Automático al siguiente slot
+            libre.</div>
+          {% endif %}
         </div>
 
+        {% if user.role != 'socio' %}
         <div class="mt-4 p-3 bg-light border rounded">
           <div class="fw-bold mb-2"><i class="fa-solid fa-mobile-screen-button me-2"></i> Subida Directa (Móvil)</div>
           <p class="small text-muted mb-3">Si estás en un móvil, pulsa este botón para abrir la cámara de tu dispositivo
@@ -225,10 +246,12 @@
           <input type="file" id="mobileInput" accept="image/*" capture="environment" style="display:none"
             onchange="uploadFile(this)">
         </div>
+        {% endif %}
 
         <div class="mt-3 d-flex justify-content-end">
           <form method="post" action="/instrumentos/{{ inst.id }}/finalizar_fotos">
-            <button class="btn btn-success">? Finalizar y volver al parte</button>
+            <button class="btn btn-success">{% if user.role == 'socio' %}Volver al parte{% else %}? Finalizar y volver
+              al parte{% endif %}</button>
           </form>
         </div>
       </div>
@@ -271,11 +294,11 @@
     }
     const photosStatus = {
       1: {{ 1 if inst.foto_entrada_1 else 0 }},
-    2: {{ 1 if inst.foto_entrada_2 else 0 }},
-    3: {{ 1 if inst.foto_entrada_3 else 0 }},
-    4: {{ 1 if inst.foto_entrada_4 else 0 }},
-    5: {{ 1 if inst.foto_entrada_5 else 0 }},
-    6: {{ 1 if inst.foto_entrada_6 else 0 }}
+    2: { { 1 if inst.foto_entrada_2 else 0 } },
+    3: { { 1 if inst.foto_entrada_3 else 0 } },
+    4: { { 1 if inst.foto_entrada_4 else 0 } },
+    5: { { 1 if inst.foto_entrada_5 else 0 } },
+    6: { { 1 if inst.foto_entrada_6 else 0 } }
     };
     let busy = false;
 
@@ -292,7 +315,7 @@
       }
 
       const constraints = deviceId
-        ? { video: { deviceId: { exact: deviceId }}, audio: false }
+        ? { video: { deviceId: { exact: deviceId } }, audio: false }
         : { video: true, audio: false };
 
       try {
@@ -431,10 +454,10 @@
     }
 
     function resetZoom() {
-       zoomLevel = 1.0;
-       if (zRange) zRange.value = 1;
-       if (zVal) zVal.innerText = "1.0x";
-       if (videoEl) videoEl.style.transform = "scale(1)";
+      zoomLevel = 1.0;
+      if (zRange) zRange.value = 1;
+      if (zVal) zVal.innerText = "1.0x";
+      if (videoEl) videoEl.style.transform = "scale(1)";
     }
 
     function captureToDataUrl() {
@@ -447,9 +470,9 @@
       const w = 960;
       const h = Math.round((vh / vw) * w);
 
-      canvas.width = w; 
+      canvas.width = w;
       canvas.height = h;
-      
+
       const ctx = canvas.getContext("2d");
 
       // Calculamos área de recorte central basada en el zoom
@@ -571,7 +594,7 @@
   <!-- Autorrelleno desde Articulos.xlsx: al salir de "Modelo / Código producto" -->
   <script>
     (function () {
-      window.addEventListener('load', () => { try { lookupNow(); } catch (e) { }});
+      window.addEventListener('load', () => { try { lookupNow(); } catch (e) { } });
       const inputCodigo = document.querySelector('input[name="codigo_producto"]');
       const inputDenom = document.querySelector('input[name="denominacion"]');
       const inputFab = document.querySelector('input[name="fabricante"]');
@@ -597,7 +620,7 @@
         lastQ = q;
 
         try {
-          const res = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, { headers: { "Accept": "application/json" }});
+          const res = await fetch(`/articulos_lookup?codigo=${encodeURIComponent(q)}`, { headers: { "Accept": "application/json" } });
           if (!res.ok) return;
           const data = await res.json();
           if (!data || !data.found) return;

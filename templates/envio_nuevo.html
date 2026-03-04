@@ -138,8 +138,11 @@
           </div>
 
           <div class="mt-4 d-flex gap-2">
+            {% if user.role != 'socio' %}
             <button class="btn btn-success">Crear parte</button>
-            <a class="btn btn-outline-secondary" href="/">Cancelar</a>
+            {% endif %}
+            <a class="btn btn-outline-secondary" href="/">{% if user.role == 'socio' %}Volver{% else %}Cancelar{% endif
+              %}</a>
           </div>
         </form>
       </div>

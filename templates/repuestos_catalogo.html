@@ -81,6 +81,7 @@
 
         <main class="container py-4">
 
+            {% if user.role != 'socio' %}
             <div class="panel p-4 mb-4">
                 <h5 class="mb-3"><i class="fa-solid fa-plus-circle text-success"></i> Añadir Repuesto Frecuente</h5>
                 <form method="post" action="/repuestos_catalogo/add" class="row g-3">
@@ -98,6 +99,7 @@
                     </div>
                 </form>
             </div>
+            {% endif %}
 
             <div class="panel p-0 overflow-hidden">
                 <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
@@ -123,12 +125,12 @@
                                     <form method="post" action="/repuestos_catalogo/{{ it.id }}/update"
                                         class="d-flex gap-2">
                                         <input class="form-control form-control-sm" name="nombre"
-                                            value="{{ it.nombre }}">
+                                            value="{{ it.nombre }}" {% if user.role=="socio" %}readonly{% endif %}>
                                 </td>
                                 <td>
                                     <div class="input-group input-group-sm">
                                         <input class="form-control" type="number" step="0.01" name="precio"
-                                            value="{{ it.precio }}">
+                                            value="{{ it.precio }}" {% if user.role=="socio" %}readonly{% endif %}>
                                         <span class="input-group-text">€</span>
                                     </div>
                                 </td>
@@ -140,6 +142,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
+                                    {% if user.role != 'socio' %}
                                     <button class="btn btn-primary btn-sm" title="Guardar cambios"><i
                                             class="fa-solid fa-save"></i></button>
                                     </form>
@@ -158,6 +161,10 @@
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
+                                    {% else %}
+                                    </form>
+                                    <span class="text-muted small">Sólo consulta</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

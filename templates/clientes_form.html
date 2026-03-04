@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -15,11 +16,11 @@
     </div>
     <div class="d-flex align-items-center gap-2">
       {% if user %}
-        <span class="badge text-bg-dark">{{ user.username }}</span>
-        <span class="badge text-bg-secondary">{{ user.role }}</span>
-        <form method="post" action="/logout" class="m-0">
-          <button class="btn btn-danger btn-sm">Salir</button>
-        </form>
+      <span class="badge text-bg-dark">{{ user.username }}</span>
+      <span class="badge text-bg-secondary">{{ user.role }}</span>
+      <form method="post" action="/logout" class="m-0">
+        <button class="btn btn-danger btn-sm">Salir</button>
+      </form>
       {% endif %}
     </div>
   </nav>
@@ -27,7 +28,8 @@
   <main class="container py-4" style="max-width: 720px;">
     <div class="card shadow-sm">
       <div class="card-body">
-        <form method="post" action="{% if mode=='new' %}/clientes/nuevo{% else %}/clientes/{{ cliente.id }}/editar{% endif %}">
+        <form method="post"
+          action="{% if mode=='new' %}/clientes/nuevo{% else %}/clientes/{{ cliente.id }}/editar{% endif %}">
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Nombre</label>
@@ -35,36 +37,44 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">Prefijo (Identificador / DataMatrix)</label>
-              <input class="form-control" name="prefijo" value="{{ cliente.prefijo if cliente else '' }}" placeholder="Ej: AC-">
+              <input class="form-control" name="prefijo" value="{{ cliente.prefijo if cliente else '' }}"
+                placeholder="Ej: AC-">
               <div class="form-text">Se antepone al número de 5 dígitos.</div>
             </div>
 
             <div class="col-md-6">
               <label class="form-label">Prefijo (Nombre)</label>
-              <input class="form-control" name="prefijo_nombre" value="{{ cliente.prefijo_nombre if cliente else '' }}" placeholder="Ej: NM-">
+              <input class="form-control" name="prefijo_nombre" value="{{ cliente.prefijo_nombre if cliente else '' }}"
+                placeholder="Ej: NM-">
               <div class="form-text">Se usa para generar el nombre: PREFIJO + últimos 5 dígitos del DataMatrix.</div>
             </div>
 
             <div class="col-md-6">
               <label class="form-label">Email de Notificaciones</label>
-              <input class="form-control" type="email" name="email" value="{{ cliente.email if cliente else '' }}" placeholder="ejemplo@centro.com">
+              <input class="form-control" type="email" name="email" value="{{ cliente.email if cliente else '' }}"
+                placeholder="ejemplo@centro.com">
               <div class="form-text">A este correo se enviarán los avisos de partes terminados.</div>
             </div>
 
             <div class="col-md-6">
               <label class="form-label">Último número usado</label>
-              <input class="form-control" type="number" min="0" name="ultimo_numero" value="{{ cliente.ultimo_numero if cliente else 0 }}">
+              <input class="form-control" type="number" min="0" name="ultimo_numero"
+                value="{{ cliente.ultimo_numero if cliente else 0 }}">
               <div class="form-text">Si ya habéis grabado códigos antes, pon aquí el último utilizado.</div>
             </div>
           </div>
 
           <div class="mt-4 d-flex gap-2">
+            {% if user.role != 'socio' %}
             <button class="btn btn-success">Guardar</button>
-            <a href="/clientes" class="btn btn-outline-secondary">Cancelar</a>
+            {% endif %}
+            <a href="/clientes" class="btn btn-outline-secondary">{% if user.role == 'socio' %}Volver{% else
+              %}Cancelar{% endif %}</a>
           </div>
         </form>
       </div>
     </div>
   </main>
 </body>
+
 </html>

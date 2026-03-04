@@ -406,6 +406,9 @@ def _default_allowed_by_role(role: str, action: str) -> int:
     role = (role or "").strip().lower()
     if role == "admin":
         return 1
+    if role == "socio":
+        # El socio puede ver todo pero no modificar nada
+        return 1 if action.endswith("_ver") or action == "dashboard_ver" else 0
     if role == "recepcion":
         return 1 if action in {"dashboard_ver","envio_crear","instrumento_crear","fotos_gestionar","excel_importar"} else 0
     if role == "tecnico":
@@ -1099,7 +1102,7 @@ def _build_instrumentos_where(estado: str | None, solo_pendientes: bool, solo_gr
 
 
 @app.get("/export", response_class=HTMLResponse)
-def export_home(request: Request, user=Depends(require_roles("admin", "recepcion", "cliente"))):
+def export_home(request: Request, user=Depends(require_roles("admin", "recepcion", "cliente", "socio"))):
     # Página con opciones de exportación
     conn = get_conn()
     cur = conn.cursor()
@@ -1133,7 +1136,7 @@ def guias_cliente(request: Request, user=Depends(get_current_user)):
 @app.get("/export/download")
 def export_download(
     request: Request,
-    user=Depends(require_roles("admin", "recepcion", "cliente")),
+    user=Depends(require_roles("admin", "recepcion", "cliente", "socio")),
     scope: str = "partes",  # partes | instrumentos | parte
     envio_id: str | None = None,
     estado: str | None = None,
@@ -1340,7 +1343,7 @@ def export_download(
 # CLIENTES (admin/recepcion)
 # -----------------------------
 @app.get("/clientes", response_class=HTMLResponse)
-def clientes_list(request: Request, user=Depends(require_roles("admin", "recepcion"))):
+def clientes_list(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
     clientes = _list_clientes(cur)
@@ -1352,7 +1355,7 @@ def clientes_list(request: Request, user=Depends(require_roles("admin", "recepci
 
 
 @app.get("/clientes/nuevo", response_class=HTMLResponse)
-def clientes_nuevo_form(request: Request, user=Depends(require_roles("admin", "recepcion"))):
+def clientes_nuevo_form(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
     return templates.TemplateResponse(
         "clientes_form.html",
         {"request": request, "user": user, "mode": "new", "cliente": None},
@@ -1391,7 +1394,7 @@ def clientes_nuevo_crear(
 
 
 @app.get("/clientes/{cliente_id}/editar", response_class=HTMLResponse)
-def clientes_editar_form(request: Request, cliente_id: int, user=Depends(require_roles("admin", "recepcion"))):
+def clientes_editar_form(request: Request, cliente_id: int, user=Depends(require_roles("admin", "recepcion", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
     cli = _get_cliente(cur, cliente_id)
@@ -1428,7 +1431,7 @@ def clientes_editar_guardar(
     return RedirectResponse(url="/clientes", status_code=303)
 
 @app.get("/envios/nuevo", response_class=HTMLResponse)
-def nuevo_envio_form(request: Request, user=Depends(require_roles("admin", "recepcion"))):
+def nuevo_envio_form(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
     clientes = _list_clientes(cur)
@@ -1542,7 +1545,7 @@ def nuevo_envio_crear(
 
 
 @app.get("/envios/{envio_id}/editar", response_class=HTMLResponse)
-def envio_editar_form(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion"))):
+def envio_editar_form(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT * FROM envios WHERE id=?", (envio_id,))
@@ -2032,7 +2035,7 @@ def etiqueta_envio(envio_id: int, user=Depends(get_current_user)):
 # GRABACION (mosaico por parte)
 # -----------------------------
 @app.get("/envios/{envio_id}/grabacion", response_class=HTMLResponse)
-def grabacion_envio(request: Request, envio_id: int, user=Depends(require_roles("admin", "grabado"))):
+def grabacion_envio(request: Request, envio_id: int, user=Depends(require_roles("admin", "grabado", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
 
@@ -2156,7 +2159,7 @@ def desgrabar_instrumento(instrumento_id: int, user=Depends(require_roles("admin
 # REVISIÓN FINAL (recepción)
 # -----------------------------
 @app.get("/envios/{envio_id}/revision", response_class=HTMLResponse)
-def revision_envio(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion"))):
+def revision_envio(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
 
@@ -2230,7 +2233,7 @@ def desrevisar_instrumento(instrumento_id: int, user=Depends(require_roles("admi
 # NUEVO INSTRUMENTO (admin/recepcion)
 # -----------------------------
 @app.get("/envios/{envio_id}/instrumentos/nuevo", response_class=HTMLResponse)
-def instrumento_nuevo_form(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion"))):
+def instrumento_nuevo_form(request: Request, envio_id: int, user=Depends(require_roles("admin", "recepcion", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT * FROM envios WHERE id=?", (envio_id,))
@@ -2357,7 +2360,7 @@ def instrumento_nuevo_crear(
 # EDITAR INSTRUMENTO (admin/recepcion)
 # -----------------------------
 @app.get("/instrumentos/{instrumento_id}/editar", response_class=HTMLResponse)
-def instrumento_editar_form(request: Request, instrumento_id: int, user=Depends(require_roles("admin", "recepcion", "tecnico"))):
+def instrumento_editar_form(request: Request, instrumento_id: int, user=Depends(require_roles("admin", "recepcion", "tecnico", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
 
@@ -3502,7 +3505,7 @@ async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Dep
 # CHECKLIST ADMIN (configurable)
 # -----------------------------
 @app.get("/checklist_admin", response_class=HTMLResponse)
-def checklist_admin(request: Request, tipo: str = "REPARACION", user=Depends(require_roles("admin"))):
+def checklist_admin(request: Request, tipo: str = "REPARACION", user=Depends(require_roles("admin", "socio"))):
     tipo = (tipo or "REPARACION").strip().upper()
     if tipo not in ("REPARACION", "TRAZABILIDAD", "OPTICA_RIGIDA"):
         tipo = "REPARACION"
@@ -3619,7 +3622,7 @@ async def checklist_admin_delete(item_id: int, request: Request, user=Depends(re
 # CATÁLOGO DE REPUESTOS (admin)
 # -----------------------------
 @app.get("/repuestos_catalogo", response_class=HTMLResponse)
-def view_repuestos_catalogo(request: Request, user=Depends(require_roles("admin"))):
+def view_repuestos_catalogo(request: Request, user=Depends(require_roles("admin", "socio"))):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT * FROM repuestos_catalogo ORDER BY nombre")
@@ -4846,7 +4849,7 @@ def estadisticas_tecnicos(
     request: Request,
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
-    user=Depends(require_roles("admin"))
+    user=Depends(require_roles("admin", "socio"))
 ):
     conn = get_conn()
     cur = conn.cursor()
