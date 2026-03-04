@@ -12,4 +12,4 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: RENDER_FORCE_REDEPLOY
-        value: "v3"
+        value: "v4"
