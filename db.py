@@ -203,6 +203,29 @@ def init_db():
     if "numero_cliente" not in cols_clientes:
         cur.execute("ALTER TABLE clientes ADD COLUMN numero_cliente INTEGER")
 
+    # Retro-compatibilidad: auto-numerar clientes antiguos que tengan numero_cliente a NULL
+    cur.execute("SELECT id FROM clientes WHERE numero_cliente IS NULL ORDER BY id ASC")
+    filas_sin_numero = cur.fetchall()
+    if filas_sin_numero:
+        cur.execute("SELECT MAX(numero_cliente) as vmax FROM clientes WHERE numero_cliente IS NOT NULL")
+        row_vmax = cur.fetchone()
+        vmax_actual = 0
+        if row_vmax and getattr(row_vmax, "vmax", None) is not None:
+            vmax_actual = int(row_vmax.vmax)
+        elif row_vmax and (isinstance(row_vmax, dict) or hasattr(row_vmax, "keys")) and getattr(row_vmax, "get", None) and row_vmax.get("vmax") is not None:
+            vmax_actual = int(row_vmax.get("vmax"))
+        else:
+            try:
+                if row_vmax and row_vmax["vmax"] is not None:
+                    vmax_actual = int(row_vmax["vmax"])
+            except:
+                pass
+
+        for f_cli in filas_sin_numero:
+            vmax_actual += 1
+            cur.execute("UPDATE clientes SET numero_cliente=? WHERE id=?", (vmax_actual, getattr(f_cli, "id", f_cli.get("id", f_cli["id"]) if isinstance(f_cli, dict) else f_cli[0])))
+
+
     # 3. Envíos (Partes de trabajo)
     cur.execute(f"""
     CREATE TABLE IF NOT EXISTS envios (
