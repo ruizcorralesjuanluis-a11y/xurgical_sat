@@ -360,55 +360,70 @@
       <div class="alert alert-danger">❌ No tienes permisos para esa acción.</div>
       {% endif %}
 
-      <!-- KPIs -->
+      <!-- KPIs Instrumentos -->
       <div class="row g-3 mb-3">
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-blue">
+        <div class="col-6 col-md">
+          <div class="kpi bg-blue h-100">
             <div class="label">Instrumentos</div>
             <div class="value">{{ kpis.total }}</div>
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-orange">
+        <div class="col-6 col-md">
+          <div class="kpi bg-orange h-100">
             <div class="label">Pendientes</div>
             <div class="value">{{ kpis.pendientes }}</div>
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-yellow">
+        <div class="col-6 col-md">
+          <div class="kpi bg-yellow h-100">
             <div class="label">En proceso</div>
             <div class="value">{{ kpis.en_proceso }}</div>
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-green">
+        <div class="col-6 col-md">
+          <div class="kpi bg-green h-100">
             <div class="label">Reparados</div>
             <div class="value">{{ kpis.reparado }}</div>
           </div>
         </div>
+        <div class="col-6 col-md">
+          <div class="kpi bg-gray h-100">
+            <div class="label">Baja</div>
+            <div class="value">{{ kpis.baja }}</div>
+          </div>
+        </div>
+      </div>
 
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-purple">
+      <!-- KPIs Partes -->
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-md">
+          <div class="kpi bg-purple h-100">
             <div class="label">Partes</div>
             <div class="value">{{ kpis_partes.total }}</div>
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-rose">
+        <div class="col-6 col-md">
+          <div class="kpi bg-rose h-100">
             <div class="label">Abiertos</div>
             <div class="value">{{ kpis_partes.abiertos }}</div>
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-emerald">
+        <div class="col-6 col-md">
+          <div class="kpi bg-emerald h-100">
             <div class="label">Cerrados</div>
             <div class="value">{{ kpis_partes.cerrados }}</div>
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <div class="kpi bg-gray">
-            <div class="label">Baja</div>
-            <div class="value">{{ kpis.baja }}</div>
+        <div class="col-6 col-md">
+          <div class="kpi bg-orange h-100" style="background: rgba(254, 215, 170, 0.95); border-color: #fdba74;">
+            <div class="label">Ópticas Rígidas</div>
+            <div class="value">{{ kpis_partes.opticas_total }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md">
+          <div class="kpi bg-green h-100" style="background: rgba(167, 243, 208, 0.95); border-color: #6ee7b7;">
+            <div class="label">Ópticas Cerradas</div>
+            <div class="value">{{ kpis_partes.opticas_cerrados }}</div>
           </div>
         </div>
       </div>

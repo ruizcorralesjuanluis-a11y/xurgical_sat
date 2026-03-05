@@ -825,27 +825,41 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     
     abiertos = 0
     cerrados = 0
+    opticas_total = 0
+    opticas_cerrados = 0
     
     rows = cur.fetchall() 
     for r in rows:
         t_inst = r["total_inst"]
-        if t_inst == 0:
-            abiertos += 1 
-            continue
-            
         tipo = (r["tipo"] or "REPARACION").upper()
-        if tipo == "TRAZABILIDAD":
+        
+        is_cerrado = False
+        if t_inst == 0:
+            pass
+        elif tipo == "TRAZABILIDAD":
             if r["n_grabados"] == t_inst:
-                cerrados += 1
-            else:
-                abiertos += 1
+                is_cerrado = True
         else:
             if r["n_terminados"] == t_inst:
-                cerrados += 1
-            else:
-                abiertos += 1
+                is_cerrado = True
+                
+        if is_cerrado:
+            cerrados += 1
+        else:
+            abiertos += 1
 
-    kpis_partes = {"total": total_partes, "abiertos": abiertos, "cerrados": cerrados}
+        if tipo == "OPTICA_RIGIDA":
+            opticas_total += 1
+            if is_cerrado:
+                opticas_cerrados += 1
+
+    kpis_partes = {
+        "total": total_partes, 
+        "abiertos": abiertos, 
+        "cerrados": cerrados,
+        "opticas_total": opticas_total,
+        "opticas_cerrados": opticas_cerrados
+    }
 
     # ✅ AÑADIDO: n_fotos_completas y n_con_alguna_foto para calcular el punto por parte
     # Compatibilidad: en BDs antiguas puede no existir e.tipo_trabajo. En ese caso asumimos REPARACION.
