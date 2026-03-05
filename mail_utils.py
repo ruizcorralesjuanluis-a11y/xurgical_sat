@@ -18,6 +18,11 @@ def send_finish_notification(dest_email, client_name, ot_num, items_count):
         return False, "Configuración de correo incompleta"
 
     try:
+        # Soporte para múltiples emails separados por comas
+        emails = [e.strip() for e in dest_email.split(",") if e.strip()]
+        if not emails:
+            return False, "No hay destinatarios válidos"
+
         msg = MIMEMultipart()
         # Evitar doble anidación si smtp_from ya tiene formato "Nombre <email>"
         if "<" in smtp_from and ">" in smtp_from:
@@ -25,7 +30,7 @@ def send_finish_notification(dest_email, client_name, ot_num, items_count):
         else:
             msg['From'] = f"Xurgical SAT <{smtp_from}>"
             
-        msg['To'] = dest_email
+        msg['To'] = ", ".join(emails)
         msg['Subject'] = f"Finalización de revisión - Parte {ot_num}"
 
         body = f"""
@@ -61,7 +66,8 @@ def send_finish_notification(dest_email, client_name, ot_num, items_count):
             server.starttls()
 
         server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
+        # Enviamos a la lista de emails
+        server.send_message(msg, to_addrs=emails)
         server.quit()
         return True, "Email enviado correctamente"
     except Exception as e:

@@ -51,9 +51,10 @@
 
             <div class="col-md-6">
               <label class="form-label">Email de Notificaciones</label>
-              <input class="form-control" type="email" name="email" value="{{ cliente.email if cliente else '' }}"
-                placeholder="ejemplo@centro.com">
-              <div class="form-text">A este correo se enviarán los avisos de partes terminados.</div>
+              <input class="form-control" type="text" name="email" value="{{ cliente.email if cliente else '' }}"
+                placeholder="email1@centro.com, email2@centro.com">
+              <div class="form-text">Puedes poner varios correos separados por comas. A estos correos se enviarán los
+                avisos de partes terminados.</div>
             </div>
 
             <div class="col-md-6">
