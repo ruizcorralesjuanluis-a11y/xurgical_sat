@@ -187,6 +187,7 @@ def init_db():
     cur.execute(f"""
     CREATE TABLE IF NOT EXISTS clientes (
         id {pk},
+        numero_cliente INTEGER,
         nombre TEXT UNIQUE NOT NULL,
         prefijo TEXT,
         prefijo_nombre TEXT,
@@ -195,10 +196,12 @@ def init_db():
     )
     """)
 
-    # Migración: asegurar que existe email en clientes
+    # Migración: asegurar que existe email y numero_cliente en clientes
     cols_clientes = get_table_columns(cur, "clientes")
     if "email" not in cols_clientes:
         cur.execute("ALTER TABLE clientes ADD COLUMN email TEXT")
+    if "numero_cliente" not in cols_clientes:
+        cur.execute("ALTER TABLE clientes ADD COLUMN numero_cliente INTEGER")
 
     # 3. Envíos (Partes de trabajo)
     cur.execute(f"""

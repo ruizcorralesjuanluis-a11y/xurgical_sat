@@ -35,7 +35,8 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
-        <h1 class="h5 mb-1">Registro de clientes</h1>
+        <h1 class="h5 mb-1">Registro de clientes <span class="badge bg-primary rounded-pill ms-2"
+            style="font-size: 0.8em; vertical-align: middle;">{{ clientes|length }}</span></h1>
         <div class="text-secondary small">Prefijo + contador (últimos 5 dígitos) por cliente.</div>
       </div>
       {% if user.role != 'socio' %}
@@ -48,6 +49,7 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
+              <th style="width: 80px;">Nº Cl.</th>
               <th>Cliente</th>
               <th>Prefijo</th>
               <th>Email Notificaciones</th>
@@ -58,7 +60,10 @@
           <tbody>
             {% for c in clientes %}
             <tr>
+              <td><span class="badge border border-secondary text-secondary" style="background-color: transparent;">{{
+                  c.numero_cliente or '-' }}</span></td>
               <td class="fw-semibold">{{ c.nombre }}</td>
+
               <td><code>{{ c.prefijo or '' }}</code></td>
               <td class="small">{{ c.email or '-' }}</td>
               <td class="text-end">{{ c.ultimo_numero }}</td>
@@ -72,7 +77,7 @@
 
             {% if not clientes %}
             <tr>
-              <td colspan="4" class="text-center text-secondary py-4">No hay clientes registrados todavía.</td>
+              <td colspan="6" class="text-center text-secondary py-4">No hay clientes registrados todavía.</td>
             </tr>
             {% endif %}
           </tbody>

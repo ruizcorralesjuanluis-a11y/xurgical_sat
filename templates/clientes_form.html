@@ -32,6 +32,13 @@
           action="{% if mode=='new' %}/clientes/nuevo{% else %}/clientes/{{ cliente.id }}/editar{% endif %}">
           <div class="row g-3">
             <div class="col-md-6">
+              <label class="form-label">Nº Cliente</label>
+              <input class="form-control" type="number" name="numero_cliente"
+                value="{{ cliente.numero_cliente if cliente and cliente.numero_cliente else '' }}"
+                placeholder="Automático">
+              <div class="form-text">Déjalo en blanco para auto-generar el último + 1.</div>
+            </div>
+            <div class="col-md-6">
               <label class="form-label">Nombre</label>
               <input class="form-control" name="nombre" value="{{ cliente.nombre if cliente else '' }}" required>
             </div>

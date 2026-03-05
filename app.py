@@ -163,13 +163,14 @@ def _list_clientes(cur) -> list[dict]:
     except ImportError:
         PG_ERR = Exception
 
-    sql = "SELECT id, nombre, prefijo, prefijo_nombre, email, ultimo_numero FROM clientes ORDER BY LOWER(nombre) ASC"
+    sql = "SELECT id, numero_cliente, nombre, prefijo, prefijo_nombre, email, ultimo_numero FROM clientes ORDER BY LOWER(nombre) ASC"
     try:
         cur.execute(sql)
         return [dict(r) for r in cur.fetchall()]
     except (sqlite3.OperationalError, PG_ERR) as e:
         err_msg = str(e).lower()
-        if "no such table" in err_msg or "does not exist" in err_msg:
+        if "no such table" in err_msg or "does not exist" in err_msg or "no such column" in err_msg or "column" in err_msg:
+            from db import init_db
             init_db()
             cur.execute(sql)
             return [dict(r) for r in cur.fetchall()]
@@ -187,7 +188,7 @@ def _envios_has_column(cur, col: str) -> bool:
 
 def _get_cliente(cur, cliente_id: int) -> dict | None:
     cur.execute(
-        "SELECT id, nombre, prefijo, prefijo_nombre, email, ultimo_numero FROM clientes WHERE id=?",
+        "SELECT id, numero_cliente, nombre, prefijo, prefijo_nombre, email, ultimo_numero FROM clientes WHERE id=?",
         (int(cliente_id),),
     )
     r = cur.fetchone()
@@ -865,11 +866,11 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     if q:
         is_pg = os.environ.get("DATABASE_URL") is not None
         if is_pg:
-            where_clauses.append("(e.ot_num ILIKE ? OR e.cliente ILIKE ? OR i.codigo_datamatrix ILIKE ? OR i.num_serie ILIKE ? OR i.codigo_producto ILIKE ? OR EXISTS (SELECT 1 FROM peticiones_recogida pr WHERE pr.num_peticion ILIKE ? AND pr.cliente_id=e.cliente_id))")
+            where_clauses.append("(e.ot_num ILIKE ? OR e.cliente ILIKE ? OR i.codigo_datamatrix ILIKE ? OR i.num_serie ILIKE ? OR i.codigo_producto ILIKE ? OR EXISTS (SELECT 1 FROM peticiones_recogida pr WHERE pr.num_peticion ILIKE ? AND pr.cliente_id=e.cliente_id) OR EXISTS (SELECT 1 FROM clientes c WHERE c.id=e.cliente_id AND CAST(c.numero_cliente AS TEXT) ILIKE ?))")
         else:
             # SQLite case-insensitive search (default for LIKE on ASCII)
-            where_clauses.append("(e.ot_num LIKE ? OR e.cliente LIKE ? OR i.codigo_datamatrix LIKE ? OR i.num_serie LIKE ? OR i.codigo_producto LIKE ? OR EXISTS (SELECT 1 FROM peticiones_recogida pr WHERE pr.num_peticion LIKE ? AND pr.cliente_id=e.cliente_id))")
-        params_q.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
+            where_clauses.append("(e.ot_num LIKE ? OR e.cliente LIKE ? OR i.codigo_datamatrix LIKE ? OR i.num_serie LIKE ? OR i.codigo_producto LIKE ? OR EXISTS (SELECT 1 FROM peticiones_recogida pr WHERE pr.num_peticion LIKE ? AND pr.cliente_id=e.cliente_id) OR EXISTS (SELECT 1 FROM clientes c WHERE c.id=e.cliente_id AND CAST(c.numero_cliente AS TEXT) LIKE ?))")
+        params_q.extend([f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%", f"%{q}%"])
 
     where_q = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
 
@@ -1365,6 +1366,7 @@ def clientes_nuevo_form(request: Request, user=Depends(require_roles("admin", "r
 @app.post("/clientes/nuevo")
 def clientes_nuevo_crear(
     nombre: str = Form(""),
+    numero_cliente: int = Form(None),
     prefijo: str = Form(""),
     email: str = Form(""),
     prefijo_nombre: str = Form(""),
@@ -1384,9 +1386,14 @@ def clientes_nuevo_crear(
         conn.close()
         return RedirectResponse(url="/clientes?err=exists", status_code=303)
 
+    if not numero_cliente:
+        cur.execute("SELECT MAX(numero_cliente) as vmax FROM clientes")
+        vmax = cur.fetchone()["vmax"]
+        numero_cliente = 1 if vmax is None else int(vmax) + 1
+
     cur.execute(
-        "INSERT INTO clientes (nombre, prefijo, email, prefijo_nombre, ultimo_numero) VALUES (?, ?, ?, ?, ?)",
-        (nombre, (prefijo or "").strip(), (email or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0)),
+        "INSERT INTO clientes (numero_cliente, nombre, prefijo, email, prefijo_nombre, ultimo_numero) VALUES (?, ?, ?, ?, ?, ?)",
+        (numero_cliente, nombre, (prefijo or "").strip(), (email or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0)),
     )
     conn.commit()
     conn.close()
@@ -1411,6 +1418,7 @@ def clientes_editar_form(request: Request, cliente_id: int, user=Depends(require
 def clientes_editar_guardar(
     cliente_id: int,
     nombre: str = Form(""),
+    numero_cliente: int = Form(None),
     prefijo: str = Form(""),
     email: str = Form(""),
     prefijo_nombre: str = Form(""),
@@ -1420,11 +1428,18 @@ def clientes_editar_guardar(
     nombre = (nombre or "").strip()
     if not nombre:
         return RedirectResponse(url=f"/clientes/{cliente_id}/editar?err=nombre", status_code=303)
+    
     conn = get_conn()
     cur = conn.cursor()
+
+    if not numero_cliente:
+        cur.execute("SELECT numero_cliente FROM clientes WHERE id=?", (int(cliente_id),))
+        row = cur.fetchone()
+        numero_cliente = (row["numero_cliente"] if row else 0)
+
     cur.execute(
-        "UPDATE clientes SET nombre=?, prefijo=?, email=?, prefijo_nombre=?, ultimo_numero=? WHERE id=?",
-        (nombre, (prefijo or "").strip(), (email or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0), int(cliente_id)),
+        "UPDATE clientes SET numero_cliente=?, nombre=?, prefijo=?, email=?, prefijo_nombre=?, ultimo_numero=? WHERE id=?",
+        (numero_cliente, nombre, (prefijo or "").strip(), (email or "").strip(), (prefijo_nombre or "").strip(), int(ultimo_numero or 0), int(cliente_id)),
     )
     conn.commit()
     conn.close()
