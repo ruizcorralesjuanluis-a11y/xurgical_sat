@@ -1880,14 +1880,14 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     Contenido del barcode: OT|CLIENTE|FECHA|N
     """
-    # Etiqueta térmica 29x62 mm (Brother QL-700).
-    # Usamos 62mm de ancho y 29mm de alto (paisaje).
+    # Etiqueta térmica Precortada DK-11209.
+    # El usuario especifica que el rollo tiene 62mm de ancho y 29mm de largo.
+    # Por tanto, el PDF debe medir exactamente 62x29 mm horizontales.
     w, h = 62 * mm, 29 * mm
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(w, h))
 
-    # Márgenes y posiciones ajustadas para 29mm de alto
-    # x0 es el margen izquierdo. Lo ponemos en 7mm para que no se pegue al borde.
+    # Márgenes y posiciones ajustadas para los precisos 29mm de alto
     x0 = 7 * mm
     y_top = h - 2 * mm
 
@@ -1897,7 +1897,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     c.setFont("Helvetica", 7.5)
     
-    # Recorta texto si es muy largo (ajustado para ancho de 62mm)
+    # Recortador de texto para que quepa en los 62mm
     def truncate(s, limit=22):
         s = (s or "").strip()
         return s[:limit-3] + "…" if len(s) > limit else s
@@ -1908,7 +1908,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     mod = truncate(modelo, 22)
     sn = truncate(serie, 22)
 
-    # Distribución compacta (line_h = 3mm)
+    # Distribución muy compacta (line_h = 3mm) porque solo tenemos 29mm de altura
     curr_y = y_top - 7.5 * mm
     step = 3.2 * mm
 
@@ -1931,7 +1931,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     c.drawString(x0, curr_y, f"Inst: {n_instrumentos} | {fecha if sn else ''}")
 
-    # QR Code
+    # QR Code (17mm de tamaño para que quepa en los 29mm)
     payload = str(ot_num)
     from reportlab.graphics.shapes import Drawing
     from reportlab.graphics import renderPDF
@@ -1941,12 +1941,11 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     qr_w = bounds[2] - bounds[0]
     qr_h = bounds[3] - bounds[1]
     
-    # QR de 17mm para 29mm de alto
     size = 17 * mm
     d = Drawing(size, size, transform=[size/qr_w, 0, 0, size/qr_h, 0, 0])
     d.add(qr_code)
     
-    # Posicionamos el QR a la derecha con margen de 3mm respecto al final de los 62mm
+    # Lo colocamos totalmente a la derecha de los 62mm
     renderPDF.draw(d, c, w - size - 3 * mm, 3.5 * mm)
     
     c.showPage()
