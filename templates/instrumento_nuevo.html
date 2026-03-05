@@ -1,3 +1,4 @@
+<!-- ANTIGRAVITY OK V2 -->
 <!doctype html>
 <html lang="es">
 
@@ -272,6 +273,12 @@
     <span id="debug-messages"></span>
   </div>
 
+  <div id="photos-data" style="display:none;" data-s1="{{ 1 if inst.foto_entrada_1 else 0 }}"
+    data-s2="{{ 1 if inst.foto_entrada_2 else 0 }}" data-s3="{{ 1 if inst.foto_entrada_3 else 0 }}"
+    data-s4="{{ 1 if inst.foto_entrada_4 else 0 }}" data-s5="{{ 1 if inst.foto_entrada_5 else 0 }}"
+    data-s6="{{ 1 if inst.foto_entrada_6 else 0 }}">
+  </div>
+
   <script>
     const instId = {{ inst.id }};
 
@@ -292,13 +299,14 @@
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       logDebug("ERROR CRÍTICO: Tu navegador no soporta acceso a cámaras (navigator.mediaDevices inexistente).");
     }
+    const pData = document.getElementById('photos-data').dataset;
     const photosStatus = {
-      1: {{ 1 if inst.foto_entrada_1 else 0 }},
-    2: { { 1 if inst.foto_entrada_2 else 0 } },
-    3: { { 1 if inst.foto_entrada_3 else 0 } },
-    4: { { 1 if inst.foto_entrada_4 else 0 } },
-    5: { { 1 if inst.foto_entrada_5 else 0 } },
-    6: { { 1 if inst.foto_entrada_6 else 0 } }
+      1: parseInt(pData.s1),
+      2: parseInt(pData.s2),
+      3: parseInt(pData.s3),
+      4: parseInt(pData.s4),
+      5: parseInt(pData.s5),
+      6: parseInt(pData.s6)
     };
     let busy = false;
 
