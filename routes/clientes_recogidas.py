@@ -16,8 +16,6 @@ from shared import (
 
 router = APIRouter()
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 # -----------------------------
 # CLIENTES (admin/recepcion)
 # -----------------------------
