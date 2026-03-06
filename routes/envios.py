@@ -13,9 +13,9 @@ from db import get_conn, get_table_columns
 from security import get_current_user, require_roles
 from shared import (
     _user_role, _envios_has_column, can_action, 
-    _build_nombre_trazabilidad, _get_cliente, _user_id
+    _get_cliente, _user_id
 )
-from utils import _clean_trz
+from utils import _clean_trz, _build_nombre_trazabilidad
 from excel_import import leer_excel_envio
 
 # Para etiquetas PDF
