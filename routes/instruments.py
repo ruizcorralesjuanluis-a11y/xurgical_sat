@@ -8,7 +8,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse,
 from db import get_conn, get_table_columns
 from security import get_current_user, require_roles, hash_password
 from shared import (
-    _user_role, _user_id, can_action, _get_cliente, _reserve_numeros_cliente, _envios_has_column, ACTIONS, _default_allowed_by_role
+    _user_role, _user_id, can_action, _get_cliente, _reserve_numeros_cliente, 
+    _envios_has_column, ACTIONS, _default_allowed_by_role, FOTOS_DIR
 )
 from utils import _build_nombre_trazabilidad, _clean_trz
 import base64
@@ -298,11 +299,11 @@ async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Dep
     row = dict(cur.fetchone())
     tag = re.sub(r"[^A-Za-z0-9_-]+", "_", (row.get("nombre_trazabilidad") or row.get("codigo_datamatrix") or "SIN_CODIGO"))[:40]
     filename = f"inst_{instrumento_id}_{tag}_f{slot}_{uuid.uuid4().hex[:8]}.jpg"
-    path_fs = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "fotos", filename)
+    path_fs = os.path.join(FOTOS_DIR, filename)
     with open(path_fs, "wb") as f: f.write(raw)
     public_path = f"/static/fotos/{filename}"
     if row["old"]:
-        try: os.remove(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), row["old"].lstrip("/")))
+        try: os.remove(os.path.join(FOTOS_DIR, os.path.basename(row["old"])))
         except: pass
     cur.execute(f"UPDATE instrumentos SET foto_entrada_{slot}=? WHERE id=?", (public_path, instrumento_id))
     conn.commit()

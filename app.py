@@ -31,7 +31,7 @@ from shared import (
     ACTIONS, _user_role, _user_id, _default_allowed_by_role, 
     _get_user_permissions_map, can_action, _users_schema, 
     _select_users_sql, _envios_has_column, _list_clientes,
-    _get_cliente, _reserve_numeros_cliente
+    _get_cliente, _reserve_numeros_cliente, FOTOS_DIR, BASE_DIR
 )
 from utils import format_fecha
 
@@ -41,14 +41,8 @@ app = FastAPI(title="Xurgical SAT")
 app.state.secret_key = os.environ.get("XURGICAL_SECRET_KEY", "dev-secret-change-me")
 app.state.serializer = make_serializer(app.state.secret_key)
 
-UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
-FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join(UPLOAD_DIR, "fotos"))
-
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(FOTOS_DIR, exist_ok=True)
-
 # Montaje de estáticos
-app.mount("/static/fotos", StaticFiles(directory=FOTOS_DIR), name="fotos_externas")
+app.mount("/static/fotos", StaticFiles(directory=str(FOTOS_DIR)), name="fotos_externas")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

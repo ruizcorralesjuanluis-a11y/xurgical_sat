@@ -1,5 +1,17 @@
+import os
+import sys
+from pathlib import Path
 from fastapi import HTTPException
 from db import get_conn, get_table_columns
+
+# Configuración de rutas centralizada
+BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
+FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join(UPLOAD_DIR, "fotos"))
+
+# Asegurar existencia de directorios (especialmente en Render)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(FOTOS_DIR, exist_ok=True)
 
 ACTIONS = [
     ("dashboard_ver", "Ver dashboard"),

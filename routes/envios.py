@@ -12,7 +12,7 @@ from db import get_conn, get_table_columns
 from security import get_current_user, require_roles
 from shared import (
     _user_role, _envios_has_column, can_action, 
-    _get_cliente, _user_id
+    _get_cliente, _user_id, FOTOS_DIR, UPLOAD_DIR
 )
 from utils import _clean_trz, _build_nombre_trazabilidad
 from excel_import import leer_excel_envio
@@ -23,11 +23,6 @@ from reportlab.lib.units import mm
 from reportlab.graphics.barcode import qr
 
 router = APIRouter()
-
-# Configuración de rutas de archivos (esto debería venir de una config central)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-FOTOS_DIR = os.path.join(BASE_DIR, "static", "fotos")
 
 @router.post("/envios/{envio_id}/aviso_finalizacion")
 def envio_aviso_finalizacion(envio_id: int, user=Depends(require_roles("admin", "recepcion"))):

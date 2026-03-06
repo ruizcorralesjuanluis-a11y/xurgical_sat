@@ -11,13 +11,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from db import get_conn
 from security import get_current_user, require_roles
 from shared import (
-    _user_role, _user_id, _list_clientes, _get_cliente
+    _user_role, _user_id, _list_clientes, _get_cliente, FOTOS_DIR
 )
 
 router = APIRouter()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FOTOS_DIR = os.path.join(BASE_DIR, "static", "fotos")
 
 # -----------------------------
 # CLIENTES (admin/recepcion)
