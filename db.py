@@ -42,7 +42,7 @@ def get_pool():
                 url = url.replace("postgres://", "postgresql://", 1)
             # Creamos un pool de 1 a 10 conexiones
             _pool = ThreadedConnectionPool(1, 15, url, connect_timeout=10)
-            print(f">>> [DATABASE] Pool de conexiones inicializado (1-15 conexiones)", flush=True)
+            print(f">>> [DATABASE] Pool de conexiones inicializado (1-15 conexiones)")
         return _pool
 
 class PGCursorWrapper:
@@ -127,7 +127,7 @@ def get_connection():
                 conn = pool.getconn()
                 return PGConnWrapper(conn, pool=pool)
         except Exception as e:
-            print(f">>> [DATABASE] ERROR: No se pudo obtener conexión del pool. Reintentando conexión directa... {e}", flush=True)
+            print(f">>> [DATABASE] ERROR: No se pudo obtener conexión del pool. Reintentando conexión directa... {e}")
             try:
                 # Si falla el pool, intentamos conexión directa una vez
                 import psycopg2
@@ -135,12 +135,12 @@ def get_connection():
                 conn = psycopg2.connect(url, connect_timeout=10)
                 return PGConnWrapper(conn)
             except Exception as e2:
-                print(f">>> [DATABASE] ERROR: No se pudo conectar a Postgres de forma directa. Error: {e2}", flush=True)
+                print(f">>> [DATABASE] ERROR: No se pudo conectar a Postgres de forma directa. Error: {e2}")
                 # Si falla Postgres, no hacemos fallback silencioso a SQLite si la URL existe
                 raise HTTPException(status_code=500, detail=f"Error de conexión a la base de datos segura: {e2}")
     
     # Fallback a SQLite (solo si NO hay DATABASE_URL configurada)
-    print(">>> [DATABASE] AVISO: Usando SQLite (Temporal). Configure DATABASE_URL en Render para persistencia.", flush=True)
+    print(">>> [DATABASE] AVISO: Usando SQLite (Temporal). Configure DATABASE_URL en Render para persistencia.")
     try:
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -338,6 +338,10 @@ def init_db():
         cur.execute("ALTER TABLE instrumentos ADD COLUMN recomendada_sustitucion INTEGER DEFAULT 0")
     if "codigo_cliente" not in cols_inst:
         cur.execute("ALTER TABLE instrumentos ADD COLUMN codigo_cliente TEXT")
+    if "tecnico_reparacion" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN tecnico_reparacion TEXT")
+    if "tecnico_reparacion_en" not in cols_inst:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN tecnico_reparacion_en TEXT")
     for i in range(1, 7):
         col_e = f"foto_entrada_{i}"
         if col_e not in cols_inst:
@@ -524,7 +528,8 @@ def init_db():
     if "telefono" not in cols_pr:
         cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN telefono TEXT")
     if "num_peticion" not in cols_pr:
-        cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN num_peticion TEXT UNIQUE")
+        cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN num_peticion TEXT")
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_peticiones_recogida_num_peticion ON peticiones_recogida(num_peticion)")
 
     # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
     cur.execute("""
