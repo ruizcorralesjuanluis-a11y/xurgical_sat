@@ -44,6 +44,16 @@ app.state.serializer = make_serializer(app.state.secret_key)
 # Montaje de estáticos
 app.mount("/static/fotos", StaticFiles(directory=str(FOTOS_DIR)), name="fotos_externas")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+# Migración de fotos antigua (de static/fotos a uploads/fotos)
+try:
+    OLD_FOTOS = BASE_DIR / "static" / "fotos"
+    if OLD_FOTOS.exists() and OLD_FOTOS.is_dir() and OLD_FOTOS != FOTOS_DIR:
+        import shutil
+        for f in OLD_FOTOS.iterdir():
+            if f.is_file() and not (FOTOS_DIR / f.name).exists():
+                shutil.copy2(f, FOTOS_DIR)
+except Exception as e:
+    print(f"Error migrando fotos: {e}")
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["fecha"] = format_fecha

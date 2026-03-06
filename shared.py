@@ -5,9 +5,9 @@ from fastapi import HTTPException
 from db import get_conn, get_table_columns
 
 # Configuración de rutas centralizada
-BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
-UPLOAD_DIR = os.environ.get("XURGICAL_UPLOAD_DIR", "uploads")
-FOTOS_DIR = os.environ.get("XURGICAL_FOTOS_DIR", os.path.join(UPLOAD_DIR, "fotos"))
+BASE_DIR = Path(__file__).resolve().parent
+UPLOAD_DIR = Path(os.environ.get("XURGICAL_UPLOAD_DIR", BASE_DIR / "uploads"))
+FOTOS_DIR = Path(os.environ.get("XURGICAL_FOTOS_DIR", UPLOAD_DIR / "fotos"))
 
 # Asegurar existencia de directorios (especialmente en Render)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
