@@ -6,7 +6,6 @@ from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, Request, Depends, HTTPException, Form
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from db import get_conn
 from security import get_current_user, require_roles, hash_password
@@ -21,7 +20,6 @@ except ImportError:
     Workbook = None
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 @router.get("/api/trazabilidad/buscar")
 def api_trazabilidad_buscar(q: str = "", user=Depends(get_current_user)):
@@ -57,6 +55,7 @@ def change_own_password(password: str = Form(...), user=Depends(get_current_user
 
 @router.get("/export", response_class=HTMLResponse)
 def export_home(request: Request, user=Depends(require_roles("admin", "recepcion", "cliente", "socio"))):
+    templates = request.app.state.templates
     conn = get_conn(); cur = conn.cursor()
     if _user_role(user) == "cliente" and user.get("cliente_id"):
         cur.execute("SELECT id, ot_num, cliente, fecha FROM envios WHERE cliente_id=? ORDER BY id DESC LIMIT 400", (int(user["cliente_id"]),))
@@ -68,6 +67,7 @@ def export_home(request: Request, user=Depends(require_roles("admin", "recepcion
 
 @router.get("/guias", response_class=HTMLResponse)
 def guias_cliente(request: Request, user=Depends(get_current_user)):
+    templates = request.app.state.templates
     return templates.TemplateResponse("guias.html", {"request": request, "user": user})
 
 @router.get("/export/download")

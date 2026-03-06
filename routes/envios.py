@@ -7,7 +7,6 @@ from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, Request, Form, File, UploadFile, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 
 from db import get_conn, get_table_columns
 from security import get_current_user, require_roles
@@ -24,9 +23,6 @@ from reportlab.lib.units import mm
 from reportlab.graphics.barcode import qr
 
 router = APIRouter()
-
-# Debería configurarse en app.py y pasarse aquí o usar app.state
-templates = Jinja2Templates(directory="templates")
 
 # Configuración de rutas de archivos (esto debería venir de una config central)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -149,6 +145,7 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
 
     conn.close()
 
+    templates = request.app.state.templates
     if _user_role(user) == "tecnico":
         return templates.TemplateResponse(
             "tecnico_parte.html",
@@ -286,6 +283,7 @@ async def envio_importar_excel(envio_id: int, file: UploadFile = File(...), user
 
 @router.get("/importar", response_class=HTMLResponse)
 def importar_form(request: Request, user=Depends(require_roles("admin", "recepcion"))):
+    templates = request.app.state.templates
     conn = get_conn()
     cur = conn.cursor()
     from shared import _list_clientes
@@ -363,6 +361,7 @@ async def importar_excel(
 
 @router.get("/envios/nuevo", response_class=HTMLResponse)
 def nuevo_envio_form(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
+    templates = request.app.state.templates
     conn = get_conn(); cur = conn.cursor()
     from shared import _list_clientes
     clientes = _list_clientes(cur)

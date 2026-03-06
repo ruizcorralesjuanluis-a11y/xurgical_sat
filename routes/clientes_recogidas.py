@@ -7,7 +7,6 @@ from typing import Optional, List, Dict, Any
 
 from fastapi import APIRouter, Request, Form, File, UploadFile, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 
 from db import get_conn
 from security import get_current_user, require_roles
@@ -17,9 +16,6 @@ from shared import (
 
 router = APIRouter()
 
-# Debería configurarse en app.py y pasarse aquí o usar app.state
-templates = Jinja2Templates(directory="templates")
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FOTOS_DIR = os.path.join(BASE_DIR, "static", "fotos")
 
@@ -28,6 +24,7 @@ FOTOS_DIR = os.path.join(BASE_DIR, "static", "fotos")
 # -----------------------------
 @router.get("/clientes", response_class=HTMLResponse)
 def clientes_list(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
+    templates = request.app.state.templates
     conn = get_conn()
     cur = conn.cursor()
     clientes = _list_clientes(cur)
@@ -39,6 +36,7 @@ def clientes_list(request: Request, user=Depends(require_roles("admin", "recepci
 
 @router.get("/clientes/nuevo", response_class=HTMLResponse)
 def clientes_nuevo_form(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
+    templates = request.app.state.templates
     return templates.TemplateResponse(
         "clientes_form.html",
         {"request": request, "user": user, "mode": "new", "cliente": None},
@@ -77,6 +75,7 @@ def clientes_nuevo_crear(
 
 @router.get("/clientes/{cliente_id}/editar", response_class=HTMLResponse)
 def clientes_editar_form(request: Request, cliente_id: int, user=Depends(require_roles("admin", "recepcion", "socio"))):
+    templates = request.app.state.templates
     conn = get_conn()
     cur = conn.cursor()
     cli = _get_cliente(cur, cliente_id)
@@ -150,6 +149,7 @@ async def peticion_recogida(
 
 @router.get("/recogidas", response_class=HTMLResponse)
 def recogidas_list(request: Request, user=Depends(get_current_user)):
+    templates = request.app.state.templates
     role = _user_role(user)
     if role not in ["admin", "recepcion", "cliente", "socio"]:
         return RedirectResponse(url="/?err=perm", status_code=303)
@@ -217,6 +217,7 @@ async def consulta_nueva(
 
 @router.get("/consultas/{consulta_id}", response_class=HTMLResponse)
 async def consulta_detalle(request: Request, consulta_id: int, user=Depends(get_current_user)):
+    templates = request.app.state.templates
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT c.*, cl.nombre as cliente_nombre FROM consultas c LEFT JOIN clientes cl ON c.cliente_id = cl.id WHERE c.id = ?", (consulta_id,))

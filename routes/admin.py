@@ -190,4 +190,15 @@ def estadisticas_tecnicos(request: Request, fecha_inicio: Optional[str] = None, 
     cur.execute(sql, (f"{fecha_inicio} 00:00:00", f"{fecha_fin} 23:59:59"))
     stats = [dict(r) for r in cur.fetchall()]
     conn.close()
-    return templates.TemplateResponse("estadisticas_tecnicos.html", {"request": request, "user": user, "stats": stats, "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin})
+    
+    totales = {
+        "reparados": sum(s["reparados"] for s in stats),
+        "bajas": sum(s["bajas"] for s in stats),
+        "curso": sum(s["curso"] for s in stats),
+        "total": sum(s["total"] for s in stats)
+    }
+    
+    return templates.TemplateResponse(
+        "estadisticas_tecnicos.html", 
+        {"request": request, "user": user, "stats": stats, "totales": totales, "fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin}
+    )
