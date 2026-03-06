@@ -79,6 +79,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 303:
+        target = exc.headers.get("Location", "/login")
+        return RedirectResponse(url=target, status_code=303)
     if exc.status_code == 401:
         accept = request.headers.get("accept", "")
         if "text/html" in accept:
