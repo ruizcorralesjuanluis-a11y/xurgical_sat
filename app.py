@@ -55,6 +55,7 @@ try:
 except Exception as e:
     print(f"Error migrando fotos: {e}")
 
+
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["fecha"] = format_fecha
 app.state.templates = templates
