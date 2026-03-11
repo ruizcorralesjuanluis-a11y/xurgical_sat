@@ -2379,8 +2379,6 @@ def instrumento_nuevo_crear(
     
     # Si es solo una, seguimos comportamiento original (ir a fotos/detalle)
     target_id = inst_ids[0]
-    if is_trazabilidad:
-        return RedirectResponse(url=f"/instrumentos/{target_id}", status_code=303)
     return RedirectResponse(url=f"/instrumentos/{target_id}/editar", status_code=303)
 
 
