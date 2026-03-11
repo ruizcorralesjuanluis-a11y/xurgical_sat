@@ -1909,20 +1909,19 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     Contenido del barcode: OT|CLIENTE|FECHA|N
     """
-    # Etiqueta térmica Precortada DK-11209.
-    # El usuario especifica que el rollo tiene 62mm de ancho y 29mm de largo.
-    # Por tanto, el PDF debe medir exactamente 62x29 mm horizontales.
-    w, h = 62 * mm, 29 * mm
+    # Exact points for 62mm x 29mm (DK-11209)
+    w, h = 175.75, 82.20
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(w, h))
+    c.setTitle(f"Etiqueta OT {ot_num}")
 
     # Márgenes y posiciones ajustadas para los precisos 29mm de alto
-    x0 = 7 * mm
-    y_top = h - 2 * mm
+    x0 = 8 * mm
+    curr_y = h - 5 * mm
 
     # Título OT
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(x0, y_top - 3.5 * mm, f"OT: {ot_num}")
+    c.drawString(x0, curr_y, f"OT: {ot_num}")
 
     c.setFont("Helvetica", 7.5)
     
@@ -1938,7 +1937,7 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     sn = truncate(serie, 22)
 
     # Distribución muy compacta (line_h = 3mm) porque solo tenemos 29mm de altura
-    curr_y = y_top - 7.5 * mm
+    curr_y -= 4 * mm
     step = 3.2 * mm
 
     c.drawString(x0, curr_y, f"Cli: {cli}")
@@ -1970,12 +1969,14 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     qr_w = bounds[2] - bounds[0]
     qr_h = bounds[3] - bounds[1]
     
-    size = 17 * mm
+    size = 18 * mm
     d = Drawing(size, size, transform=[size/qr_w, 0, 0, size/qr_h, 0, 0])
     d.add(qr_code)
     
-    # Lo colocamos totalmente a la derecha de los 62mm
-    renderPDF.draw(d, c, w - size - 3 * mm, 3.5 * mm)
+    # Lo colocamos a la derecha, centrado verticalmente
+    qr_x = w - size - 4 * mm
+    qr_y = (h - size) / 2
+    renderPDF.draw(d, c, qr_x, qr_y)
     
     c.showPage()
     c.save()
