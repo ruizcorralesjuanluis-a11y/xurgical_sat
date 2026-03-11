@@ -1909,21 +1909,22 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
 
     Contenido del barcode: OT|CLIENTE|FECHA|N
     """
-    # Exact points for 62mm x 29mm (DK-11209)
-    w, h = 175.75, 82.20
+    # Usamos constantes mm para máxima precisión
+    w, h = 62 * mm, 29 * mm
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=(w, h))
     c.setTitle(f"Etiqueta OT {ot_num}")
 
-    # Márgenes y posiciones ajustadas para los precisos 29mm de alto
+    # Márgenes y posiciones ajustadas para los precisos 29mm de alto (DK-11209 de 62x29)
+    # x0: margen izquierdo (desde el 62mm)
     x0 = 8 * mm
-    curr_y = h - 5 * mm
+    curr_y = h - 7 * mm  # Bajamos un poco el inicio (antes h-5)
 
     # Título OT
     c.setFont("Helvetica-Bold", 10)
     c.drawString(x0, curr_y, f"OT: {ot_num}")
 
-    c.setFont("Helvetica", 7.5)
+    c.setFont("Helvetica", 7.0) # Bajamos a 7.0 para que quepan mejor los nombres largos
     
     # Recortador de texto para que quepa en los 62mm
     def truncate(s, limit=22):
@@ -1936,9 +1937,9 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     mod = truncate(modelo, 22)
     sn = truncate(serie, 22)
 
-    # Distribución muy compacta (line_h = 3mm) porque solo tenemos 29mm de altura
+    # Distribución muy compacta porque solo tenemos 29mm de altura
     curr_y -= 4 * mm
-    step = 3.2 * mm
+    step = 3.0 * mm # Tighter step
 
     c.drawString(x0, curr_y, f"Cli: {cli}")
     curr_y -= step
@@ -1973,9 +1974,9 @@ def _build_etiqueta_pdf(ot_num: str, cliente: str, fecha: str, n_instrumentos: i
     d = Drawing(size, size, transform=[size/qr_w, 0, 0, size/qr_h, 0, 0])
     d.add(qr_code)
     
-    # Lo colocamos a la derecha, centrado verticalmente
-    qr_x = w - size - 4 * mm
-    qr_y = (h - size) / 2
+    # Lo colocamos a la derecha, centrado pero un poco más abajo
+    qr_x = w - size - 5 * mm
+    qr_y = (h - size) / 2 - 1 * mm
     renderPDF.draw(d, c, qr_x, qr_y)
     
     c.showPage()
