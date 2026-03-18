@@ -84,6 +84,15 @@ except Exception:  # pragma: no cover
     Workbook = None
 
 app = FastAPI(title="Xurgical SAT")
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Permitir todos los orígenes para que el puente local funcione
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Arranque de la aplicación
 print(">>> XURGICAL SAT STARTING UP...", flush=True)

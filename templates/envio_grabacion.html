@@ -788,28 +788,61 @@
       const btnGrabar = document.getElementById('btnGrabar');
       const instId = document.getElementById('mInstId').textContent.replace('#', '');
       
-      btn.disabled = true; // Corrected from 'True' to 'true'
+      btn.disabled = true;
       const oldText = btn.innerHTML;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Leyendo...';
       
       statusEl.style.display = '';
-      statusEl.textContent = 'Abriendo cámara...';
+      statusEl.textContent = 'Buscando lector local...';
       statusEl.className = 'ms-2 fw-bold text-secondary';
 
+      let data = null;
+      let usedLocal = false;
+
+      // 1. Intentar llamar al agente local primero (localhost:8000)
       try {
-        const resp = await fetch(`/api/instrumentos/${instId}/verificar_dm`, { method: 'POST' });
-        const data = await resp.json();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
         
+        const localResp = await fetch(`http://localhost:8000/api/instrumentos/${instId}/verificar_dm`, { 
+            method: 'POST',
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (localResp.ok) {
+            data = await localResp.json();
+            usedLocal = true;
+            console.log("Using LOCAL agent for verification");
+        }
+      } catch (e) {
+        console.log("Local agent not available or timeout, falling back to server...", e);
+      }
+
+      // 2. Si no hay data (local falló), intentar con el servidor actual
+      if (!data) {
+        statusEl.textContent = 'Abriendo cámara (Cloud)...';
+        try {
+          const resp = await fetch(`/api/instrumentos/${instId}/verificar_dm`, { method: 'POST' });
+          data = await resp.json();
+        } catch (e) {
+          statusEl.textContent = '✖ Error de conexión';
+          statusEl.className = 'ms-2 fw-bold text-danger';
+        }
+      }
+
+      // 3. Procesar el resultado
+      if (data) {
         if (data.ok && data.result) {
           const res = data.result;
           if (res.status === 'success') {
             if (res.match) {
-              statusEl.textContent = '✓ COINCIDE (' + res.scanned + ')';
+              statusEl.textContent = (usedLocal ? '✓ [LOCAL] ' : '✓ ') + 'COINCIDE (' + res.scanned + ')';
               statusEl.className = 'ms-2 fw-bold text-success';
               btnGrabar.disabled = false;
               btnGrabar.title = "";
             } else {
-              statusEl.textContent = '✗ NO COINCIDE (' + res.scanned + ')';
+              statusEl.textContent = (usedLocal ? '✗ [LOCAL] ' : '✗ ') + 'NO COINCIDE (' + res.scanned + ')';
               statusEl.className = 'ms-2 fw-bold text-danger';
             }
           } else if (res.status === 'timeout') {
@@ -823,13 +856,10 @@
           statusEl.textContent = '✖ Error API: ' + (data.error || 'Desconocido');
           statusEl.className = 'ms-2 fw-bold text-danger';
         }
-      } catch (e) {
-        statusEl.textContent = '✖ Error de conexión';
-        statusEl.className = 'ms-2 fw-bold text-danger';
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = oldText;
       }
+
+      btn.disabled = false;
+      btn.innerHTML = oldText;
     });
   </script>
 
