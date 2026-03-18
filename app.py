@@ -83,6 +83,11 @@ try:
 except Exception:  # pragma: no cover
     Workbook = None
 
+try:
+    from verify_dm import verify
+except ImportError:
+    verify = None
+
 app = FastAPI(title="Xurgical SAT")
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -2135,33 +2140,18 @@ async def api_verificar_dm(instrumento_id: int, expected_dm: Optional[str] = Non
         if not expected_dm:
             return {"ok": False, "error": "El instrumento no tiene un código DataMatrix asignado"}
 
-    # Ejecutar el script externo que abre la cámara y lee el DM
+    # Ejecutar la verificación (ahora directamente para evitar problemas en el ejecutable)
+    if verify is None:
+        return {"ok": False, "error": "Módulo de lectura (verify_dm) no encontrado"}
+
     try:
-        import subprocess
-        python_exe = sys.executable # Usamos el mismo venv donde corre el servidor
-        script_path = os.path.join(os.path.dirname(__file__), "verify_dm.py")
-        
-        # Ejecutamos el script. Este script devolverá un JSON por stdout
-        proc = subprocess.run(
-            [python_exe, script_path, expected_dm, "--timeout", "15"],
-            capture_output=True, text=True, timeout=20
-        )
-        
-        try:
-            res_data = json.loads(proc.stdout.strip())
-            return {"ok": True, "result": res_data}
-        except Exception:
-            # Si no devolvió un JSON válido, algo falló en el script
-            return {
-                "ok": False, 
-                "error": "Error al ejecutar el lector", 
-                "details": proc.stderr or proc.stdout
-            }
+        from starlette.concurrency import run_in_threadpool
+        # Ejecutamos en un hilo aparte porque 'verify' es bloqueante
+        res_data = await run_in_threadpool(verify, expected_dm, 15)
+        return {"ok": True, "result": res_data}
             
-    except subprocess.TimeoutExpired:
-        return {"ok": False, "error": "Tiempo de espera agotado (Lector no detectó nada)"}
     except Exception as e:
-        return {"ok": False, "error": f"Error interno: {str(e)}"}
+        return {"ok": False, "error": f"Error interno en el lector: {str(e)}"}
 
 
 @app.post("/instrumentos/{instrumento_id}/grabar")
