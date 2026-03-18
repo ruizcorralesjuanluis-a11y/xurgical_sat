@@ -3,9 +3,8 @@ import uvicorn
 import webbrowser
 import threading
 import time
-
-# Importa la app FastAPI
-from app import app
+import os
+import sys
 
 
 def open_browser():
@@ -18,15 +17,31 @@ def open_browser():
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
+    try:
+        import multiprocessing
+        multiprocessing.freeze_support()
 
-    # Abrir navegador en segundo plano (no bloquea el servidor)
-    threading.Thread(target=open_browser, daemon=True).start()
+        print(">>> Cargando aplicación...")
+        # Importa la app FastAPI dentro del try para capturar errores de importación
+        from app import app
 
-    # Arrancar servidor FastAPI
-    uvicorn.run(
-        app,
-        host="127.0.0.1",
-        port=8000,
-        log_level="info"
-    )
+        # Abrir navegador en segundo plano (no bloquea el servidor)
+        print(">>> Iniciando navegador...")
+        threading.Thread(target=open_browser, daemon=True).start()
+
+        # Arrancar servidor FastAPI
+        print(">>> Iniciando servidor...")
+        uvicorn.run(
+            app,
+            host="127.0.0.1",
+            port=8000,
+            log_level="info"
+        )
+    except Exception as e:
+        import traceback
+        print("\n" + "="*50)
+        print("CRITICAL ERROR DURING STARTUP:")
+        print("="*50)
+        traceback.print_exc()
+        print("="*50)
+        input("\nPresiona ENTER para cerrar esta ventana...")
