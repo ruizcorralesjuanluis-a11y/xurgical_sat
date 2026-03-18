@@ -32,6 +32,9 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 # sat.db siempre debe estar en BASE_DIR (fuera de _internal para ser persistente)
 DB_PATH = Path(os.environ.get("XURGICAL_DB_PATH", str(BASE_DIR / "sat.db")))
 
+print(f">>> [DATABASE] BASE_DIR: {BASE_DIR}", flush=True)
+print(f">>> [DATABASE] DB_PATH: {DB_PATH}", flush=True)
+
 # -------------------------------------------------
 # WRAPPER PARA COMPATIBILIDAD (SQLite vs Postgres)
 # -------------------------------------------------
