@@ -794,7 +794,7 @@
         text: 'Escanee el código DataMatrix ahora',
         input: 'text',
         inputPlaceholder: 'El código aparecerá aquí...',
-        showConfirmButton: false, // Automático al pulsar Enter (el lector suele enviarlo)
+        showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
         allowOutsideClick: false,
@@ -804,10 +804,28 @@
         },
         didOpen: () => {
           const input = Swal.getInput();
+          
+          // Función para forzar el foco
+          const forceFocus = () => {
+            if (Swal.isVisible() && document.activeElement !== input) {
+              input.focus();
+            }
+          };
+
+          // Intentar foco inmediato y con pequeño retardo
           input.focus();
+          setTimeout(forceFocus, 100);
+          setTimeout(forceFocus, 300);
+
+          // Si pierde el foco (por ejemplo, el lector pulsa Tab), lo recuperamos al instante
+          input.addEventListener('blur', () => {
+            setTimeout(forceFocus, 10);
+          });
+
           // Forzar confirmación al pulsar Enter
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
+              e.preventDefault();
               Swal.clickConfirm();
             }
           });
