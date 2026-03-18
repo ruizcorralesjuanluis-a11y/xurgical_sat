@@ -2123,7 +2123,7 @@ def grabacion_envio(request: Request, envio_id: int, user=Depends(require_roles(
 
 
 @app.post("/api/instrumentos/{instrumento_id}/verificar_dm")
-async def api_verificar_dm(instrumento_id: int, expected_dm: Optional[str] = None, user=Depends(require_roles("admin", "grabado", "tecnico"))):
+async def api_verificar_dm(instrumento_id: int, expected_dm: Optional[str] = None):
     """
     Ejecuta el script verify_dm.py para leer el DataMatrix real desde la cámara
     y compararlo con el esperado en el sistema.
