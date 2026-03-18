@@ -11,15 +11,25 @@ except ImportError:
     psycopg2 = None
 from fastapi import HTTPException
 
+import sys
+
 # -------------------------------------------------
 # RUTA BASE DEL PROYECTO
 # -------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent
+if getattr(sys, 'frozen', False):
+    # Si estamos en un ejecutable (PyInstaller), BASE_DIR es la carpeta del .exe
+    BASE_DIR = Path(sys.executable).resolve().parent
+    INTERNAL_DIR = Path(getattr(sys, "_MEIPASS", str(BASE_DIR)))
+else:
+    # Si estamos ejecutando con python normal
+    BASE_DIR = Path(__file__).resolve().parent
+    INTERNAL_DIR = BASE_DIR
 
 # -------------------------------------------------
 # RUTA DE LA BASE DE DATOS (PRO o LOCAL)
 # -------------------------------------------------
 DATABASE_URL = os.environ.get("DATABASE_URL")
+# sat.db siempre debe estar en BASE_DIR (fuera de _internal para ser persistente)
 DB_PATH = Path(os.environ.get("XURGICAL_DB_PATH", str(BASE_DIR / "sat.db")))
 
 # -------------------------------------------------
