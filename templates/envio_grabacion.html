@@ -368,18 +368,29 @@
           </div>
 
           <div class="row g-3">
+            <div class="col-12">
+              <div class="p-3 border rounded-3 bg-light" style="border: 2px dashed #0d6efd !important;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <div class="fw-bold text-primary small">
+                    <i class="fa-solid fa-barcode me-1"></i> LECTOR DE ESCANEO (TECLADO)
+                  </div>
+                  <div id="scannerIndicator" class="badge rounded-pill bg-primary border">LISTO PARA ESCANEAR</div>
+                </div>
+                <input type="text" id="mainScannerInput" class="form-control form-control-lg text-center fw-bold" 
+                       placeholder="Haga clic aquí y escanee el instrumento" 
+                       style="font-family: monospace; border: 2px solid #0d6efd; background: #fff;">
+                <div id="verifyStatus" class="mt-2 text-center fw-bold" style="font-size: 1.1rem; display:none;"></div>
+              </div>
+            </div>
+
             <div class="col-md-6">
-              <div class="fw-bold">DataMatrix</div>
+              <div class="fw-bold">DataMatrix Esperado</div>
               <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
                 <span class="badge text-bg-dark" id="mDM"></span>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyDM" title="Copiar código">
                   Copiar
                 </button>
-                <button type="button" class="btn btn-primary btn-sm" id="btnVerifyDM">
-                  <i class="fa-solid fa-camera me-1"></i> Verificar
-                </button>
                 <span class="text-success small" id="dmCopiedMsg" style="display:none;">Copiado</span>
-                <div id="verifyStatus" class="ms-2 fw-bold" style="display:none;"></div>
               </div>
             </div>
 
@@ -762,15 +773,25 @@
         desgrabarForm.style.display = grabado ? '' : 'none';
       }
 
-      // Reset Verificación
-      const btnVerify = document.getElementById('btnVerifyDM');
+      // Reset Verificación (Nueva lógica integrada en modal)
+      const scannerInput = document.getElementById('mainScannerInput');
       const verifyStatus = document.getElementById('verifyStatus');
-      verifyStatus.style.display = 'none';
-      verifyStatus.textContent = '';
-      verifyStatus.className = 'ms-2 fw-bold';
+      const scannerIndicator = document.getElementById('scannerIndicator');
       
-      // Si ya está grabado, no hace falta verificar
-      btnVerify.disabled = grabado;
+      if (scannerInput) {
+        scannerInput.value = '';
+        verifyStatus.style.display = 'none';
+        verifyStatus.textContent = '';
+        
+        scannerInput.disabled = grabado;
+        if (grabado) {
+            scannerIndicator.textContent = 'YA GRABADO';
+            scannerIndicator.className = 'badge rounded-pill bg-success border';
+        } else {
+            scannerIndicator.textContent = 'LISTO PARA ESCANEAR';
+            scannerIndicator.className = 'badge rounded-pill bg-primary border';
+        }
+      }
       
       // Deshabilitar botón de grabar si hay DM y no está grabado (exigir verificación)
       if (!grabado && dm) {
@@ -782,78 +803,48 @@
       }
     });
 
-    // Lógica de verificación (Modo Teclado / Scanner HID - Versión "Ultra-Robusta")
-    document.getElementById('btnVerifyDM').addEventListener('click', async function() {
-      const statusEl = document.getElementById('verifyStatus');
-      const btnGrabar = document.getElementById('btnGrabar');
-      const expectedDM = document.getElementById('mDM').textContent.trim();
-      
-      const { value: scannedDM, isConfirmed } = await Swal.fire({
-        title: 'Esperando escaneo...',
-        html: `
-          <div class="mt-3">
-            <p class="text-muted">Escanee el DataMatrix del instrumento ahora</p>
-            <input id="scanner-input-custom" 
-                   class="swal2-input w-100 m-0 text-center fw-bold" 
-                   placeholder="Haga clic aquí si no escribe..." 
-                   autofocus
-                   style="border: 2px solid #007bff; font-family: monospace;">
-            <p class="mt-2 small text-primary">El lector enviará el código automáticamente.</p>
-          </div>
-        `,
-        showConfirmButton: true,
-        confirmButtonText: 'Verificar Manual',
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        allowOutsideClick: false,
-        preConfirm: () => {
-          return document.getElementById('scanner-input-custom').value.trim();
-        },
-        didOpen: () => {
-          const input = document.getElementById('scanner-input-custom');
-          
-          // Foco ultra-agresivo
-          const doFocus = () => { if (document.activeElement !== input) input.focus(); };
-          input.focus();
-          for(let t of [10, 50, 100, 200, 500, 1000]) setTimeout(doFocus, t);
-
-          input.addEventListener('blur', () => setTimeout(doFocus, 5));
-
-          // Al pulsar Enter (el lector lo hace), confirmamos automáticamente
-          input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              Swal.clickConfirm();
-            }
-          });
+    // Foco automático al abrir detalle
+    document.getElementById('instModal').addEventListener('shown.bs.modal', function() {
+        const input = document.getElementById('mainScannerInput');
+        if (input && !input.disabled) {
+            input.focus();
+            setTimeout(() => input.focus(), 100);
+            setTimeout(() => input.focus(), 400);
         }
-      });
+    });
 
-      if (!isConfirmed || scannedDM === undefined) return;
+    // Lógica del Input de Escaneo (Teclado/HID)
+    document.getElementById('mainScannerInput')?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const scanned = this.value.trim();
+        const expected = document.getElementById('mDM').textContent.trim();
+        const statusEl = document.getElementById('verifyStatus');
+        const btnGrabar = document.getElementById('btnGrabar');
+        const indicator = document.getElementById('scannerIndicator');
 
-      const scannedTrimmed = scannedDM.trim();
+        if (!scanned) return;
 
-      if (scannedTrimmed === expectedDM) {
-        statusEl.textContent = '✓ OK: ' + scannedTrimmed;
-        statusEl.className = 'ms-2 fw-bold text-success';
-        btnGrabar.disabled = false;
-        btnGrabar.title = "";
-        Swal.fire({
-            icon: 'success',
-            title: '¡Correcto!',
-            text: 'Código coincide: ' + scannedTrimmed,
-            timer: 1500,
-            showConfirmButton: false
-        });
-      } else {
-        const errorMsg = 'El código "' + scannedTrimmed + '" no es correcto.';
-        statusEl.textContent = '✗ ' + errorMsg;
-        statusEl.className = 'ms-2 fw-bold text-danger';
-        Swal.fire({
-            icon: 'error',
-            title: 'No coincide',
-            text: errorMsg + '\n\nEsperado: ' + expectedDM
-        });
+        if (scanned === expected) {
+          statusEl.textContent = '✓ OK: ' + scanned;
+          statusEl.className = 'mt-2 text-center fw-bold text-success';
+          statusEl.style.display = 'block';
+          btnGrabar.disabled = false;
+          btnGrabar.title = "";
+          indicator.textContent = '¡COINCIDE!';
+          indicator.className = 'badge rounded-pill bg-success border';
+          
+          Swal.fire({ icon: 'success', title: '¡Perfecto!', text: 'El código coincide.', timer: 1000, showConfirmButton: false });
+        } else {
+          statusEl.textContent = '✗ NO COINCIDE (' + scanned + ')';
+          statusEl.className = 'mt-2 text-center fw-bold text-danger';
+          statusEl.style.display = 'block';
+          indicator.textContent = 'ERROR: NO COINCIDE';
+          indicator.className = 'badge rounded-pill bg-danger border';
+          this.value = ''; 
+          this.focus();
+          Swal.fire({ icon: 'error', title: 'Código incorrecto', text: 'Leído: "' + scanned + '". No es el correcto para este instrumento.' });
+        }
       }
     });
   </script>
