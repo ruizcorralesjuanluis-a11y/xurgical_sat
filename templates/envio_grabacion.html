@@ -374,7 +374,11 @@
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyDM" title="Copiar código">
                   Copiar
                 </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnVerifyDM">
+                  <i class="fa-solid fa-camera me-1"></i> Verificar
+                </button>
                 <span class="text-success small" id="dmCopiedMsg" style="display:none;">Copiado</span>
+                <div id="verifyStatus" class="ms-2 fw-bold" style="display:none;"></div>
               </div>
             </div>
 
@@ -755,6 +759,76 @@
       if (desgrabarForm) {
         desgrabarForm.action = '/instrumentos/' + id + '/desgrabar';
         desgrabarForm.style.display = grabado ? '' : 'none';
+      }
+
+      // Reset Verificación
+      const btnVerify = document.getElementById('btnVerifyDM');
+      const verifyStatus = document.getElementById('verifyStatus');
+      verifyStatus.style.display = 'none';
+      verifyStatus.textContent = '';
+      verifyStatus.className = 'ms-2 fw-bold';
+      
+      // Si ya está grabado, no hace falta verificar
+      btnVerify.disabled = grabado;
+      
+      // Deshabilitar botón de grabar si hay DM y no está grabado (exigir verificación)
+      if (!grabado && dm) {
+        btnGrabar.disabled = true;
+        btnGrabar.title = "Debes verificar el DataMatrix antes de grabar";
+      } else {
+        btnGrabar.disabled = grabado;
+        btnGrabar.title = "";
+      }
+    });
+
+    // Lógica de verificación
+    document.getElementById('btnVerifyDM').addEventListener('click', async function() {
+      const btn = this;
+      const statusEl = document.getElementById('verifyStatus');
+      const btnGrabar = document.getElementById('btnGrabar');
+      const instId = document.getElementById('mInstId').textContent.replace('#', '');
+      
+      btn.disabled = true; // Corrected from 'True' to 'true'
+      const oldText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Leyendo...';
+      
+      statusEl.style.display = '';
+      statusEl.textContent = 'Abriendo cámara...';
+      statusEl.className = 'ms-2 fw-bold text-secondary';
+
+      try {
+        const resp = await fetch(`/api/instrumentos/${instId}/verificar_dm`, { method: 'POST' });
+        const data = await resp.json();
+        
+        if (data.ok && data.result) {
+          const res = data.result;
+          if (res.status === 'success') {
+            if (res.match) {
+              statusEl.textContent = '✓ COINCIDE (' + res.scanned + ')';
+              statusEl.className = 'ms-2 fw-bold text-success';
+              btnGrabar.disabled = false;
+              btnGrabar.title = "";
+            } else {
+              statusEl.textContent = '✗ NO COINCIDE (' + res.scanned + ')';
+              statusEl.className = 'ms-2 fw-bold text-danger';
+            }
+          } else if (res.status === 'timeout') {
+            statusEl.textContent = '⚠ Tiempo agotado';
+            statusEl.className = 'ms-2 fw-bold text-warning';
+          } else {
+            statusEl.textContent = '✖ Error: ' + (res.error || 'Desconocido');
+            statusEl.className = 'ms-2 fw-bold text-danger';
+          }
+        } else {
+          statusEl.textContent = '✖ Error API: ' + (data.error || 'Desconocido');
+          statusEl.className = 'ms-2 fw-bold text-danger';
+        }
+      } catch (e) {
+        statusEl.textContent = '✖ Error de conexión';
+        statusEl.className = 'ms-2 fw-bold text-danger';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = oldText;
       }
     });
   </script>

@@ -2106,6 +2106,54 @@ def grabacion_envio(request: Request, envio_id: int, user=Depends(require_roles(
     )
 
 
+@app.post("/api/instrumentos/{instrumento_id}/verificar_dm")
+async def api_verificar_dm(instrumento_id: int, user=Depends(require_roles("admin", "grabado"))):
+    """
+    Ejecuta el script verify_dm.py para leer el DataMatrix real desde la cámara
+    y compararlo con el esperado en el sistema.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT codigo_datamatrix FROM instrumentos WHERE id=?", (instrumento_id,))
+    inst = cur.fetchone()
+    conn.close()
+    
+    if not inst:
+        return {"ok": False, "error": "Instrumento no encontrado"}
+    
+    expected_dm = inst["codigo_datamatrix"]
+    if not expected_dm:
+        return {"ok": False, "error": "El instrumento no tiene un código DataMatrix asignado"}
+
+    # Ejecutar el script externo que abre la cámara y lee el DM
+    try:
+        import subprocess
+        python_exe = sys.executable # Usamos el mismo venv donde corre el servidor
+        script_path = os.path.join(os.path.dirname(__file__), "verify_dm.py")
+        
+        # Ejecutamos el script. Este script devolverá un JSON por stdout
+        proc = subprocess.run(
+            [python_exe, script_path, expected_dm, "--timeout", "15"],
+            capture_output=True, text=True, timeout=20
+        )
+        
+        try:
+            res_data = json.loads(proc.stdout.strip())
+            return {"ok": True, "result": res_data}
+        except Exception:
+            # Si no devolvió un JSON válido, algo falló en el script
+            return {
+                "ok": False, 
+                "error": "Error al ejecutar el lector", 
+                "details": proc.stderr or proc.stdout
+            }
+            
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "Tiempo de espera agotado (Lector no detectó nada)"}
+    except Exception as e:
+        return {"ok": False, "error": f"Error interno: {str(e)}"}
+
+
 @app.post("/instrumentos/{instrumento_id}/grabar")
 def grabar_instrumento(instrumento_id: int, user=Depends(require_roles("admin", "grabado"))):
     conn = get_conn()
