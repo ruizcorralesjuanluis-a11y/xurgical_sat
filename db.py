@@ -2,7 +2,13 @@ import os
 import sqlite3
 import threading
 from pathlib import Path
-from psycopg2.pool import ThreadedConnectionPool
+try:
+    from psycopg2.pool import ThreadedConnectionPool
+    import psycopg2.extras
+    import psycopg2
+except ImportError:
+    ThreadedConnectionPool = None
+    psycopg2 = None
 from fastapi import HTTPException
 
 # -------------------------------------------------
@@ -36,7 +42,9 @@ def get_pool():
     
     with _pool_lock:
         if _pool is None:
-            import psycopg2
+            if psycopg2 is None or ThreadedConnectionPool is None:
+                print(">>> [DATABASE] AVISO: psycopg2 no instalado. No se puede usar Postgres.")
+                return None
             url = env_url.strip()
             if url.startswith("postgres://"):
                 url = url.replace("postgres://", "postgresql://", 1)
@@ -101,8 +109,9 @@ class PGConnWrapper:
         self.conn = conn
         self.pool = pool
     def cursor(self):
-        import psycopg2.extras
-        return PGCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor))
+        if psycopg2 and hasattr(psycopg2, "extras"):
+            return PGCursorWrapper(self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor))
+        return PGCursorWrapper(self.conn.cursor())
     def commit(self):
         self.conn.commit()
     def rollback(self):
@@ -130,7 +139,7 @@ def get_connection():
             print(f">>> [DATABASE] ERROR: No se pudo obtener conexión del pool. Reintentando conexión directa... {e}", flush=True)
             try:
                 # Si falla el pool, intentamos conexión directa una vez
-                import psycopg2
+                if psycopg2 is None: raise ImportError("psycopg2 no disponible")
                 url = env_url.strip().replace("postgres://", "postgresql://", 1)
                 conn = psycopg2.connect(url, connect_timeout=10)
                 return PGConnWrapper(conn)
