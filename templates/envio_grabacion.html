@@ -782,13 +782,29 @@
       }
     });
 
-    // Lógica de verificación (Modo Teclado / Scanner HID - Automático)
+    // Lógica de verificación (Modo Teclado / Scanner HID - Automático y Robusto)
     document.getElementById('btnVerifyDM').addEventListener('click', async function() {
       const btn = this;
       const statusEl = document.getElementById('verifyStatus');
       const btnGrabar = document.getElementById('btnGrabar');
       const expectedDM = document.getElementById('mDM').textContent.trim();
       
+      // Listener global para redirigir cualquier tecla al input si el modal está abierto
+      const globalKeyHandler = (e) => {
+        if (Swal.isVisible()) {
+          const input = Swal.getInput();
+          if (input && document.activeElement !== input) {
+            input.focus();
+            // No redirigimos eventos especiales como Enter o Escape
+            if (e.key.length === 1) {
+              // Si el lector empezó a escribir antes del foco, lo añadimos manualmente
+              // Pero normalmente el focus() rápido ya lo captura
+            }
+          }
+        }
+      };
+      window.addEventListener('keydown', globalKeyHandler);
+
       const { value: scannedDM } = await Swal.fire({
         title: 'Esperando escaneo...',
         text: 'Escanee el código DataMatrix ahora',
@@ -805,30 +821,27 @@
         didOpen: () => {
           const input = Swal.getInput();
           
-          // Función para forzar el foco
           const forceFocus = () => {
             if (Swal.isVisible() && document.activeElement !== input) {
               input.focus();
             }
           };
 
-          // Intentar foco inmediato y con pequeño retardo
+          // Foco ultra-rápido y repetitivo
           input.focus();
-          setTimeout(forceFocus, 100);
-          setTimeout(forceFocus, 300);
+          for(let t of [10, 50, 100, 200, 500]) setTimeout(forceFocus, t);
 
-          // Si pierde el foco (por ejemplo, el lector pulsa Tab), lo recuperamos al instante
-          input.addEventListener('blur', () => {
-            setTimeout(forceFocus, 10);
-          });
+          input.addEventListener('blur', () => setTimeout(forceFocus, 5));
 
-          // Forzar confirmación al pulsar Enter
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
               Swal.clickConfirm();
             }
           });
+        },
+        willClose: () => {
+          window.removeEventListener('keydown', globalKeyHandler);
         }
       });
 
