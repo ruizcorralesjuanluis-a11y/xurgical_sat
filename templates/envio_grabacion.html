@@ -782,7 +782,7 @@
       }
     });
 
-    // Lógica de verificación (Modo Teclado / Scanner HID)
+    // Lógica de verificación (Modo Teclado / Scanner HID - Automático)
     document.getElementById('btnVerifyDM').addEventListener('click', async function() {
       const btn = this;
       const statusEl = document.getElementById('verifyStatus');
@@ -790,17 +790,27 @@
       const expectedDM = document.getElementById('mDM').textContent.trim();
       
       const { value: scannedDM } = await Swal.fire({
-        title: 'Escanee el instrumento',
+        title: 'Esperando escaneo...',
+        text: 'Escanee el código DataMatrix ahora',
         input: 'text',
-        inputLabel: 'Use el lector DataMatrix ahora',
-        inputPlaceholder: 'Esperando lectura...',
+        inputPlaceholder: 'El código aparecerá aquí...',
+        showConfirmButton: false, // Automático al pulsar Enter (el lector suele enviarlo)
         showCancelButton: true,
-        confirmButtonText: 'Verificar',
         cancelButtonText: 'Cancelar',
         allowOutsideClick: false,
         inputAttributes: {
           autocapitalize: 'off',
           autocorrect: 'off'
+        },
+        didOpen: () => {
+          const input = Swal.getInput();
+          input.focus();
+          // Forzar confirmación al pulsar Enter
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              Swal.clickConfirm();
+            }
+          });
         }
       });
 
@@ -809,24 +819,25 @@
       const scannedTrimmed = scannedDM.trim();
 
       if (scannedTrimmed === expectedDM) {
-        statusEl.textContent = '✓ COINCIDE (' + scannedTrimmed + ')';
+        statusEl.textContent = '✓ OK: ' + scannedTrimmed;
         statusEl.className = 'ms-2 fw-bold text-success';
         btnGrabar.disabled = false;
         btnGrabar.title = "";
         Swal.fire({
             icon: 'success',
-            title: '¡Coincide!',
-            text: 'El código escaneado es correcto.',
+            title: '¡OK!',
+            text: 'Código correcto: ' + scannedTrimmed,
             timer: 1500,
             showConfirmButton: false
         });
       } else {
-        statusEl.textContent = '✗ NO COINCIDE (' + scannedTrimmed + ')';
+        const errorMsg = 'El código "' + scannedTrimmed + '" no es correcto.';
+        statusEl.textContent = '✗ ' + errorMsg;
         statusEl.className = 'ms-2 fw-bold text-danger';
         Swal.fire({
             icon: 'error',
-            title: 'No coincide',
-            text: 'Escaneado: ' + scannedTrimmed + '\nEsperado: ' + expectedDM
+            title: 'Código incorrecto',
+            text: errorMsg + '\n\nEsperado: ' + expectedDM
         });
       }
     });
