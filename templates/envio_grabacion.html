@@ -800,11 +800,13 @@
       let usedLocal = false;
 
       // 1. Intentar llamar al agente local primero (localhost:8000)
+      const expectedDM = document.getElementById('mDM').textContent.trim();
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 2500);
         
-        const localResp = await fetch(`http://localhost:8000/api/instrumentos/${instId}/verificar_dm`, { 
+        // Pasamos el expected_dm para que el agente local no necesite consultar su propia DB
+        const localResp = await fetch(`http://localhost:8000/api/instrumentos/${instId}/verificar_dm?expected_dm=${encodeURIComponent(expectedDM)}`, { 
             method: 'POST',
             signal: controller.signal
         });

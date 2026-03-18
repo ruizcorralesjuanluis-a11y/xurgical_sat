@@ -2116,23 +2116,24 @@ def grabacion_envio(request: Request, envio_id: int, user=Depends(require_roles(
 
 
 @app.post("/api/instrumentos/{instrumento_id}/verificar_dm")
-async def api_verificar_dm(instrumento_id: int, user=Depends(require_roles("admin", "grabado"))):
+async def api_verificar_dm(instrumento_id: int, expected_dm: Optional[str] = None, user=Depends(require_roles("admin", "grabado", "tecnico"))):
     """
     Ejecuta el script verify_dm.py para leer el DataMatrix real desde la cámara
     y compararlo con el esperado en el sistema.
     """
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT codigo_datamatrix FROM instrumentos WHERE id=?", (instrumento_id,))
-    inst = cur.fetchone()
-    conn.close()
-    
-    if not inst:
-        return {"ok": False, "error": "Instrumento no encontrado"}
-    
-    expected_dm = inst["codigo_datamatrix"]
     if not expected_dm:
-        return {"ok": False, "error": "El instrumento no tiene un código DataMatrix asignado"}
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT codigo_datamatrix FROM instrumentos WHERE id=?", (instrumento_id,))
+        inst = cur.fetchone()
+        conn.close()
+        
+        if not inst:
+            return {"ok": False, "error": "Instrumento no encontrado"}
+        
+        expected_dm = inst["codigo_datamatrix"]
+        if not expected_dm:
+            return {"ok": False, "error": "El instrumento no tiene un código DataMatrix asignado"}
 
     # Ejecutar el script externo que abre la cámara y lee el DM
     try:
