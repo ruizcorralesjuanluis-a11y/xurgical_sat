@@ -74,6 +74,10 @@ from pathlib import Path
 # Rutas compatibles con PyInstaller (sys._MEIPASS) y ejecución normal
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 
+# Asegurar que el directorio base esté en sys.path para poder importar módulos empaquetados como verify_dm
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
 from db import init_db, get_conn
 from excel_import import leer_excel_envio
 
