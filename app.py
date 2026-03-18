@@ -41,10 +41,12 @@ import json
 import base64
 from datetime import datetime
 from typing import List, Optional
-from dotenv import load_dotenv
-
-# Carga variables de entorno desde .env (útil para desarrollo local)
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    # Carga variables de entorno desde .env (útil para desarrollo local)
+    load_dotenv()
+except ImportError:
+    print("Warning: python-dotenv not found, skipping load_dotenv()")
 
 # Etiquetas (PDF) + código de barras / QR
 from reportlab.pdfgen import canvas
