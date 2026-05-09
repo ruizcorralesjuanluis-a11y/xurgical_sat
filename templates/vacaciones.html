@@ -140,12 +140,23 @@
           </h6>
           <div id="usersList">
             {% for u in users %}
-            <div class="user-list-item d-flex align-items-center justify-content-between" onclick="openUserModal({{ u.id }}, '{{ u.username }}', '{{ u.color or '#0d6efd' }}')">
-              <div class="d-flex align-items-center">
-                <span class="color-dot" style="background-color: {{ u.color or '#0d6efd' }}"></span>
-                <span class="fw-medium text-slate-700">{{ u.username }}</span>
+            <div class="user-list-item" onclick="openUserModal({{ u.id }}, '{{ u.username }}', '{{ u.color or '#0d6efd' }}')">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center">
+                  <span class="color-dot" style="background-color: {{ u.color or '#0d6efd' }}"></span>
+                  <span class="fw-bold text-slate-700">{{ u.username }}</span>
+                </div>
+                <i class="fa-solid fa-palette text-muted small"></i>
               </div>
-              <i class="fa-solid fa-palette text-muted small"></i>
+              <div class="d-flex flex-column gap-1">
+                <div class="progress" style="height: 6px;" title="Naturales: {{ u.natural_used }}/30">
+                  <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (u.natural_used / 30 * 100)|round|int }}%"></div>
+                </div>
+                <div class="d-flex justify-content-between x-small" style="font-size: 0.65rem;">
+                  <span class="text-secondary">Naturales: <b>{{ u.natural_used }}</b>/30</span>
+                  <span class="text-secondary">Laborales: <b>{{ u.laboral_used }}</b>/22</span>
+                </div>
+              </div>
             </div>
             {% endfor %}
           </div>

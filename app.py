@@ -5178,9 +5178,51 @@ def view_vacaciones(
 ):
     conn = get_conn()
     cur = conn.cursor()
-    # Listado de personal para el lateral
-    cur.execute("SELECT id, username, color FROM users WHERE is_active=1 ORDER BY username ASC")
+    # Listado de personal (excluimos clientes y socios)
+    cur.execute("""
+        SELECT id, username, color 
+        FROM users 
+        WHERE is_active=1 
+          AND role NOT IN ('cliente', 'socio')
+        ORDER BY username ASC
+    """)
     users_list = [dict(r) for r in cur.fetchall()]
+    
+    # Calculamos días usados para cada uno
+    from datetime import datetime
+    for u in users_list:
+        cur.execute("SELECT fecha_inicio, fecha_fin, tipo FROM vacaciones WHERE user_id=?", (u["id"],))
+        vacs = cur.fetchall()
+        
+        natural_total = 0
+        laboral_total = 0
+        
+        for v in vacs:
+            try:
+                d1 = datetime.strptime(v["fecha_inicio"], "%Y-%m-%d")
+                d2 = datetime.strptime(v["fecha_fin"], "%Y-%m-%d")
+                
+                # Cálculo exacto de días entre d1 y d2 inclusivos
+                count_natural = (d2 - d1).days + 1
+                
+                if v["tipo"] == "laboral":
+                    # Solo contamos laborables (lun-vie)
+                    count_lab = 0
+                    from datetime import timedelta
+                    tmp = d1
+                    while tmp <= d2:
+                        if tmp.weekday() < 5: # 0-4 es lun-vie
+                            count_lab += 1
+                        tmp += timedelta(days=1)
+                    laboral_total += count_lab
+                else:
+                    natural_total += count_natural
+            except:
+                pass
+        
+        u["natural_used"] = natural_total
+        u["laboral_used"] = laboral_total
+        
     conn.close()
     
     return templates.TemplateResponse(request, "vacaciones.html", {
