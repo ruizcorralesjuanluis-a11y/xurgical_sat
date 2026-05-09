@@ -5174,7 +5174,7 @@ def estadisticas_tecnicos(
 @app.get("/vacaciones")
 def view_vacaciones(
     request: Request,
-    user=Depends(require_roles("admin", "socio")),
+    user=Depends(get_current_user),
 ):
     conn = get_conn()
     cur = conn.cursor()
@@ -5299,21 +5299,14 @@ async def api_post_vacacion(
 @app.delete("/api/vacaciones/{vac_id}")
 def api_delete_vacacion(
     vac_id: int,
-    user=Depends(require_roles("admin")),
+    password: str = Query(...),
+    user=Depends(get_current_user),
 ):
+    if password != "noni0432":
+        raise HTTPException(status_code=403, detail="Contraseña de borrado incorrecta.")
+
     conn = get_conn()
     cur = conn.cursor()
-    
-    # Comprobar si la fecha ya pasó
-    cur.execute("SELECT fecha_inicio FROM vacaciones WHERE id=?", (vac_id,))
-    row = cur.fetchone()
-    if row:
-        from datetime import datetime
-        fecha_inicio = datetime.strptime(row["fecha_inicio"], "%Y-%m-%d").date()
-        if fecha_inicio < datetime.now().date():
-            conn.close()
-            raise HTTPException(status_code=400, detail="No se pueden borrar vacaciones que ya han pasado o comenzado.")
-            
     cur.execute("DELETE FROM vacaciones WHERE id=?", (vac_id,))
     conn.commit()
     conn.close()

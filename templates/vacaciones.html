@@ -323,23 +323,14 @@
           updateDaysCount();
         },
         eventClick: function (info) {
-          const hoy = new Date();
-          hoy.setHours(0,0,0,0);
-          const fechaInicio = info.event.start;
-          
-          if (fechaInicio < hoy) {
-            Swal.fire({
-              title: 'Acción no permitida',
-              text: 'No puedes eliminar vacaciones de fechas pasadas.',
-              icon: 'error',
-              confirmButtonColor: '#0d6efd'
-            });
-            return;
-          }
-
           Swal.fire({
             title: '¿Eliminar vacaciones?',
-            text: `De ${info.event.extendedProps.username}`,
+            text: `Introduce la contraseña para confirmar el borrado de ${info.event.extendedProps.username}:`,
+            input: 'password',
+            inputAttributes: {
+              autocapitalize: 'off',
+              autocorrect: 'off'
+            },
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
@@ -347,7 +338,12 @@
             cancelButtonText: 'Cancelar'
           }).then((result) => {
             if (result.isConfirmed) {
-              deleteVacation(info.event.id);
+              const pass = result.value;
+              if (!pass) {
+                Swal.fire('Error', 'Debes introducir la contraseña', 'error');
+                return;
+              }
+              deleteVacation(info.event.id, pass);
             }
           });
         }
@@ -468,11 +464,16 @@
         }
       });
 
-      async function deleteVacation(id) {
+      async function deleteVacation(id, password) {
         try {
-          const resp = await fetch(`/api/vacaciones/${id}`, { method: 'DELETE' });
+          const resp = await fetch(`/api/vacaciones/${id}?password=${encodeURIComponent(password)}`, { 
+            method: 'DELETE' 
+          });
           if (resp.ok) {
             window.location.reload();
+          } else {
+            const err = await resp.text();
+            Swal.fire('Error', err || 'Contraseña incorrecta', 'error');
           }
         } catch (e) {
           alert("Error al eliminar");
