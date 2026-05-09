@@ -135,23 +135,25 @@
     }
 
     /* SOLUCIÓN DEFINITIVA PARA VISTA AÑO (Líneas finas) */
-    .fc-multimonth-daygrid-event {
-      height: 4px !important;
+    .fc-view-multiMonthYear .fc-daygrid-event {
+      height: 5px !important;
       margin-bottom: 2px !important;
       padding: 0 !important;
-      font-size: 0 !important; /* Ocultamos texto en año para que solo sea la línea de color */
+      font-size: 0 !important; /* Ocultamos texto en año */
       border-radius: 0 !important;
-    }
-    /* Forzar que se vean todos los eventos ocultos */
-    .fc-daygrid-event-harness.fc-daygrid-event-harness-abs {
-      visibility: visible !important;
       display: block !important;
     }
-    .fc-daygrid-more-link {
-      display: none !important;
+    /* Forzar que se vean todos los eventos y se apilen */
+    .fc-view-multiMonthYear .fc-daygrid-event-harness {
+      visibility: visible !important;
+      display: block !important;
+      position: relative !important;
+      top: auto !important;
+      left: 0 !important;
+      right: 0 !important;
     }
-    .fc-multimonth-daygrid-day-events {
-      min-height: 20px;
+    .fc-view-multiMonthYear .fc-daygrid-more-link {
+      display: none !important;
     }
   </style>
 </head>
