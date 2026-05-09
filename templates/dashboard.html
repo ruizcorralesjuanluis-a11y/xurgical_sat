@@ -241,6 +241,38 @@
     .bounce-in {
       animation: bounceIn 0.5s ease;
     }
+
+    /* VISTA MÓVIL (TARJETAS) */
+    .mobile-card {
+      display: none;
+      background: #fff;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-table-desktop {
+        display: none !important;
+      }
+      .mobile-card {
+        display: block;
+      }
+      .nav-buttons .btn span {
+        display: none; /* Oculta texto en botones nav para ganar espacio */
+      }
+      .topbar {
+        padding: 0.5rem;
+      }
+      .brand {
+        font-size: 0.9rem;
+      }
+      .logo {
+        height: 28px;
+      }
+    }
   </style>
 </head>
 
@@ -248,10 +280,9 @@
   <div class="page-overlay">
 
     <nav class="navbar topbar d-flex justify-content-between align-items-center">
-      <div class="d-flex align-items-center gap-3">
+      <div class="d-flex align-items-center gap-2">
         <img src="/static/logo-xurgical.png" class="logo">
-        <span class="brand">Xurgical SAT</span>
-        <span class="text-secondary">/ Dashboard</span>
+        <span class="brand d-none d-sm-inline">Xurgical SAT</span>
       </div>
 
       <div class="d-flex align-items-center gap-2 nav-buttons">
@@ -613,7 +644,76 @@
               </div>
               {% endif %}
 
-              <table class="table table-hover align-middle mb-0">
+              {# --- VISTA MÓVIL (TARJETAS) --- #}
+              <div class="d-md-none">
+                {% for e in envios %}
+                <div class="mobile-card">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <div class="fw-bold h6 mb-0">{{ e.ot_num }}</div>
+                      <div class="small text-secondary">{{ e.fecha|fecha }}</div>
+                    </div>
+                    <div class="text-end">
+                      {% if e.is_closed %}
+                      <span class="badge bg-success">CERRADO</span>
+                      {% else %}
+                      <span class="badge bg-warning text-dark">EN REPARACIÓN</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <div class="mb-2">
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Cliente:</div>
+                    <div class="fw-semibold">{{ e.cliente or "-" }}</div>
+                  </div>
+
+                  <div class="row g-2 mb-3 bg-light p-2 rounded">
+                    <div class="col-4 text-center border-end">
+                      <div class="small text-muted" style="font-size: 0.6rem;">PEND.</div>
+                      <div class="fw-bold">{{ e.n_pendientes }}</div>
+                    </div>
+                    <div class="col-4 text-center border-end">
+                      <div class="small text-muted" style="font-size: 0.6rem;">FOTOS</div>
+                      <span class="dot {{ e.foto_dot }}"></span>
+                    </div>
+                    <div class="col-4 text-center">
+                      <div class="small text-muted" style="font-size: 0.6rem;">ACEPT.</div>
+                      <span {% if user and user.role in ['admin', 'recepcion' ] %}onclick="toggleAceptado({{ e.id }}, this)"{% endif %}>
+                        {% if e.aceptado %}
+                        <i class="fa-solid fa-circle-check text-success" id="aceptado-icon-mob-{{ e.id }}"></i>
+                        {% else %}
+                        <i class="fa-solid fa-circle-xmark text-danger" id="aceptado-icon-mob-{{ e.id }}"></i>
+                        {% endif %}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="d-flex gap-2">
+                    {% if user and user.role == "grabado" %}
+                    <a href="/envios/{{ e.id }}/grabacion" class="btn btn-outline-dark btn-sm flex-grow-1 justify-content-center">
+                      <i class="fa-solid fa-pen-nib"></i> Grabación
+                    </a>
+                    {% else %}
+                    <a href="/envios/{{ e.id }}" class="btn btn-primary btn-sm flex-grow-1 justify-content-center">
+                      <i class="fa-solid fa-folder-open"></i> Abrir Parte
+                    </a>
+                    {% endif %}
+                    
+                    {% if user and user.role in ["admin","recepcion"] %}
+                    <a href="/envios/{{ e.id }}/editar" class="btn btn-outline-secondary btn-sm" title="Editar">
+                      <i class="fa-solid fa-pen"></i>
+                    </a>
+                    <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delModal{{ e.id }}">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+
+              {# --- VISTA ESCRITORIO (TABLA) --- #}
+              <table class="table table-hover align-middle mb-0 dashboard-table-desktop">
                 <thead class="table-light">
                   <tr>
                     <th>OT</th>
