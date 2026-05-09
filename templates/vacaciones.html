@@ -123,35 +123,14 @@
       }
     }
 
-    /* Martillazo CSS para forzar mostrar todo en vista de Año */
-    .fc-daygrid-more-link {
-      display: none !important;
-    }
-    .fc-daygrid-event-harness {
-      visibility: visible !important;
-      margin-top: 1px !important;
-    }
-    .fc-daygrid-day-events {
-      margin-bottom: 2px !important;
-    }
-    /* En vista de año, reducir un poco el texto si hace falta */
-    .fc-multimonth-daygrid-event {
-      font-size: 0.7rem !important;
-      padding: 1px 2px !important;
-    }
-    /* Eventos más finos y elegantes */
-    .fc-v-event, .fc-h-event {
-      height: 18px !important;
-      line-height: 18px !important;
-      font-size: 0.65rem !important;
-      border-radius: 3px !important;
-      margin-bottom: 2px !important;
+    /* Estilos de los eventos */
+    .fc-event {
       border: none !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .fc-event-title {
-      padding: 0 4px !important;
+      border-radius: 3px !important;
+      padding: 1px 4px !important;
+      font-size: 0.7rem !important;
       font-weight: 600 !important;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -353,14 +332,7 @@
         dayHeaderFormat: { weekday: 'short' },
         selectable: true,
         dayMaxEvents: 99, 
-        multiMonthMaxEvents: 99,
-        eventDisplay: 'block', // Forzar que sean bloques/barras
-        views: {
-          multiMonthYear: {
-            multiMonthMaxEvents: false,
-            dayMaxEvents: false
-          }
-        },
+        eventDisplay: 'block',
         events: '/api/vacaciones',
         select: function (info) {
           document.getElementById('eventForm').reset();

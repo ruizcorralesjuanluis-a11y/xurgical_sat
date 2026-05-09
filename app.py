@@ -5259,7 +5259,7 @@ def api_get_vacaciones(
             
         events.append({
             "id": r["id"],
-            "title": f"{r['username']} ({r['tipo'][0].upper()})",
+            "title": r["username"],
             "start": r["fecha_inicio"],
             "end": end_str,
             "color": r["color"] or "#0d6efd",
