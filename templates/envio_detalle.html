@@ -159,7 +159,11 @@
 
     /* Columnas con ancho razonable */
     .col-id {
-      width: 60px;
+      width: 50px;
+    }
+
+    .col-foto {
+      width: 65px;
     }
 
     .col-modelo {
@@ -283,7 +287,11 @@
 
     /* Ajustamos anchos relativos para que quepa todo */
     .col-id {
-      width: 50px;
+      width: 45px;
+    }
+
+    .col-foto {
+      width: 60px;
     }
 
     .col-denom {
@@ -583,6 +591,7 @@
             <thead class="table-light">
               <tr>
                 <th class="col-id">ID</th>
+                <th class="col-foto">Foto</th>
                 <th class="col-modelo">Modelo</th>
                 <th class="col-denom">Denominación</th>
                 <th class="col-fab">Fabricante</th>
@@ -606,7 +615,19 @@
               <!-- FILA PRINCIPAL -->
               <tr
                 class="instrument-row {% if envio and (envio.tipo_trabajo|default('REPARACION') != 'TRAZABILIDAD') %}{% if inst.estado and inst.estado|lower|trim == 'reparado' %}row-reparado{% endif %}{% if inst.estado and inst.estado|lower|trim == 'baja' %} row-baja{% endif %}{% endif %}">
-                <td class="col-id">{{ inst.id }}</td>
+                <td class="col-id text-muted" style="font-size: 0.75rem;">{{ inst.id }}</td>
+                <td class="col-foto">
+                  <a href="/instrumentos/{{ inst.id }}">
+                    {% if inst.foto_entrada_1 %}
+                    <img src="{{ inst.foto_entrada_1 | image_url }}" 
+                         style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff;">
+                    {% else %}
+                    <div style="width: 48px; height: 48px; background: #f3f4f6; border-radius: 8px; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
+                      <i class="fa-solid fa-camera"></i>
+                    </div>
+                    {% endif %}
+                  </a>
+                </td>
 
                 <td class="col-modelo">
                   <strong>{{ inst.codigo_producto or "-" }}</strong>

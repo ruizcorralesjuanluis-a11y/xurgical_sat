@@ -1012,6 +1012,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
     cur.execute(f"""
         SELECT 
             e.*,
+            (SELECT foto_entrada_1 FROM instrumentos WHERE envio_id = e.id AND (foto_entrada_1 IS NOT NULL AND foto_entrada_1 != '') LIMIT 1) as foto_portada,
             COUNT(i.id) AS n_instrumentos,
             SUM(CASE WHEN 
                 (i.foto_entrada_1 IS NOT NULL AND i.foto_entrada_1 != '') OR 
