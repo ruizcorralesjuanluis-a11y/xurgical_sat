@@ -31,6 +31,14 @@
     <div class="alert alert-danger">❌ El cliente ya existe en la base de datos.</div>
     {% elif err == 'nombre' %}
     <div class="alert alert-danger">❌ El nombre del cliente es obligatorio.</div>
+    {% elif err == 'has_data' %}
+    <div class="alert alert-warning">⚠️ No se puede borrar: El cliente tiene partes de trabajo asociados. Borra primero sus partes.</div>
+    {% elif err == 'has_users' %}
+    <div class="alert alert-warning">⚠️ No se puede borrar: El cliente tiene usuarios asociados.</div>
+    {% endif %}
+
+    {% if request.query_params.get('uok') == 'deleted' %}
+    <div class="alert alert-success">✅ Cliente eliminado correctamente.</div>
     {% endif %}
 
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -71,6 +79,11 @@
                 <a class="btn btn-outline-primary btn-sm" href="/clientes/{{ c.id }}/editar">
                   {% if user.role == 'socio' %}Ver{% else %}Editar{% endif %}
                 </a>
+                {% if user.role == 'admin' %}
+                <form action="/clientes/{{ c.id }}/borrar" method="post" style="display:inline;" onsubmit="return confirm('¿Estás seguro de que quieres borrar este cliente? Esta acción no se puede deshacer.');">
+                  <button type="submit" class="btn btn-outline-danger btn-sm">Borrar</button>
+                </form>
+                {% endif %}
               </td>
             </tr>
             {% endfor %}

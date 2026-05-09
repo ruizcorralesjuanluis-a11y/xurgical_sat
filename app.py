@@ -1571,6 +1571,28 @@ def clientes_editar_guardar(
     conn.close()
     return RedirectResponse(url="/clientes", status_code=303)
 
+@app.post("/clientes/{cliente_id}/borrar")
+def clientes_borrar(cliente_id: int, user=Depends(require_roles("admin"))):
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # 1. Comprobar si tiene envíos asociados
+    cur.execute("SELECT id FROM envios WHERE cliente_id = ?", (int(cliente_id),))
+    if cur.fetchone():
+        conn.close()
+        return RedirectResponse(url="/clientes?err=has_data", status_code=303)
+    
+    # 2. Comprobar si tiene usuarios asociados
+    cur.execute("SELECT id FROM users WHERE cliente_id = ?", (int(cliente_id),))
+    if cur.fetchone():
+        conn.close()
+        return RedirectResponse(url="/clientes?err=has_users", status_code=303)
+        
+    cur.execute("DELETE FROM clientes WHERE id = ?", (int(cliente_id),))
+    conn.commit()
+    conn.close()
+    return RedirectResponse(url="/clientes?uok=deleted", status_code=303)
+
 @app.get("/envios/nuevo", response_class=HTMLResponse)
 def nuevo_envio_form(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
     conn = get_conn()
