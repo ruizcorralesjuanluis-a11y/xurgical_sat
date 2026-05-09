@@ -225,7 +225,7 @@ def format_fecha(value):
             except:
                 return s # Si falla todo, devuelve el original
         
-        return dt.strftime("%d-%m-%Y")
+        return dt.strftime("%d/%m/%Y")
     except:
         return value
 

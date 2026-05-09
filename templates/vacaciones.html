@@ -149,12 +149,12 @@
                 <i class="fa-solid fa-palette text-muted small"></i>
               </div>
               <div class="d-flex flex-column gap-1">
-                <div class="progress" style="height: 6px;" title="Naturales: {{ u.natural_used }}/30">
+                <div class="progress" style="height: 6px;" title="Consumido: {{ u.natural_used }}/30">
                   <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (u.natural_used / 30 * 100)|round|int }}%"></div>
                 </div>
                 <div class="d-flex justify-content-between x-small" style="font-size: 0.65rem;">
-                  <span class="text-secondary">Naturales: <b>{{ u.natural_used }}</b>/30</span>
-                  <span class="text-secondary">Laborales: <b>{{ u.laboral_used }}</b>/22</span>
+                  <span class="text-secondary">Restan: <b class="text-dark">{{ 30 - u.natural_used }}</b> nat.</span>
+                  <span class="text-secondary">Restan: <b class="text-dark">{{ 22 - u.laboral_used }}</b> lab.</span>
                 </div>
               </div>
             </div>
@@ -292,6 +292,8 @@
           month: 'Mes',
           week: 'Semana'
         },
+        titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+        dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric', omitCommas: true },
         selectable: true,
         events: '/api/vacaciones',
         select: function (info) {
