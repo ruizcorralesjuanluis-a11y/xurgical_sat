@@ -466,7 +466,14 @@ def load_articulos_map(force_refresh=False) -> dict:
             
             # Insertar en bloques para que sea rápido
             if batch:
-                cur.executemany("INSERT OR IGNORE INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?)", batch)
+                # Usamos sintaxis compatible para evitar errores en Postgres/SQLite
+                is_pg = os.environ.get("DATABASE_URL") is not None
+                if is_pg:
+                    sql_ins = "INSERT INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?) ON CONFLICT (codigo) DO NOTHING"
+                else:
+                    sql_ins = "INSERT OR IGNORE INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?)"
+                
+                cur.executemany(sql_ins, batch)
                 conn.commit()
                 print(f">>> [ARTICULOS] {len(batch)} artículos guardados en la BD para futuras cargas.", flush=True)
 
@@ -2505,10 +2512,12 @@ def instrumento_nuevo_crear(
     c_norm = _norm_codigo(codigo_producto)
     if c_norm and denominacion:
         try:
-            cur.execute(
-                "INSERT OR IGNORE INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?)",
-                (c_norm, denominacion.strip(), (fabricante.strip() if fabricante else None))
-            )
+            is_pg = os.environ.get("DATABASE_URL") is not None
+            if is_pg:
+                sql_ins = "INSERT INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?) ON CONFLICT (codigo) DO NOTHING"
+            else:
+                sql_ins = "INSERT OR IGNORE INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?)"
+            cur.execute(sql_ins, (c_norm, denominacion.strip(), (fabricante.strip() if fabricante else None)))
         except Exception:
             pass
 
@@ -4635,12 +4644,14 @@ def dash_users_set_role(
     cur.execute("UPDATE users SET role=? WHERE id=?", (role, user_id))
 
     # Ajusta permisos a defaults del rol (sin borrar nada extra)
+    is_pg = os.environ.get("DATABASE_URL") is not None
     for action, _label in ACTIONS:
         allowed = _default_allowed_by_role(role, action)
-        cur.execute(
-            "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
-            (int(user_id), action, int(allowed)),
-        )
+        if is_pg:
+            sql_perm = "INSERT INTO user_permissions (user_id, action, allowed) VALUES (?, ?, ?) ON CONFLICT (user_id, action) DO UPDATE SET allowed = EXCLUDED.allowed"
+        else:
+            sql_perm = "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?, ?, ?)"
+        cur.execute(sql_perm, (int(user_id), action, int(allowed)))
 
     conn.commit()
     conn.close()
@@ -4712,12 +4723,14 @@ async def dash_users_set_perms(
         conn.close()
         return RedirectResponse(url="/?users=1&uerr=notfound", status_code=303)
 
+    is_pg = os.environ.get("DATABASE_URL") is not None
     for action, _label in ACTIONS:
         allowed = 1 if form.get(f"perm_{action}") == "on" else 0
-        cur.execute(
-            "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?,?,?)",
-            (int(user_id), action, int(allowed)),
-        )
+        if is_pg:
+            sql_perm = "INSERT INTO user_permissions (user_id, action, allowed) VALUES (?, ?, ?) ON CONFLICT (user_id, action) DO UPDATE SET allowed = EXCLUDED.allowed"
+        else:
+            sql_perm = "INSERT OR REPLACE INTO user_permissions (user_id, action, allowed) VALUES (?, ?, ?)"
+        cur.execute(sql_perm, (int(user_id), action, int(allowed)))
 
     conn.commit()
     conn.close()
