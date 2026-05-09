@@ -149,12 +149,16 @@
                 <i class="fa-solid fa-palette text-muted small"></i>
               </div>
               <div class="d-flex flex-column gap-1">
-                <div class="progress" style="height: 6px;" title="Consumido: {{ u.natural_used }}/30">
-                  <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (u.natural_used / 30 * 100)|round|int }}%"></div>
+                <div class="progress" style="height: 6px;" title="Progreso de consumo">
+                  {% set p_nat = (u.natural_used / 30 * 100)|round|int %}
+                  {% set p_lab = (u.laboral_used / 22 * 100)|round|int %}
+                  {% set p_max = [p_nat, p_lab]|max %}
+                  <div class="progress-bar bg-primary" role="progressbar" style="width: {{ p_max if p_max <= 100 else 100 }}%"></div>
                 </div>
-                <div class="d-flex justify-content-between x-small" style="font-size: 0.65rem;">
+                <div class="d-flex justify-content-between x-small align-items-center" style="font-size: 0.65rem;">
                   <span class="text-secondary">Restan: <b class="text-dark">{{ 30 - u.natural_used }}</b> nat.</span>
-                  <span class="text-secondary">Restan: <b class="text-dark">{{ 22 - u.laboral_used }}</b> lab.</span>
+                  <span class="text-muted fw-bold">O</span>
+                  <span class="text-secondary"><b class="text-dark">{{ 22 - u.laboral_used }}</b> lab.</span>
                 </div>
               </div>
             </div>

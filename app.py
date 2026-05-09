@@ -5202,25 +5202,23 @@ def view_vacaciones(
                 d1 = datetime.strptime(v["fecha_inicio"], "%Y-%m-%d")
                 d2 = datetime.strptime(v["fecha_fin"], "%Y-%m-%d")
                 
-                # Cálculo exacto de días entre d1 y d2 inclusivos
-                count_natural = (d2 - d1).days + 1
+                # 1. CÁLCULO NATURAL (independientemente de cómo se guardó)
+                count_raw = (d2 - d1).days + 1
+                extra_nat = 0
+                if d1.weekday() == 0: extra_nat += 2 # Empieza Lunes
+                if d2.weekday() == 4: extra_nat += 2 # Termina Viernes
+                natural_total += (count_raw + extra_nat)
                 
-                if v["tipo"] == "laboral":
-                    # Solo contamos laborables (lun-vie)
-                    count_lab = 0
-                    from datetime import timedelta
-                    tmp = d1
-                    while tmp <= d2:
-                        if tmp.weekday() < 5: # 0-4 es lun-vie
-                            count_lab += 1
-                        tmp += timedelta(days=1)
-                    laboral_total += count_lab
-                else:
-                    # REGLA CONVENIO: Si empieza lunes o termina viernes, suma +2
-                    extra = 0
-                    if d1.weekday() == 0: extra += 2 # Lunes
-                    if d2.weekday() == 4: extra += 2 # Viernes
-                    natural_total += (count_natural + extra)
+                # 2. CÁLCULO LABORAL (independientemente de cómo se guardó)
+                count_lab = 0
+                from datetime import timedelta
+                tmp = d1
+                while tmp <= d2:
+                    if tmp.weekday() < 5: # 0-4 es lun-vie
+                        count_lab += 1
+                    tmp += timedelta(days=1)
+                laboral_total += count_lab
+                
             except:
                 pass
         
