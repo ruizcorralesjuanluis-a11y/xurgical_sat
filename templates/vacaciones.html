@@ -294,22 +294,45 @@
           year: 'Año'
         },
         titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
-        dayHeaderFormat: { weekday: 'short', day: 'numeric', month: 'numeric', omitCommas: true },
+        dayHeaderFormat: { weekday: 'short' },
         selectable: true,
         events: '/api/vacaciones',
         select: function (info) {
           document.getElementById('eventForm').reset();
+          
+          // FullCalendar dates in allDay are YYYY-MM-DD strings
           document.getElementById('eventStart').value = info.startStr;
-          // FullCalendar select end is exclusive, we subtract one day for the UI date input if it's multiple days
-          // or just use it as is for simplicity in this specific input type
-          let endDate = new Date(info.end);
-          endDate.setDate(endDate.getDate() - 1);
-          document.getElementById('eventEnd').value = endDate.toISOString().split('T')[0];
+          
+          // info.endStr is exclusive. We want to show the last day of selection (inclusive)
+          // If selection is 1 day, startStr == 2026-02-01, endStr == 2026-02-02.
+          // We want end input to be 2026-02-01.
+          let endDt = new Date(info.end);
+          endDt.setDate(endDt.getDate() - 1);
+          
+          // Formateamos a YYYY-MM-DD para el input date
+          const year = endDt.getFullYear();
+          const month = String(endDt.getMonth() + 1).padStart(2, '0');
+          const day = String(endDt.getDate()).padStart(2, '0');
+          document.getElementById('eventEnd').value = `${year}-${month}-${day}`;
           
           eventModal.show();
           updateDaysCount();
         },
         eventClick: function (info) {
+          const hoy = new Date();
+          hoy.setHours(0,0,0,0);
+          const fechaInicio = info.event.start;
+          
+          if (fechaInicio < hoy) {
+            Swal.fire({
+              title: 'Acción no permitida',
+              text: 'No puedes eliminar vacaciones de fechas pasadas.',
+              icon: 'error',
+              confirmButtonColor: '#0d6efd'
+            });
+            return;
+          }
+
           Swal.fire({
             title: '¿Eliminar vacaciones?',
             text: `De ${info.event.extendedProps.username}`,
@@ -362,12 +385,22 @@
         }
 
         // Regla de convenio: si es natural y toca viernes o lunes, avisar del plus
-        if (tipo === 'natural' && hasFridayOrMonday) {
-          warningEl.style.display = 'block';
-          let totalImpacto = count;
-          // Si coges un viernes suelto o lunes suelto, el impacto son 3
-          if (count === 1) totalImpacto = 3;
-          daysCountEl.innerHTML = `${count} días <span class="badge bg-danger ms-1">Impacto: ${totalImpacto}</span>`;
+        if (tipo === 'natural') {
+          let extra = 0;
+          const startsOnMonday = (start.getDay() === 1);
+          const endsOnFriday = (end.getDay() === 5);
+          
+          if (startsOnMonday) extra += 2;
+          if (endsOnFriday) extra += 2;
+          
+          if (extra > 0) {
+            warningEl.style.display = 'block';
+            let totalImpacto = count + extra;
+            daysCountEl.innerHTML = `${count} días <span class="badge bg-danger ms-1">Impacto: ${totalImpacto}</span>`;
+          } else {
+            warningEl.style.display = 'none';
+            daysCountEl.textContent = `${count} días`;
+          }
         } else {
           warningEl.style.display = 'none';
           daysCountEl.textContent = `${count} días`;
