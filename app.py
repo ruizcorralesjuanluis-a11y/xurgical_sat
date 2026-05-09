@@ -398,14 +398,27 @@ def load_articulos_map(force_refresh=False) -> dict:
             print(f">>> [ARTICULOS] Error leyendo de BD: {e}", flush=True)
 
     # 2. Si la BD está vacía, cargar desde EXCEL y GUARDAR en la BD
-    path = ARTICULOS_XLS if os.path.exists(ARTICULOS_XLS) else ARTICULOS_XLSX
-    if not os.path.exists(path):
-        print(f">>> [ARTICULOS] Archivo no encontrado: {path}", flush=True)
+    paths_to_try = [
+        str(BASE_DIR / 'Articulos.xlsx'),
+        str(BASE_DIR / 'Articulos.xls'),
+        'Articulos.xlsx',
+        'Articulos.xls',
+        os.path.join(os.getcwd(), 'Articulos.xlsx')
+    ]
+    
+    path = None
+    for p in paths_to_try:
+        if os.path.exists(p):
+            path = p
+            break
+            
+    if not path:
+        print(f">>> [ARTICULOS] Archivo no encontrado en ninguna ruta: {paths_to_try}", flush=True)
         _articulos_map = {}
         conn.close()
         return _articulos_map
 
-    print(f">>> [ARTICULOS] Base de datos vacía. Cargando desde Excel ({path})...", flush=True)
+    print(f">>> [ARTICULOS] Cargando desde Excel ({path})...", flush=True)
     
     def _put(m, code, desc, fab=None):
         code = _norm_codigo(str(code))
@@ -4940,6 +4953,21 @@ def count_consultas_unread(user=Depends(get_current_user)):
 # -----------------------------
 # CONSULTAS TÉCNICAS (Chat)
 # -----------------------------
+@app.get("/admin/debug_articulos")
+async def debug_articulos(user=Depends(require_roles("admin"))):
+    """Ruta de diagnóstico para el catálogo."""
+    import os
+    res = {
+        "cwd": os.getcwd(),
+        "base_dir": str(BASE_DIR),
+        "files_in_root": os.listdir("."),
+        "excel_path_default": str(BASE_DIR / 'Articulos.xlsx'),
+        "excel_exists": os.path.exists(str(BASE_DIR / 'Articulos.xlsx')),
+        "pandas_ok": pd is not None,
+        "items_in_memory": len(_articulos_map) if _articulos_map else 0
+    }
+    return res
+
 @app.post("/consultas/nueva")
 async def consulta_nueva(
     titulo: str = Form(...),
