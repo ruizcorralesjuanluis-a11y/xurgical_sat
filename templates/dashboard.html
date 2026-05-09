@@ -648,32 +648,17 @@
               <div class="d-md-none">
                 {% for e in envios %}
                 <div class="mobile-card">
-                  <div class="d-flex gap-3 align-items-center mb-2">
-                    <div class="flex-shrink-0">
-                      {% if e.foto_dot != 'gray' %}
-                      {# Buscamos la primera foto del parte (esto requiere que el backend la envíe, pero si no, usamos un placeholder) #}
-                      <img src="{{ e.foto_portada | image_url }}" 
-                           style="width: 60px; height: 60px; object-fit: cover; border-radius: 10px; border: 1px solid #eee;">
-                      {% else %}
-                      <div style="width: 60px; height: 60px; background: #f3f4f6; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
-                        <i class="fa-solid fa-camera fa-lg"></i>
-                      </div>
-                      {% endif %}
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <div class="fw-bold h6 mb-0">{{ e.ot_num }}</div>
+                      <div class="small text-secondary">{{ e.fecha|fecha }}</div>
                     </div>
-                    <div class="flex-grow-1">
-                      <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                          <div class="fw-bold h6 mb-0">{{ e.ot_num }}</div>
-                          <div class="small text-secondary">{{ e.fecha|fecha }}</div>
-                        </div>
-                        <div class="text-end">
-                          {% if e.is_closed %}
-                          <span class="badge bg-success" style="font-size: 0.6rem;">CERRADO</span>
-                          {% else %}
-                          <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">EN REPARACIÓN</span>
-                          {% endif %}
-                        </div>
-                      </div>
+                    <div class="text-end">
+                      {% if e.is_closed %}
+                      <span class="badge bg-success" style="font-size: 0.6rem;">CERRADO</span>
+                      {% else %}
+                      <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">EN REPARACIÓN</span>
+                      {% endif %}
                     </div>
                   </div>
                   
@@ -732,7 +717,6 @@
                 <thead class="table-light">
                   <tr>
                     <th>OT</th>
-                    <th>Foto</th>
                     <th class="d-none d-md-table-cell">Ref.</th>
                     <th class="d-none d-md-table-cell">Tipo</th>
                     <th>Cliente</th>
@@ -769,16 +753,6 @@
                           <i class="fa-solid fa-euro-sign"></i> PRESUPUESTO
                         </span>
                         {% endif %}
-                      </div>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if e.foto_dot != 'gray' %}
-                      <img src="{{ e.foto_portada | image_url }}" 
-                           style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #eee;">
-                      {% else %}
-                      <div style="width: 40px; height: 40px; background: #f8f9fa; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #ced4da;">
-                        <i class="fa-solid fa-camera"></i>
                       </div>
                       {% endif %}
                     </td>
