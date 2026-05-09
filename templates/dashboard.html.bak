@@ -1,0 +1,1558 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Xurgical SAT - Dashboard</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/premium.css">
+  <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    html,
+    body {
+      overflow-x: hidden;
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      background: radial-gradient(circle at top left, #f8fafc, #f1f5f9);
+      background-attachment: fixed;
+    }
+
+    .page-overlay {
+      min-height: 100vh;
+      background: rgba(245, 247, 250, 0.86);
+      overflow-x: hidden;
+    }
+
+    .topbar {
+      background: #ffffffcc;
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid #e5e7eb;
+      padding: .6rem 1rem;
+    }
+
+    .logo {
+      height: 34px
+    }
+
+    .brand {
+      font-weight: 700
+    }
+
+    .panel {
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(229, 231, 235, 0.5);
+    }
+
+    /* Mejora de botones */
+    .btn {
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .kpi {
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .06);
+      background: rgba(255, 255, 255, 0.95);
+      padding: .9rem 1rem;
+      border: 1px solid #e5e7eb;
+    }
+
+    .kpi .label {
+      color: #6b7280;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: .2rem;
+    }
+
+    .kpi .value {
+      font-weight: 800;
+      font-size: 1.45rem;
+      line-height: 1.1;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.red {
+      background: #dc2626
+    }
+
+    .dot.green {
+      background: #16a34a
+    }
+
+    .dot.yellow {
+      background: #f59e0b
+    }
+
+    /* Colores claros para los KPI */
+    .kpi.bg-blue {
+      background: rgba(219, 234, 254, 0.95);
+      border-color: #bfdbfe;
+    }
+
+    /* Instrumentos */
+    .kpi.bg-orange {
+      background: rgba(255, 237, 213, 0.95);
+      border-color: #fed7aa;
+    }
+
+    /* Pendientes */
+    .kpi.bg-yellow {
+      background: rgba(254, 249, 195, 0.95);
+      border-color: #fef08a;
+    }
+
+    /* En proceso */
+    .kpi.bg-green {
+      background: rgba(220, 252, 231, 0.95);
+      border-color: #bbf7d0;
+    }
+
+    /* Reparados */
+    .kpi.bg-purple {
+      background: rgba(243, 232, 255, 0.95);
+      border-color: #e9d5ff;
+    }
+
+    /* Partes */
+    .kpi.bg-rose {
+      background: rgba(255, 228, 230, 0.95);
+      border-color: #fecdd3;
+    }
+
+    /* Abiertos */
+    .kpi.bg-emerald {
+      background: rgba(209, 250, 229, 0.95);
+      border-color: #a7f3d0;
+    }
+
+    /* Cerrados */
+    .kpi.bg-gray {
+      background: rgba(243, 244, 246, 0.95);
+      border-color: #e5e7eb;
+    }
+
+    /* Baja */
+
+    .table thead th {
+      font-size: .72rem;
+      text-transform: uppercase;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+
+    .dashboard-table-wrapper {
+      max-height: calc(100vh - 260px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      /* Evita scroll horizontal del contenedor */
+    }
+
+    .table {
+      width: 100% !important;
+      table-layout: auto;
+      /* Permite que las celdas se ajusten */
+      word-break: break-word;
+      /* Rompe palabras largas si es necesario */
+    }
+
+    .perm-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .35rem .75rem;
+    }
+
+    @media (max-width: 768px) {
+      .perm-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Scanner Styles */
+    #reader {
+      border: none !important;
+      border-radius: 12px;
+      overflow: hidden;
+      width: 100% !important;
+      background: #000;
+    }
+
+    #reader video {
+      width: 100% !important;
+      height: auto !important;
+      object-fit: cover !important;
+    }
+
+    #reader button {
+      background-color: #0d6efd !important;
+      color: white !important;
+      border: none !important;
+      padding: 8px 16px !important;
+      border-radius: 8px !important;
+      font-weight: 600 !important;
+      margin: 10px auto !important;
+    }
+
+    @keyframes bounceIn {
+      0% {
+        transform: scale(0.3);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 1;
+      }
+
+      70% {
+        transform: scale(0.9);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .bounce-in {
+      animation: bounceIn 0.5s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page-overlay">
+
+    <nav class="navbar topbar d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <img src="/static/logo-xurgical.png" class="logo">
+        <span class="brand">Xurgical SAT</span>
+        <span class="text-secondary">/ Dashboard</span>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 nav-buttons">
+        {% if db_type.startswith("PRO") %}
+        <span class="badge bg-success" title="Base de Datos Segura">
+          <i class="fa-solid fa-shield-halved"></i> {{ db_type }}
+        </span>
+        {% else %}
+        <span class="badge bg-warning text-dark" title="Base de Datos Temporal (SQLite)">
+          <i class="fa-solid fa-triangle-exclamation"></i> DB TEMP
+        </span>
+        {% endif %}
+
+        {% if user %}
+        {% if user.role == "admin" %}
+        <a href="/?users=1" class="btn btn-outline-primary btn-sm">
+          <i class="fa-solid fa-users"></i> Usuarios
+        </a>
+        {% endif %}
+
+        {% if user.role in ["admin", "socio"] %}
+        <a href="/checklist_admin" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-list-check"></i> Checklist
+        </a>
+        <a href="/estadisticas_tecnicos" class="btn btn-outline-info btn-sm">
+          <i class="fa-solid fa-chart-line"></i> Productividad
+        </a>
+        <a href="/repuestos_catalogo" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-gears"></i> Repuestos
+        </a>
+        <a href="/clientes" class="btn btn-outline-success btn-sm">
+          <i class="fa-solid fa-hospital"></i> Clientes
+        </a>
+        {% endif %}
+
+        {% if user.role in ["admin", "recepcion", "cliente", "socio"] %}
+        <a href="/export" class="btn btn-outline-primary btn-sm">
+          <i class="fa-solid fa-file-export"></i> Exportar
+        </a>
+        {% endif %}
+
+        {% if user.role in ["admin", "recepcion"] %}
+        <div id="pickupBadgeContainer" class="d-inline-block">
+          {% if n_peticiones_pendientes > 0 %}
+          <button class="btn btn-warning btn-sm position-relative ms-1 bounce-in" data-bs-toggle="modal"
+            data-bs-target="#pickupListModal" title="Peticiones de recogida pendientes">
+            <i class="fa-solid fa-truck-pickup"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.6rem;">
+              {{ n_peticiones_pendientes }}
+            </span>
+          </button>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if user.role in ["admin", "recepcion", "tecnico", "socio"] %}
+        <div id="consultaBadgeContainer" class="d-inline-block">
+          <button class="btn btn-info btn-sm position-relative ms-2 bounce-in text-white" data-bs-toggle="modal"
+            data-bs-target="#consultaListModal" title="Consultas técnicas">
+            <i class="fa-solid fa-comments"></i>
+            {% if n_consultas_pendientes > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.6rem;">
+              {{ n_consultas_pendientes }}
+            </span>
+            {% endif %}
+          </button>
+        </div>
+        {% endif %}
+
+        <div class="ms-2 d-flex align-items-center gap-1">
+          <button class="btn btn-outline-dark btn-sm p-2" onclick="openScanner()" title="Escanear OT">
+            <i class="fa-solid fa-camera"></i>
+          </button>
+          <span class="badge bg-dark px-2 py-1">{{ user.username }}</span>
+          <button class="btn btn-link btn-sm p-0 ms-1" data-bs-toggle="modal" data-bs-target="#myPassModal"
+            title="Cambiar mi contraseña">
+            <i class="fa-solid fa-key text-secondary"></i>
+          </button>
+          <span class="badge bg-secondary px-2 py-1">{{ user.role }}</span>
+          <form method="post" action="/logout" class="m-0">
+            <button class="btn btn-danger btn-sm p-2" title="Salir">
+              <i class="fa-solid fa-power-off"></i>
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </nav>
+
+    <main class="container-fluid px-3 px-md-4 py-3">
+
+      {% set err = request.query_params.get('err') %}
+      {% set ok = request.query_params.get('ok') %}
+      {% if ok == 'borrado' %}
+      <div class="alert alert-success">✅ Parte borrado correctamente.</div>
+      {% endif %}
+      {% if err == 'confirm_ot' %}
+      <div class="alert alert-danger">❌ Confirmación incorrecta. Escribe exactamente la OT.</div>
+      {% elif err == 'cerrado' %}
+      <div class="alert alert-warning">⚠️ El parte está cerrado y no se puede borrar.</div>
+      {% elif err == 'envio_no_encontrado' %}
+      <div class="alert alert-danger">❌ El parte no existe.</div>
+      {% elif err == 'perm' %}
+      <div class="alert alert-danger">❌ No tienes permisos para esa acción.</div>
+      {% endif %}
+
+      <!-- KPIs Consilidados -->
+      <div class="stat-grid">
+        <div class="premium-card">
+          <div class="stat-label"><i class="fa-solid fa-microscope me-2 text-primary"></i>Instrumentos</div>
+          <div class="stat-value">{{ kpis.total }}</div>
+          <div class="mt-2 small">
+            <span class="badge bg-warning text-dark">{{ kpis.pendientes }} Pend.</span>
+            <span class="badge bg-info text-white">{{ kpis.en_proceso }} Proc.</span>
+          </div>
+        </div>
+        <div class="premium-card">
+          <div class="stat-label"><i class="fa-solid fa-check-double me-2 text-success"></i>Estado Final</div>
+          <div class="stat-value">{{ kpis.reparado }}</div>
+          <div class="mt-2 small">
+            <span class="text-success font-weight-bold">Reparados</span> | 
+            <span class="text-danger">{{ kpis.baja }} Bajas</span>
+          </div>
+        </div>
+        <div class="premium-card">
+          <div class="stat-label"><i class="fa-solid fa-file-invoice me-2 text-primary"></i>Partes (OT)</div>
+          <div class="stat-value">{{ kpis_partes.total }}</div>
+          <div class="mt-2 small">
+            <span class="badge bg-primary">{{ kpis_partes.abiertos }} Abiertos</span>
+            <span class="badge bg-success">{{ kpis_partes.cerrados }} Cerrados</span>
+          </div>
+        </div>
+        <div class="premium-card">
+          <div class="stat-label"><i class="fa-solid fa-eye me-2 text-warning"></i>Ópticas</div>
+          <div class="stat-value">{{ kpis_partes.opticas_total }}</div>
+          <div class="mt-2 small">
+            <span class="text-warning font-weight-bold">Total Ópticas</span> | 
+            <span class="text-success">{{ kpis_partes.opticas_cerrados }} OK</span>
+          </div>
+        </div>
+      </div>
+
+
+      {% if user and user.role == "cliente" %}
+      <!-- SECCIÓN CLIENTE -->
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-3">
+          <button
+            class="btn btn-primary p-3 w-100 shadow-sm border-0 d-flex align-items-center justify-content-between text-start mb-2"
+            data-bs-toggle="modal" data-bs-target="#recogidaModal" style="border-radius:12px; min-height: 70px;">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-truck-ramp-box fa-lg me-3"></i>
+              <strong>Solicitar Recogida</strong>
+            </div>
+          </button>
+          <a href="/recogidas"
+            class="btn btn-outline-primary p-2 w-100 shadow-sm d-flex align-items-center justify-content-center text-start"
+            style="border-radius:12px; font-size: 0.85rem;">
+            <i class="fa-solid fa-list-check me-2"></i> Mis Recogidas
+          </a>
+        </div>
+        <div class="col-md-3">
+          <button
+            class="btn btn-info text-white p-3 w-100 h-100 shadow-sm border-0 d-flex align-items-center justify-content-between text-start"
+            data-bs-toggle="modal" data-bs-target="#consultaModal"
+            style="border-radius:12px; min-height: 70px; background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-comment-medical fa-lg me-3"></i>
+              <strong>¿Es reparable?</strong>
+            </div>
+            <div class="small opacity-75 d-none d-xl-block">Consultar técnicos</div>
+          </button>
+        </div>
+        <div class="col-md-3">
+          <button
+            class="btn btn-dark p-3 w-100 h-100 shadow-sm border-0 position-relative d-flex align-items-center justify-content-between text-start"
+            data-bs-toggle="modal" data-bs-target="#consultaListModal" style="border-radius:12px; min-height: 70px;">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-comments fa-lg me-3"></i>
+              <strong>Mis Consultas</strong>
+            </div>
+            <div class="small opacity-75 d-none d-xl-block">Chat y seguimiento</div>
+            {% if n_consultas_pendientes > 0 %}
+            <span id="consultasBadge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.75rem; border: 2px solid white; z-index: 10;">
+              {{ n_consultas_pendientes }}
+            </span>
+            {% elif n_consultas_activas > 0 %}
+            <span id="consultasIndicator"
+              class="position-absolute top-0 start-100 translate-middle p-1 bg-info border border-light rounded-circle"
+              style="z-index:10;">
+              <span class="visually-hidden">Activo</span>
+            </span>
+            {# Se añadirá dinámicamente el badge de contador si cambia #}
+            <span id="consultasBadge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.75rem; border: 2px solid white; z-index: 10; display: none;">
+              0
+            </span>
+            {% else %}
+            <span id="consultasBadge"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.75rem; border: 2px solid white; z-index: 10; display: none;">
+              0
+            </span>
+            {% endif %}
+          </button>
+        </div>
+        <div class="col-md-3">
+          <a href="/guias"
+            class="btn bg-white text-dark p-3 w-100 h-100 shadow-sm border-0 d-flex align-items-center justify-content-between text-start"
+            style="border-radius:12px; min-height: 70px;">
+            <div class="d-flex align-items-center">
+              <i class="fa-solid fa-book-medical fa-lg me-3 text-primary"></i>
+              <strong>Guías Técnicas</strong>
+            </div>
+            <div class="small opacity-50 d-none d-xl-block">Cuidado instrumental</div>
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Tabla partes -->
+      <!-- Pestañas Principales -->
+      <ul class="nav nav-pills mb-3 gap-2" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active shadow-sm" id="envios-tab" data-bs-toggle="pill" data-bs-target="#panel-envios"
+            type="button" role="tab" style="border-radius: 10px; font-weight: 700;">
+            <i class="fa-solid fa-file-lines me-2"></i> Mis Envíos (OT)
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link shadow-sm" id="trazabilidad-tab" data-bs-toggle="pill"
+            data-bs-target="#panel-trazabilidad" type="button" role="tab"
+            style="border-radius: 10px; font-weight: 700;">
+            <i class="fa-solid fa-clock-rotate-left me-2"></i> Trazabilidad / Historial
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="dashboardTabsContent">
+        <!-- TAB 1: ENVÍOS -->
+        <div class="tab-pane fade show active" id="panel-envios" role="tabpanel">
+          <div class="panel p-2">
+            <div class="d-flex justify-content-between align-items-center p-2">
+              <div class="fw-bold">Partes (OT)</div>
+              {% if user and user.role in ["admin","recepcion","socio"] %}
+              <div class="d-flex align-items-center gap-2">
+                {% if user.role != "socio" %}
+                <a href="/importar" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-file-import"></i> Nuevo Parte (Excel)
+                </a>
+                <a href="/envios/nuevo" class="btn btn-outline-primary btn-sm text-nowrap">
+                  <i class="fa-solid fa-plus"></i> Alta Manual
+                </a>
+                {% endif %}
+                <a href="/recogidas" class="btn btn-outline-dark btn-sm position-relative">
+                  <i class="fa-solid fa-truck-ramp-box"></i> Recogidas
+                  {% if n_peticiones_pendientes > 0 %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style="font-size: 0.65rem; border: 2px solid white; z-index: 10;">
+                    {{ n_peticiones_pendientes }}
+                  </span>
+                  {% endif %}
+                </a>
+                <a href="/export" class="btn btn-outline-secondary btn-sm">
+                  <i class="fa-solid fa-file-export"></i> Exportar
+                </a>
+              </div>
+              {% endif %}
+            </div>
+
+            <form class="row g-2 mb-3" method="get" action="/">
+              <div class="col-md-6">
+                <input class="form-control" name="q" placeholder="Buscar por OT, cliente, DataMatrix, S/N o Ref..."
+                  value="{{ q or '' }}">
+              </div>
+              <div class="col-md-3 d-grid">
+                <button class="btn btn-primary" type="submit">Buscar</button>
+              </div>
+              <div class="col-md-3 d-grid">
+                <a class="btn btn-outline-secondary" href="/">Limpiar</a>
+              </div>
+            </form>
+
+            <div class="dashboard-table-wrapper">
+              {% if found_recogidas %}
+              <div class="mb-4">
+                <div class="fw-bold mb-2 text-primary border-bottom pb-1">
+                  <i class="fa-solid fa-truck-ramp-box me-1"></i> Recogidas encontradas:
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-bordered align-middle bg-white">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Referencia</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Detalle</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for fr in found_recogidas %}
+                      <tr>
+                        <td><strong>{{ fr.num_peticion }}</strong></td>
+                        <td>{{ fr.creado_en | fecha }}</td>
+                        <td>
+                          {% if fr.estado == 'Pendiente' %}
+                          <span class="badge bg-warning text-dark">Pendiente</span>
+                          {% else %}
+                          <span class="badge bg-success">Recibida</span>
+                          {% endif %}
+                        </td>
+                        <td>
+                          <a href="/recogidas" class="btn btn-sm btn-outline-primary py-0 px-2"
+                            style="font-size: 0.75rem;">Ver historial</a>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {% endif %}
+
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>OT</th>
+                    <th class="d-none d-md-table-cell">Ref.</th>
+                    <th class="d-none d-md-table-cell">Tipo</th>
+                    <th>Cliente</th>
+                    <th class="d-none d-md-table-cell">Fecha</th>
+                    <th class="d-none d-md-table-cell">Instr.</th>
+                    <th>Pend.</th>
+                    <th>Fotos</th>
+                    <th class="d-none d-md-table-cell">Grabados</th>
+                    <th>Aceptado</th>
+                    <th>Aviso</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for e in envios %}
+                  <tr>
+                    <td>
+                      <strong>{{ e.ot_num }}</strong>
+                      {% if e.is_closed %}
+                      <div class="mt-1"><span class="badge text-bg-success" style="font-size: 0.65rem;">CERRADO</span>
+                      </div>
+                      {% else %}
+                      <div class="mt-1 d-flex flex-column gap-1">
+                        <span class="badge text-bg-warning text-dark" style="font-size: 0.65rem; width: fit-content;">EN
+                          REPARACIÓN</span>
+                        {% if e.n_en_proceso > 0 %}
+                        <span class="badge bg-info text-dark" style="font-size: 0.65rem; width: fit-content;">
+                          <i class="fa-solid fa-hourglass-half"></i> EN ESPERA REPUESTO
+                        </span>
+                        {% endif %}
+                        {% if e.n_con_repuesto > 0 %}
+                        <span class="badge bg-primary px-2" style="font-size: 0.65rem; width: fit-content;"
+                          title="Tiene repuestos asignados">
+                          <i class="fa-solid fa-euro-sign"></i> PRESUPUESTO
+                        </span>
+                        {% endif %}
+                      </div>
+                      {% endif %}
+                    </td>
+                    <td class="d-none d-md-table-cell">
+                      <span class="text-secondary small">{{ e.nombre_archivo or "-" }}</span>
+                    </td>
+                    <td class="d-none d-md-table-cell">
+                      {% if e.tipo_trabajo == 'TRAZABILIDAD' %}
+                      <span class="badge text-bg-primary">TRAZABILIDAD</span>
+                      {% elif e.tipo_trabajo == 'OPTICA_RIGIDA' %}
+                      <span class="badge text-bg-warning text-dark">ÓPTICA RÍGIDA</span>
+                      {% else %}
+                      <span class="badge text-bg-success">REPARACIÓN</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ e.cliente or "-" }}</td>
+                    <td class="d-none d-md-table-cell">{{ e.fecha|fecha }}</td>
+                    <td class="d-none d-md-table-cell">{{ e.n_instrumentos }}</td>
+                    <td>{{ e.n_pendientes }}</td>
+                    <td><span class="dot {{ e.foto_dot }}"></span></td>
+                    <td class="d-none d-md-table-cell"><span class="badge text-bg-light">{{ e.n_grabados or 0 }}/{{
+                        e.n_instrumentos }}</span></td>
+                    <td>
+                      <div class="d-flex justify-content-center">
+                        <span {% if user and user.role in ['admin', 'recepcion' ] %}style="cursor: pointer;"
+                          onclick="toggleAceptado({{ e.id }}, this)" {% endif %}>
+                          {% if e.aceptado %}
+                          <i class="fa-solid fa-circle-check text-success fa-lg" id="aceptado-icon-{{ e.id }}"></i>
+                          {% else %}
+                          <i class="fa-solid fa-circle-xmark text-danger fa-lg" id="aceptado-icon-{{ e.id }}"></i>
+                          {% endif %}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="d-flex justify-content-center">
+                        {% if e.is_closed %}
+                        {% if e.aviso_enviado %}
+                        <i class="fa-solid fa-envelope text-info fa-lg" title="Aviso enviado al centro"></i>
+                        {% else %}
+                        <i class="fa-solid fa-envelope text-secondary fa-lg" style="opacity: 0.6;"
+                          title="Parte listo. Pendiente avisar al cliente."></i>
+                        {% endif %}
+                        {% else %}
+                        <i class="fa-solid fa-envelope-open text-secondary fa-lg" style="opacity: 0.15;"
+                          title="En proceso"></i>
+                        {% endif %}
+                      </div>
+                    </td>
+                    <td class="text-end">
+                      <div class="d-flex justify-content-end gap-1">
+                        {% if user and user.role == "grabado" %}
+                        <a href="/envios/{{ e.id }}/grabacion" class="btn btn-outline-dark btn-sm">
+                          <i class="fa-solid fa-pen-nib"></i> Grabación
+                        </a>
+                        {% else %}
+                        {% if user.role == "cliente" and not e.aceptado %}
+                        <button class="btn btn-outline-secondary btn-sm" disabled title="Pendiente de validación">
+                          <i class="fa-solid fa-lock"></i> Pendiente
+                        </button>
+                        {% else %}
+                        <a href="/envios/{{ e.id }}" class="btn btn-primary btn-sm">
+                          <i class="fa-solid fa-folder-open"></i> Abrir
+                        </a>
+                        {% endif %}
+                        {% endif %}
+
+                        {% if user and user.role in ["admin","recepcion"] %}
+                        <a href="/envios/{{ e.id }}/editar" class="btn btn-outline-secondary btn-sm"
+                          title="{% if user.role == 'socio' %}Ver datos del parte{% else %}Editar datos del parte{% endif %}">
+                          {% if user.role == 'socio' %}
+                          <i class="fa-solid fa-eye"></i>
+                          {% else %}
+                          <i class="fa-solid fa-pen"></i>
+                          {% endif %}
+                        </a>
+                        {% endif %}
+
+                        {% if user and user.role in ["admin","recepcion"] and user.role != "socio" %}
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                          data-bs-target="#delModal{{ e.id }}" title="Borrar">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+
+                  {% if user and user.role in ["admin","recepcion"] %}
+                  <div class="modal fade" id="delModal{{ e.id }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title text-danger">⚠️ Borrar parte {{ e.ot_num }}</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                          <p><strong>Esta acción no se puede deshacer.</strong></p>
+                          <ul>
+                            <li>Parte completo</li>
+                            <li>Instrumentos</li>
+                            <li>Fotos</li>
+                          </ul>
+                        </div>
+                        <div class="modal-footer">
+                          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                          <form method="post" action="/envios/{{ e.id }}/borrar" class="m-0" style="min-width:260px">
+                            <label class="form-label mb-1">Escribe <b>{{ e.ot_num }}</b> para confirmar</label>
+                            <input class="form-control form-control-sm mb-2" name="confirm_ot" required>
+                            <button class="btn btn-danger w-100">Borrar definitivamente</button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+
+                  {% endfor %}
+
+                  {% if envios|length == 0 %}
+                  <tr>
+                    <td colspan="11" class="text-center text-secondary py-5">
+                      <div class="d-flex flex-column align-items-center">
+                        <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-25"></i>
+                        {% if q %}
+                        <h5 class="fw-bold">No se han encontrado resultados</h5>
+                        <p>No hay ningún parte que coincida con "<b>{{ q }}</b>"</p>
+                        <a href="/" class="btn btn-primary mt-2">
+                          <i class="fa-solid fa-rotate-left"></i> Ver todo el listado
+                        </a>
+                        {% else %}
+                        <p class="m-0">No hay partes registrados todavía.</p>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: TRAZABILIDAD -->
+        <div class="tab-pane fade" id="panel-trazabilidad" role="tabpanel">
+          <div class="panel p-4">
+            <h5 class="mb-3"><i class="fa-solid fa-magnifying-glass me-2 text-primary"></i> Buscador de Historial de
+              Instrumental</h5>
+            <p class="text-secondary small mb-4">Introduce el código DataMatrix o el Número de Serie del instrumento
+              para ver su historial completo de reparaciones y mantenimientos.</p>
+
+            <div class="row g-3">
+              <div class="col-md-8">
+                <div class="input-group input-group-lg shadow-sm">
+                  <span class="input-group-text bg-white border-end-0"><i
+                      class="fa-solid fa-barcode text-secondary"></i></span>
+                  <input type="text" id="trzSearchInput" class="form-control border-start-0"
+                    placeholder="Ej: 06-LCC11, SN12345, o escanea DataMatrix..." autofocus>
+                  <button class="btn btn-primary px-4" type="button" onclick="searchTrazabilidad()">
+                    <i class="fa-solid fa-search me-1"></i> Buscar
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <button class="btn btn-outline-dark btn-lg w-100 shadow-sm" onclick="openScannerForTrz()">
+                  <i class="fa-solid fa-camera me-2"></i> Escanear Código
+                </button>
+              </div>
+            </div>
+
+            <div id="trzResultsContainer" class="mt-5" style="display: none;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">Resultados encontrados: <span id="trzCount"
+                    class="badge bg-primary ms-1">0</span></h6>
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearTrzResults()">Limpiar resultados</button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Fecha</th>
+                      <th>OT</th>
+                      <th>Denominación</th>
+                      <th>Ref / Modelo</th>
+                      <th>Tipo</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="trzResultsBody">
+                    <!-- Dinámico -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="trzNoResults" class="mt-5 text-center py-5 bg-light rounded-4" style="display: none;">
+              <i class="fa-solid fa-circle-question fa-3x text-secondary opacity-25 mb-3"></i>
+              <h5 class="text-secondary">No se han encontrado registros</h5>
+              <p class="text-muted">Asegúrate de que el código introducido sea correcto.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===========================
+     MODAL USUARIOS (solo admin)
+     =========================== -->
+  {% if user and user.role == "admin" %}
+  <div class="modal fade" id="usersModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">👤 Gestión de usuarios y permisos</h5>
+          <a href="/" class="btn-close" aria-label="Close"></a>
+        </div>
+
+        <div class="modal-body">
+          {% set uerr = request.query_params.get('uerr') %}
+          {% set uok = request.query_params.get('uok') %}
+          {% if uok %}
+          <div class="alert alert-success">✅ Cambios guardados.</div>
+          {% endif %}
+          {% if uerr == 'exists' %}
+          <div class="alert alert-danger">❌ Ese usuario ya existe.</div>
+          {% elif uerr == 'username' %}
+          <div class="alert alert-danger">❌ El nombre de usuario es obligatorio.</div>
+          {% elif uerr == 'role' %}
+          <div class="alert alert-danger">❌ Rol inválido.</div>
+          {% elif uerr == 'db' %}
+          <div class="alert alert-danger">❌ Error de base de datos creando el usuario.</div>
+          {% elif uerr == 'pw' %}
+          <div class="alert alert-danger">❌ Password inválido.</div>
+          {% elif uerr == 'selfdelete' %}
+          <div class="alert alert-danger">❌ No puedes borrarte a ti mismo.</div>
+          {% elif uerr == 'notfound' %}
+          <div class="alert alert-danger">❌ Usuario no encontrado.</div>
+          {% endif %}
+
+          <div class="row g-3">
+            <!-- Crear usuario -->
+            <div class="col-lg-4">
+              <div class="panel p-3">
+                <div class="fw-bold mb-2">Crear usuario</div>
+                <form method="post" action="/dash_users/nuevo">
+                  <div class="mb-2">
+                    <label class="form-label">Usuario</label>
+                    <input class="form-control" name="username" required>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">Password</label>
+                    <input class="form-control" name="password" type="password" required>
+                  </div>
+                  <div class="mb-2">
+                    <label class="form-label">Rol</label>
+                    <select class="form-select" name="role" id="dashRoleSelector" onchange="toggleDashClienteSelector()"
+                      required>
+                      <option value="recepcion">recepcion</option>
+                      <option value="tecnico">tecnico</option>
+                      <option value="grabado">grabado</option>
+                      <option value="admin">admin</option>
+                      <option value="socio">socio</option>
+                      <option value="cliente">cliente</option>
+                    </select>
+                  </div>
+                  <div class="mb-2" id="dashClienteSelectorContainer" style="display: none;">
+                    <label class="form-label">Centro / Cliente</label>
+                    <select class="form-select" name="cliente_id">
+                      <option value="">-- Seleccionar centro --</option>
+                      {% for cli in clientes_list_global %}
+                      <option value="{{ cli.id }}">{{ cli.nombre }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <script>
+                    function toggleDashClienteSelector() {
+                      const role = document.getElementById('dashRoleSelector').value;
+                      const container = document.getElementById('dashClienteSelectorContainer');
+                      container.style.display = (role === 'cliente') ? 'block' : 'none';
+                    }
+                  </script>
+                  <button class="btn btn-primary w-100">Crear</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Lista usuarios -->
+            <div class="col-lg-8">
+              <div class="panel p-3">
+                <div class="fw-bold mb-2">Usuarios</div>
+
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Centro</th>
+                        <th>Activo</th>
+                        <th style="min-width:320px;">Permisos por acción</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for u in users_list %}
+                      <tr>
+                        <td>{{ u.id }}</td>
+                        <td><strong>{{ u.username }}</strong></td>
+
+                        <td>
+                          <form method="post" action="/dash_users/{{ u.id }}/role" class="m-0">
+                            <select class="form-select form-select-sm" name="role" onchange="this.form.submit()">
+                              {% for r in ["admin","recepcion","tecnico","grabado", "cliente", "socio"] %}
+                              <option value="{{ r }}" {% if u.role==r %}selected{% endif %}>{{ r }}</option>
+                              {% endfor %}
+                            </select>
+                          </form>
+                        </td>
+
+                        <td>
+                          <form method="post" action="/dash_users/{{ u.id }}/cliente" class="m-0">
+                            <select class="form-select form-select-sm" name="cliente_id" onchange="this.form.submit()">
+                              <option value="">-- Interno --</option>
+                              {% for cli in clientes_list_global %}
+                              <option value="{{ cli.id }}" {% if u.cliente_id==cli.id %}selected{% endif %}>{{
+                                cli.nombre }}</option>
+                              {% endfor %}
+                            </select>
+                          </form>
+                        </td>
+
+                        <td>
+                          <form method="post" action="/dash_users/{{ u.id }}/toggle" class="m-0">
+                            <button
+                              class="btn btn-sm {% if u.is_active %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                              {% if u.is_active %}Activo{% else %}Inactivo{% endif %}
+                            </button>
+                          </form>
+                        </td>
+
+                        <td>
+                          <form method="post" action="/dash_users/{{ u.id }}/perms" class="m-0">
+                            <div class="perm-grid">
+                              {% set pm = perms_by_user.get(u.id, {}) %}
+                              {% for act,label in actions %}
+                              {% set checked = (pm.get(act, 0) == 1) %}
+                              <label class="form-check form-check-inline m-0">
+                                <input class="form-check-input" type="checkbox" name="perm_{{ act }}" {% if checked
+                                  %}checked{% endif %}>
+                                <span class="form-check-label">{{ label }}</span>
+                              </label>
+                              {% endfor %}
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm mt-2">Guardar permisos</button>
+                          </form>
+
+                          <form method="post" action="/dash_users/{{ u.id }}/password" class="m-0 mt-2">
+                            <div class="input-group input-group-sm">
+                              <input class="form-control" name="password" type="password" placeholder="Nuevo password">
+                              <button class="btn btn-outline-dark">Cambiar</button>
+                            </div>
+                          </form>
+                        </td>
+
+                        <td class="text-end">
+                          <div class="d-flex justify-content-end gap-2 flex-wrap">
+                            <span class="text-secondary small align-self-center">{{ u.created_at|fecha }}</span>
+                            <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal"
+                              data-bs-target="#delUser{{ u.id }}">Borrar</button>
+                          </div>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="/" class="btn btn-secondary">Cerrar y volver</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Modales de borrado de usuario (fuera del modal principal para evitar bloqueos) -->
+  {% if user and user.role == "admin" %}
+  {% for u in users_list %}
+  <div class="modal fade" id="delUser{{ u.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger">⚠️ Borrar usuario {{ u.username }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Esta acción no se puede deshacer.</strong></p>
+          <p>Se eliminará el usuario y sus permisos.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form method="post" action="/dash_users/{{ u.id }}/delete" class="m-0">
+            <button class="btn btn-danger">Sí, borrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Modal Escáner -->
+  <div class="modal fade" id="scannerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Escanear Código OT</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="stopScanner()"></button>
+        </div>
+        <div class="modal-body">
+          <div id="reader"
+            style="width: 100%; min-height: 300px; background: #000; border-radius: 8px; overflow: hidden;"></div>
+          <div class="text-center mt-3 small text-secondary">
+            <i class="fa-solid fa-expand me-1"></i> Centra el código en el recuadro para escanearlo más rápido
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Cambiar Mi Contraseña -->
+  <div class="modal fade" id="myPassModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-key text-primary me-2"></i>Nueva Contraseña</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="/perfil/password">
+          <div class="modal-body">
+            <input type="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6"
+              required autofocus>
+            <div class="form-text small mt-2">Se cerrará la sesión tras el cambio por seguridad.</div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="submit" class="btn btn-primary btn-sm w-100">Actualizar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Solicitar Recogida (Punto 5) -->
+  <div class="modal fade" id="recogidaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-truck-ramp-box text-primary me-2"></i>Solicitar Recogida de
+            Material</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="/peticion_recogida">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Nº aproximado de instrumentos</label>
+              <input type="number" name="n_instrumentos" class="form-control" placeholder="Ej: 15" min="1" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Persona de contacto</label>
+                <input type="text" name="contacto" class="form-control" placeholder="Nombre completo" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Teléfono de contacto</label>
+                <input type="tel" name="telefono" class="form-control" placeholder="600 000 000" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Observaciones / Descripción</label>
+              <textarea name="observaciones" class="form-control" rows="3"
+                placeholder="Ej: Recoger en administración, horario de mañana..."></textarea>
+            </div>
+            <div class="alert alert-info p-2 small mb-0">
+              <i class="fa-solid fa-circle-info me-1"></i> Se enviará una notificación al servicio técnico para
+              coordinar la logística.
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="submit" class="btn btn-primary w-100">Enviar Solicitud</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Consulta Técnica -->
+  <div class="modal fade" id="consultaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-comment-medical text-info me-2"></i>Consultar Reparabilidad
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="/consultas/nueva" enctype="multipart/form-data">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Título / Instrumento</label>
+              <input type="text" name="titulo" class="form-control" placeholder="Ej: Óptica rígida 4mm 30º" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Descripción del fallo</label>
+              <textarea name="descripcion" class="form-control" rows="3"
+                placeholder="Describe qué le pasa o qué necesitas consultar..." required></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Fotos (Máximo 3)</label>
+              <div class="row g-2">
+                <div class="col-4">
+                  <input type="file" name="foto1" class="form-control form-control-sm" accept="image/*">
+                </div>
+                <div class="col-4">
+                  <input type="file" name="foto2" class="form-control form-control-sm" accept="image/*">
+                </div>
+                <div class="col-4">
+                  <input type="file" name="foto3" class="form-control form-control-sm" accept="image/*">
+                </div>
+              </div>
+              <div class="form-text small mt-1">Imágenes del daño ayudan mucho a la valoración previa.</div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="submit" class="btn btn-info text-white w-100">Enviar Consulta</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lista de Consultas -->
+  <div class="modal fade" id="consultaListModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-comments text-info me-2"></i>Historial de Consultas</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="list-group list-group-flush">
+            {% if not consultas_list %}
+            <div class="text-center p-4 text-secondary opacity-50">
+              <i class="fa-solid fa-comment-slash fa-2xl d-block mb-3"></i>
+              No hay consultas activas actualmente.
+            </div>
+            {% endif %}
+            {% for c in consultas_list %}
+            <div class="list-group-item px-0 py-3 border-bottom position-relative">
+              <div class="d-flex justify-content-between align-items-start h-100">
+                <!-- Zona clicable (Chat) -->
+                <a href="/consultas/{{ c.id }}" class="text-decoration-none text-dark flex-grow-1 me-3">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div>
+                      {% if user.role != 'cliente' %}
+                      <span class="badge bg-light text-dark border me-1">{{ c.cliente_nombre }}</span>
+                      {% endif %}
+                      <strong class="text-primary">{{ c.titulo }}</strong>
+                    </div>
+                    <span class="text-secondary small ms-2">{{ c.creado_en|fecha }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="small text-secondary text-truncate" style="max-width: 80%;">
+                      {{ c.descripcion }}
+                    </div>
+                    {% if c.estado == 'Abierta' %}
+                    <span class="badge text-bg-warning">Pendiente</span>
+                    {% elif c.estado == 'Respondida' %}
+                    <span class="badge text-bg-success">Respondida</span>
+                    {% else %}
+                    <span class="badge text-bg-secondary">{{ c.estado }}</span>
+                    {% endif %}
+                  </div>
+                </a>
+
+                <!-- Botón de acción rápida (Cerrar/Borrar) -->
+                {% if user.role in ["admin", "recepcion", "tecnico"] %}
+                <form method="post" action="/consultas/{{ c.id }}/cerrar" class="m-0 align-self-center"
+                  onsubmit="return confirm('¿Confirmas que quieres BORRAR esta consulta de la lista?')">
+                  <button type="submit" class="btn btn-outline-danger btn-sm border-0 p-2" title="Borrar consulta">
+                    <i class="fa-solid fa-trash fa-lg"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lista de Recogidas Pendientes -->
+  <div class="modal fade" id="pickupListModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content panel border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title h6"><i class="fa-solid fa-truck-pickup text-primary me-2"></i>Recogidas Pendientes</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="list-group list-group-flush">
+            {% for p in peticiones_recogida %}
+            <div class="list-group-item px-0 py-3 border-bottom">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <span class="badge bg-light text-dark border">{{ p.cliente_nombre }}</span>
+                <span class="text-secondary small">{{ p.creado_en|fecha }}</span>
+              </div>
+              <div class="mb-2">
+                <strong>Instrumentos aprox:</strong> {{ p.n_instrumentos }}<br>
+                <i class="fa-solid fa-user me-1 small text-secondary"></i> <strong>{{ p.contacto or 'N/A'
+                  }}</strong><br>
+                <i class="fa-solid fa-phone me-1 small text-secondary"></i> <a href="tel:{{ p.telefono }}"
+                  class="text-decoration-none">{{ p.telefono or 'N/A' }}</a><br>
+                <div class="mt-1 p-2 bg-light rounded small border">
+                  <i class="fa-solid fa-comment-dots me-1 text-secondary"></i> {{ p.observaciones or 'Sin observaciones'
+                  }}
+                </div>
+              </div>
+              <form method="post" action="/peticion_recogida/{{ p.id }}/completar">
+                <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                  <i class="fa-solid fa-check me-1"></i> Marcar como Gestionada
+                </button>
+              </form>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  {% if open_users_modal %}
+  <script>
+    const m = new bootstrap.Modal(document.getElementById('usersModal'));
+    m.show();
+  </script>
+  {% endif %}
+
+  <script>
+    // Lógica del Escáner General
+    let html5QrCode = null;
+    const scannerModal = new bootstrap.Modal(document.getElementById('scannerModal'));
+
+    async function openScanner() {
+      scannerModal.show();
+      setTimeout(async () => {
+        try {
+          html5QrCode = new Html5Qrcode("reader");
+          const config = {
+            fps: 30,
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              const size = Math.floor(minEdge * 0.75);
+              return { width: size, height: size };
+            },
+            aspectRatio: 1.0,
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+          };
+
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+              if (decodedText) {
+                const cleanText = decodedText.trim();
+                stopScanner();
+                scannerModal.hide();
+                if (window.navigator.vibrate) window.navigator.vibrate(100);
+                window.location.href = `/ot/${encodeURIComponent(cleanText)}`;
+              }
+            },
+            (errorMessage) => { /* ignore */ }
+          );
+        } catch (err) {
+          console.error("No se pudo iniciar el escáner", err);
+          document.getElementById('reader').innerHTML = `<div class="alert alert-danger m-2 small">Error de cámara: ${err}</div>`;
+        }
+      }, 300);
+    }
+
+    function stopScanner() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+        }).catch(err => console.error("Error al parar escáner", err));
+      }
+    }
+
+    // --- LÓGICA DE TRAZABILIDAD ---
+    async function searchTrazabilidad() {
+      const q = document.getElementById('trzSearchInput').value.trim();
+      if (!q) return;
+
+      const container = document.getElementById('trzResultsContainer');
+      const body = document.getElementById('trzResultsBody');
+      const noResults = document.getElementById('trzNoResults');
+      const countBadge = document.getElementById('trzCount');
+
+      body.innerHTML = '<tr><td colspan="7" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Buscando...</td></tr>';
+      container.style.display = 'block';
+      noResults.style.display = 'none';
+
+      try {
+        const response = await fetch(`/api/trazabilidad/buscar?q=${encodeURIComponent(q)}`);
+        const data = await response.json();
+
+        if (data.results && data.results.length > 0) {
+          countBadge.innerText = data.results.length;
+          let html = '';
+          data.results.forEach(r => {
+            const fecha = r.fecha_fmt || r.fecha || '-';
+            const estadoClass = r.estado === 'Reparado' ? 'bg-success' : 'bg-warning text-dark';
+            html += `
+              <tr>
+                <td><small class="text-secondary">${fecha}</small></td>
+                <td><span class="fw-bold">${r.ot_num}</span></td>
+                <td><small>${r.denominacion || '-'}</small></td>
+                <td><small class="text-secondary">${r.codigo_producto || '-'}</small></td>
+                <td><span class="badge text-bg-light border">${r.tipo_trabajo || 'REPARACION'}</span></td>
+                <td><span class="badge ${estadoClass}" style="font-size:0.7rem;">${r.estado}</span></td>
+                <td class="text-end">
+                  <a href="/instrumentos/${r.id}" class="btn btn-sm btn-outline-primary py-0">Ver detalle</a>
+                </td>
+              </tr>
+            `;
+          });
+          body.innerHTML = html;
+        } else {
+          container.style.display = 'none';
+          noResults.style.display = 'block';
+        }
+      } catch (err) {
+        console.error("Error buscando trazabilidad:", err);
+        body.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error al conectar con el servidor</td></tr>';
+      }
+    }
+
+    function clearTrzResults() {
+      document.getElementById('trzSearchInput').value = '';
+      document.getElementById('trzResultsContainer').style.display = 'none';
+      document.getElementById('trzNoResults').style.display = 'none';
+    }
+
+    function openScannerForTrz() {
+      scannerModal.show();
+      setTimeout(async () => {
+        try {
+          html5QrCode = new Html5Qrcode("reader");
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 20, qrbox: 250 },
+            (decodedText) => {
+              if (decodedText) {
+                stopScanner();
+                scannerModal.hide();
+                document.getElementById('trzSearchInput').value = decodedText.trim();
+                searchTrazabilidad();
+              }
+            },
+            (errorMessage) => { /* ignore */ }
+          );
+        } catch (err) {
+          console.error("Scanner Trz error", err);
+        }
+      }, 300);
+    }
+
+    // Enter en trazabilidad
+    document.getElementById('trzSearchInput')?.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') searchTrazabilidad();
+    });
+
+    // Notificaciones SweetAlert
+    {% if request.query_params.get('msg') == 'recogida_ok' %}
+    Swal.fire({
+      title: '¡Solicitud Enviada!',
+      text: 'Hemos registrado tu petición con el número {{ request.query_params.get("num") or "" }}.',
+      icon: 'success',
+      confirmButtonColor: '#0d6efd',
+      timer: 8000,
+      timerProgressBar: true
+    }).then(() => {
+      window.history.replaceState(null, '', window.location.pathname);
+    });
+    {% endif %}
+    {% if request.query_params.get('msg') == 'consulta_ok' %}
+    Swal.fire({
+      title: '¡Consulta Enviada!',
+      text: 'Nuestros técnicos revisarán las fotos y te responderán lo antes posible.',
+      icon: 'success',
+      confirmButtonColor: '#0dcaf0',
+      timer: 5000,
+      timerProgressBar: true
+    }).then(() => {
+      window.history.replaceState(null, '', window.location.pathname);
+    });
+    {% endif %}
+
+    // Efecto de carga en el botón de recogida
+    const recogidaForm = document.querySelector('form[action="/peticion_recogida"]');
+    if (recogidaForm) {
+      recogidaForm.addEventListener('submit', function () {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+      });
+    }
+
+    async function toggleAceptado(envioId, element) {
+      try {
+        const response = await fetch(`/envios/${envioId}/toggle_aceptado`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await response.json();
+        if (data.ok) {
+          const icon = element.querySelector('i');
+          if (data.aceptado) {
+            icon.classList.remove('fa-circle-xmark', 'text-danger');
+            icon.classList.add('fa-circle-check', 'text-success');
+          } else {
+            icon.classList.remove('fa-circle-check', 'text-success');
+            icon.classList.add('fa-circle-xmark', 'text-danger');
+          }
+        } else {
+          Swal.fire('Error', data.error || 'No se pudo cambiar el estado', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Error de conexión', 'error');
+      }
+    }
+
+    // Polling de Consultas y Sonido de Notificación
+    let lastConsultasCount = {{ n_consultas_pendientes or 0 }};
+
+    function playNotificationSound() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.5);
+      } catch (e) { console.error("Could not play sound:", e); }
+    }
+
+    function checkConsultas() {
+      fetch('/api/consultas/unread_count')
+        .then(r => r.json())
+        .then(data => {
+          const badge = document.getElementById('consultasBadge');
+          if (badge) {
+            badge.innerText = data.count;
+            badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+          }
+          if (data.count > lastConsultasCount) {
+            playNotificationSound();
+          }
+          lastConsultasCount = data.count;
+        })
+        .catch(err => console.error("Error polling consultas:", err));
+    }
+
+    // Polling cada 60 segundos
+    setInterval(checkConsultas, 60000);
+    // Ejecutar una vez al inicio tras un delay corto
+    setTimeout(checkConsultas, 5000);
+
+    // Polling de recogidas
+    {% if user and user.role in ["admin", "recepcion"] %}
+    function checkPickups() {
+      fetch('/api/peticiones_recogida/count')
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById('pickupBadgeContainer');
+          if (!container) return;
+          if (data.count > 0) {
+            const currentBadge = container.querySelector('.badge');
+            if (!currentBadge || parseInt(currentBadge.innerText) !== data.count) {
+              container.innerHTML = `
+                <button class="btn btn-warning btn-sm position-relative ms-1 bounce-in" data-bs-toggle="modal"
+                    data-bs-target="#pickupListModal" title="Peticiones de recogida pendientes">
+                    <i class="fa-solid fa-truck-pickup"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style="font-size: 0.6rem;">
+                    ${data.count}
+                    </span>
+                </button>
+                `;
+            }
+          } else {
+            container.innerHTML = '';
+          }
+        })
+        .catch(err => console.error("Error polling pickups:", err));
+    }
+    setInterval(checkPickups, 120000);
+    {% endif %}
+  </script>
+</body>
+
+</html>

@@ -323,6 +323,29 @@ def init_db():
     )
     """)
 
+    # Migración: asegurar columnas en instrumentos
+    cols_instrumentos = get_table_columns(cur, "instrumentos")
+    if "tecnico_reparacion" not in cols_instrumentos:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN tecnico_reparacion TEXT")
+    if "tecnico_reparacion_en" not in cols_instrumentos:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN tecnico_reparacion_en TEXT")
+    if "repuesto_info" not in cols_instrumentos:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN repuesto_info TEXT")
+    if "repuesto_precio" not in cols_instrumentos:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN repuesto_precio REAL")
+    if "recomendada_sustitucion" not in cols_instrumentos:
+        cur.execute("ALTER TABLE instrumentos ADD COLUMN recomendada_sustitucion INTEGER DEFAULT 0")
+
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS articulos_catalogo (
+        id {pk},
+        codigo TEXT UNIQUE NOT NULL,
+        descripcion TEXT,
+        fabricante TEXT
+    )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_articulos_codigo ON articulos_catalogo(codigo)")
+
     cur.execute(f"""
     CREATE TABLE IF NOT EXISTS repuestos_catalogo (
         id {pk},
@@ -553,7 +576,8 @@ def init_db():
     if "telefono" not in cols_pr:
         cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN telefono TEXT")
     if "num_peticion" not in cols_pr:
-        cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN num_peticion TEXT UNIQUE")
+        cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN num_peticion TEXT")
+        cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_peticiones_num ON peticiones_recogida(num_peticion)")
 
     # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
     cur.execute("""

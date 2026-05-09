@@ -132,8 +132,10 @@ try:
 except Exception as e:
     print(f">>> CRITICAL ERROR mounting static files: {e}", flush=True)
 
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-print(">>> Templates initialized.", flush=True)
+# Configuración de plantillas (forzamos ruta absoluta)
+TEMPLATES_DIR = (BASE_DIR / "templates").resolve()
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+print(f">>> [INIT] Plantillas inicializadas en: {TEMPLATES_DIR}", flush=True)
 
 def format_fecha(value):
     if not value or value == "-":
@@ -303,78 +305,92 @@ def _codigo_variants(codigo_norm: str) -> list:
 
     return out
 
-def load_articulos_map() -> dict:
-    """Carga el catálogo de Articulos para autocompletar."""
+def load_articulos_map(force_refresh=False) -> dict:
+    """Carga el catálogo de Articulos para autocompletar, usando la BD como caché."""
     global _articulos_map
-    if _articulos_map is not None:
+    if _articulos_map is not None and not force_refresh:
         return _articulos_map
 
+    m = {}
+    from db import get_conn
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # 1. Intentar cargar desde la Base de Datos (solo si no forzamos actualización)
+    if not force_refresh:
+        try:
+            cur.execute("SELECT codigo, descripcion, fabricante FROM articulos_catalogo")
+        rows = cur.fetchall()
+        if rows:
+            for r in rows:
+                m[r["codigo"]] = {"descripcion": r["descripcion"], "fabricante": r["fabricante"]}
+            _articulos_map = m
+            conn.close()
+            print(f">>> [ARTICULOS] {len(m)} artículos cargados desde la Base de Datos.", flush=True)
+            return _articulos_map
+    except Exception as e:
+        print(f">>> [ARTICULOS] Error leyendo de BD: {e}", flush=True)
+
+    # 2. Si la BD está vacía, cargar desde EXCEL y GUARDAR en la BD
     path = ARTICULOS_XLS if os.path.exists(ARTICULOS_XLS) else ARTICULOS_XLSX
     if not os.path.exists(path):
         print(f">>> [ARTICULOS] Archivo no encontrado: {path}", flush=True)
         _articulos_map = {}
+        conn.close()
         return _articulos_map
 
+    print(f">>> [ARTICULOS] Base de datos vacía. Cargando desde Excel ({path})...", flush=True)
+    
     def _put(m, code, desc, fab=None):
         code = _norm_codigo(str(code))
-        if not code or code == "NAN":
-            return
+        if not code or code == "NAN": return
         desc = ("" if desc is None else str(desc)).strip()
-        if not desc or desc.lower() == "nan":
-            return
-        fab_s = None
-        if fab is not None:
-            fab_s = str(fab).strip()
-            if not fab_s or fab_s.lower() == "nan":
-                fab_s = None
-
-        if fab_s is None:
-            try:
-                d = desc.strip()
-                if d.upper().endswith(" AS"):
-                    fab_s = "Aescula"
-            except Exception:
-                pass
+        if not desc or desc.lower() == "nan": return
+        fab_s = (str(fab).strip() if fab and str(fab).lower() != "nan" else None)
+        if fab_s is None and desc.upper().endswith(" AS"): fab_s = "Aescula"
+        
         m[code] = {"descripcion": desc, "fabricante": fab_s}
         if code.endswith('R') and len(code) > 1:
             code2 = code[:-1].strip()
             if code2 and code2 not in m:
                 m[code2] = {"descripcion": desc, "fabricante": fab_s}
 
-    m = {}
     df = None
     if pd is not None:
         try:
             engine = 'openpyxl' if path.lower().endswith('.xlsx') else None
             df = pd.read_excel(path, engine=engine)
-            print(f">>> [ARTICULOS] Cargado {path} ({len(df)} filas)", flush=True)
-        except Exception as e:
-            print(f">>> [ARTICULOS] Error {path}: {e}", flush=True)
-            if path.lower().endswith('.xls') and os.path.exists(ARTICULOS_XLSX):
-                try:
-                    path = ARTICULOS_XLSX
-                    df = pd.read_excel(path, engine='openpyxl')
-                except Exception:
-                    pass
+        except Exception: pass
 
     if df is not None:
         cols_raw = [str(c).strip() for c in df.columns]
         cols_map = {c.lower(): c for c in cols_raw}
-        col_codigo = cols_map.get("código") or cols_map.get("codigo") or cols_map.get("cod") or (cols_raw[0] if cols_raw else None)
-        col_desc = cols_map.get("descripción") or cols_map.get("descripcion") or cols_map.get("denominacion") or (cols_raw[1] if len(cols_raw) >= 2 else None)
-        col_fab = None
-        if len(cols_raw) >= 4:
-            col_fab = cols_raw[3]
-        else:
-            col_fab = cols_map.get("fabricante") or cols_map.get("marca") or cols_map.get("manufacturer")
+        col_codigo = cols_map.get("código") or cols_map.get("codigo") or (cols_raw[0] if cols_raw else None)
+        col_desc = cols_map.get("descripción") or cols_map.get("descripcion") or (cols_raw[1] if len(cols_raw) >= 2 else None)
+        col_fab = cols_map.get("fabricante") or (cols_raw[3] if len(cols_raw) >= 4 else None)
 
         if col_codigo and col_desc:
+            # Limpiar tabla antes de insertar
+            cur.execute("DELETE FROM articulos_catalogo")
+            batch = []
             for _, row in df.iterrows():
                 try:
-                    _put(m, row[col_codigo], row[col_desc], row[col_fab] if col_fab else None)
-                except Exception:
-                    continue
+                    c = _norm_codigo(str(row[col_codigo]))
+                    d = str(row[col_desc]).strip()
+                    f = (str(row[col_fab]).strip() if col_fab and row[col_fab] else None)
+                    if c and d:
+                        _put(m, c, d, f)
+                        batch.append((c, d, f))
+                except Exception: continue
+            
+            # Insertar en bloques para que sea rápido
+            if batch:
+                cur.executemany("INSERT OR IGNORE INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?)", batch)
+                conn.commit()
+                print(f">>> [ARTICULOS] {len(batch)} artículos guardados en la BD para futuras cargas.", flush=True)
+
     _articulos_map = m
+    conn.close()
     return _articulos_map
 
 # -----------------------------
@@ -464,15 +480,9 @@ def can_action(user, action: str, cur=None) -> bool:
 
 @app.on_event("startup")
 def on_startup():
-    # Pre-carga del catálogo de Articulos para evitar LAG en el primer uso
-    try:
-        from app import load_articulos_map
-        load_articulos_map()
-        print(">>> [INIT] Catálogo de Artículos pre-cargado con éxito.", flush=True)
-    except Exception as e:
-        print(f">>> [INIT] Error pre-cargando catálogo: {e}", flush=True)
-
+    # Inicialización de la BD (migraciones)
     init_db()
+    print(">>> [INIT] Aplicación iniciada y Base de Datos verificada.", flush=True)
 
     # Tabla de permisos por acción (granularidad extra a roles)
     conn = get_conn()
@@ -567,34 +577,37 @@ def manual_init_db():
 
 @app.get('/articulos_lookup')
 def articulos_lookup(codigo: str, user=Depends(get_current_user)):
-    """Lookup de artículo para autorrelleno en alta manual de instrumentos.
-
-    Devuelve JSON con:
-      - found: bool
-      - codigo: str (normalizado)
-      - descripcion: str
-      - fabricante: str (opcional)
-    """
+    """Lookup de artículo directo en la base de datos (Alta velocidad)."""
     key = _norm_codigo(codigo)
     if not key:
         return {'found': False}
 
-    m = load_articulos_map()
-    if not m:
-        return {'found': False, 'error': 'Catálogo Articulos no disponible'}
-
-    for k in _codigo_variants(key):
-        hit = m.get(k)
-        if hit:
+    from db import get_conn
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # Probamos con el código normalizado y sus variantes (con/sin R)
+    variants = _codigo_variants(key)
+    placeholders = ', '.join(['?'] * len(variants))
+    
+    try:
+        sql = f"SELECT codigo, descripcion, fabricante FROM articulos_catalogo WHERE codigo IN ({placeholders})"
+        cur.execute(sql, tuple(variants))
+        row = cur.fetchone()
+        conn.close()
+        
+        if row:
             resp = {
                 'found': True,
-                'codigo': k,
-                'descripcion': (hit.get('descripcion') or '').strip(),
+                'codigo': row["codigo"],
+                'descripcion': (row["descripcion"] or "").strip(),
             }
-            fab = (hit.get('fabricante') or '').strip()
-            if fab:
-                resp['fabricante'] = fab
+            if row["fabricante"]:
+                resp['fabricante'] = row["fabricante"].strip()
             return resp
+    except Exception as e:
+        print(f">>> [LOOKUP] Error: {e}", flush=True)
+        if conn: conn.close()
 
     return {'found': False}
 
@@ -652,7 +665,7 @@ def _next_ot_num(cur) -> str:
 # -----------------------------
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    return templates.TemplateResponse(request, "login.html", {"error": None})
 
 
 from mail_utils import send_finish_notification, send_credentials_request
@@ -687,7 +700,7 @@ async def login(request: Request):
     pw_col = schema.get("password_col")
     if not pw_col:
         conn.close()
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Credenciales inválidas"})
+        return templates.TemplateResponse(request, "login.html", {"error": "Credenciales inválidas"})
 
     if schema.get("has_is_active"):
         cur.execute(f"SELECT id, {pw_col} AS pw, is_active FROM users WHERE username=?", (username,))
@@ -698,13 +711,13 @@ async def login(request: Request):
     conn.close()
 
     if not u:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Credenciales inválidas"})
+        return templates.TemplateResponse(request, "login.html", {"error": "Credenciales inválidas"})
 
     if int(u["is_active"] or 0) == 0:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Usuario desactivado (contacta con el administrador)"})
+        return templates.TemplateResponse(request, "login.html", {"error": "Usuario desactivado (contacta con el administrador)"})
 
     if not verify_password(password, u["pw"]):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Credenciales inválidas"})
+        return templates.TemplateResponse(request, "login.html", {"error": "Credenciales inválidas"})
 
     response = RedirectResponse(url="/", status_code=303)
     token = sign_session(app.state.serializer, user_id=int(u["id"]))
@@ -1015,8 +1028,7 @@ def dashboard(request: Request, user=Depends(get_current_user)):
         "n_consultas_activas": n_consultas_activas or 0,
     }
 
-    return templates.TemplateResponse(
-        "dashboard.html",
+    return templates.TemplateResponse(request, "dashboard.html",
         context,
     )
 
@@ -1152,11 +1164,7 @@ def export_home(request: Request, user=Depends(require_roles("admin", "recepcion
         
     envios = [dict(r) for r in cur.fetchall()]
     conn.close()
-    return templates.TemplateResponse(
-        "export.html",
-        {
-            "request": request,
-            "user": user,
+    return templates.TemplateResponse(request, "export.html", {"user": user,
             "envios": envios,
             "estados": ["TODOS", "Pendiente", "En proceso", "Reparado", "Baja"],
         },
@@ -1165,7 +1173,7 @@ def export_home(request: Request, user=Depends(require_roles("admin", "recepcion
 
 @app.get("/guias", response_class=HTMLResponse)
 def guias_cliente(request: Request, user=Depends(get_current_user)):
-    return templates.TemplateResponse("guias.html", {"request": request, "user": user})
+    return templates.TemplateResponse(request, "guias.html", {"user": user})
 
 
 @app.get("/export/download")
@@ -1383,17 +1391,14 @@ def clientes_list(request: Request, user=Depends(require_roles("admin", "recepci
     cur = conn.cursor()
     clientes = _list_clientes(cur)
     conn.close()
-    return templates.TemplateResponse(
-        "clientes_list.html",
-        {"request": request, "user": user, "clientes": clientes},
+    return templates.TemplateResponse(request, "clientes_list.html", {"user": user, "clientes": clientes},
     )
 
 
 @app.get("/clientes/nuevo", response_class=HTMLResponse)
 def clientes_nuevo_form(request: Request, user=Depends(require_roles("admin", "recepcion", "socio"))):
-    return templates.TemplateResponse(
-        "clientes_form.html",
-        {"request": request, "user": user, "mode": "new", "cliente": None},
+    return templates.TemplateResponse(request, "clientes_form.html",
+        {"user": user, "mode": "new", "cliente": None},
     )
 
 
@@ -1442,9 +1447,8 @@ def clientes_editar_form(request: Request, cliente_id: int, user=Depends(require
     conn.close()
     if not cli:
         return HTMLResponse("Cliente no encontrado", status_code=404)
-    return templates.TemplateResponse(
-        "clientes_form.html",
-        {"request": request, "user": user, "mode": "edit", "cliente": cli},
+    return templates.TemplateResponse(request, "clientes_form.html",
+        {"user": user, "mode": "edit", "cliente": cli},
     )
 
 
@@ -1485,9 +1489,8 @@ def nuevo_envio_form(request: Request, user=Depends(require_roles("admin", "rece
     cur = conn.cursor()
     clientes = _list_clientes(cur)
     conn.close()
-    return templates.TemplateResponse(
-        "envio_nuevo.html",
-        {"request": request, "user": user, "clientes": clientes},
+    return templates.TemplateResponse(request, "envio_nuevo.html",
+        {"user": user, "clientes": clientes},
     )
 
 
@@ -1605,10 +1608,8 @@ def envio_editar_form(request: Request, envio_id: int, user=Depends(require_role
     if not envio:
         return HTMLResponse("Envío no encontrado", status_code=404)
 
-    return templates.TemplateResponse(
-        "envio_editar.html",
+    return templates.TemplateResponse(request, "envio_editar.html",
         {
-            "request": request,
             "user": user,
             "envio": dict(envio),
             "clientes": clientes
@@ -1848,14 +1849,12 @@ def ver_envio(request: Request, envio_id: int, user=Depends(get_current_user)):
     conn.close()
 
     if _user_role(user) == "tecnico":
-        return templates.TemplateResponse(
-            "tecnico_parte.html",
-            {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos, "is_finished": is_finished},
+        return templates.TemplateResponse(request, "tecnico_parte.html",
+            {"user": user, "envio": dict(envio), "instrumentos": instrumentos, "is_finished": is_finished},
         )
 
-    return templates.TemplateResponse(
-        "envio_detalle.html",
-        {"request": request, "user": user, "envio": dict(envio), "instrumentos": instrumentos, "is_finished": is_finished},
+    return templates.TemplateResponse(request, "envio_detalle.html",
+        {"user": user, "envio": dict(envio), "instrumentos": instrumentos, "is_finished": is_finished},
     )
 
 
@@ -2113,10 +2112,8 @@ def grabacion_envio(request: Request, envio_id: int, user=Depends(require_roles(
     grabados = sum(1 for r in instrumentos if int(r.get("grabado") or 0) == 1)
 
     conn.close()
-    return templates.TemplateResponse(
-        "envio_grabacion.html",
+    return templates.TemplateResponse(request, "envio_grabacion.html",
         {
-            "request": request,
             "user": user,
             "envio": dict(envio),
             "instrumentos": instrumentos,
@@ -2277,10 +2274,8 @@ def revision_envio(request: Request, envio_id: int, user=Depends(require_roles("
     total = len(instrumentos)
 
     conn.close()
-    return templates.TemplateResponse(
-        "envio_revision.html",
+    return templates.TemplateResponse(request, "envio_revision.html",
         {
-            "request": request,
             "user": user,
             "envio": dict(envio),
             "instrumentos": instrumentos,
@@ -2326,10 +2321,8 @@ def instrumento_nuevo_form(request: Request, envio_id: int, user=Depends(require
     if not envio:
         return HTMLResponse("Envío no encontrado", status_code=404)
 
-    return templates.TemplateResponse(
-        "instrumento_nuevo.html",
+    return templates.TemplateResponse(request, "instrumento_nuevo.html",
         {
-            "request": request,
             "user": user,
             "mode": "new",
             "envio": dict(envio),
@@ -2426,6 +2419,18 @@ def instrumento_nuevo_crear(
         
         inst_ids.append(inst_id)
 
+    # --- APRENDIZAJE AUTOMÁTICO ---
+    # Si el código de producto es nuevo, lo guardamos en el catálogo para el futuro
+    c_norm = _norm_codigo(codigo_producto)
+    if c_norm and denominacion:
+        try:
+            cur.execute(
+                "INSERT OR IGNORE INTO articulos_catalogo (codigo, descripcion, fabricante) VALUES (?, ?, ?)",
+                (c_norm, denominacion.strip(), (fabricante.strip() if fabricante else None))
+            )
+        except Exception:
+            pass
+
     conn.commit()
     conn.close()
 
@@ -2456,10 +2461,8 @@ def instrumento_editar_form(request: Request, instrumento_id: int, user=Depends(
     envio = cur.fetchone()
     conn.close()
 
-    return templates.TemplateResponse(
-        "instrumento_nuevo.html",
+    return templates.TemplateResponse(request, "instrumento_nuevo.html",
         {
-            "request": request,
             "user": user,
             "mode": "edit",
             "envio": dict(envio) if envio else None,
@@ -2653,7 +2656,7 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
             SELECT i.id, i.envio_id, e.ot_num, e.fecha, i.estado, i.creado_en
             FROM instrumentos i
             JOIN envios e ON e.id = i.envio_id
-            WHERE ({ " OR ".join(clauses) }) AND i.id != ?
+            WHERE ({ " OR ".join(clauses)}) AND i.id != ?
         """
         p_hist.append(instrumento_id)
 
@@ -2679,11 +2682,7 @@ def instrumento_detalle(request: Request, instrumento_id: int, user=Depends(get_
 
     conn.close()
 
-    return templates.TemplateResponse(
-        "instrumento_detalle.html",
-        {
-            "request": request,
-            "user": user,
+    return templates.TemplateResponse(request, "instrumento_detalle.html", {"user": user,
             "inst": dict(inst),
             "checklist": checklist,
             "repuestos_frecuentes": repuestos_frecuentes,
@@ -2718,18 +2717,14 @@ async def qc_optica_view(request: Request, instrumento_id: int, user=Depends(req
     
     conn.close()
     
-    return templates.TemplateResponse(
-        "instrumento_qc_optica.html",
+    return templates.TemplateResponse(request, "instrumento_qc_optica.html",
         {
-            "request": request,
             "user": user,
             "inst": dict(inst),
             "envio": dict(envio),
             "cliente": dict(cliente) if cliente else None,
             "qc": dict(qc) if qc else None,
-            "now_date": datetime.now().strftime("%Y-%m-%d")
-        }
-    )
+            "now_date": datetime.now().strftime("%Y-%m-%d")})
 
 @app.post("/instrumentos/{instrumento_id}/qc_optica")
 async def qc_optica_save(
@@ -3605,11 +3600,7 @@ def checklist_admin(request: Request, tipo: str = "REPARACION", user=Depends(req
     items = [dict(r) for r in cur.fetchall()]
     conn.close()
 
-    return templates.TemplateResponse(
-        "checklist_admin.html",
-        {
-            "request": request,
-            "user": user,
+    return templates.TemplateResponse(request, "checklist_admin.html", {"user": user,
             "tipo": tipo,
             "items": items,
             "tipos": ["REPARACION", "OPTICA_RIGIDA", "TRAZABILIDAD"],
@@ -3710,7 +3701,7 @@ def view_repuestos_catalogo(request: Request, user=Depends(require_roles("admin"
     cur.execute("SELECT * FROM repuestos_catalogo ORDER BY nombre")
     items = [dict(r) for r in cur.fetchall()]
     conn.close()
-    return templates.TemplateResponse("repuestos_catalogo.html", {"request": request, "user": user, "items": items})
+    return templates.TemplateResponse(request, "repuestos_catalogo.html", {"user": user, "items": items})
 
 @app.post("/repuestos_catalogo/add")
 async def add_repuesto_catalogo(request: Request, user=Depends(require_roles("admin"))):
@@ -3929,7 +3920,7 @@ def importar_form(request: Request, user=Depends(require_roles("admin", "recepci
     cur = conn.cursor()
     clientes = _list_clientes(cur)
     conn.close()
-    return templates.TemplateResponse("importar.html", {"request": request, "user": user, "clientes": clientes})
+    return templates.TemplateResponse(request, "importar.html", {"user": user, "clientes": clientes})
 
 
 @app.post("/importar")
@@ -4054,6 +4045,15 @@ async def importar_excel(
 # -----------------------------
 # USUARIOS (admin)
 # -----------------------------
+@app.post("/admin/sincronizar_catalogo")
+def admin_sincronizar_catalogo(user=Depends(require_roles("admin"))):
+    """Fuerza la sincronización del catálogo desde el archivo Excel a la BD."""
+    try:
+        load_articulos_map(force_refresh=True)
+        return RedirectResponse(url="/usuarios?msg=catalogo_sincronizado", status_code=303)
+    except Exception as e:
+        return RedirectResponse(url=f"/usuarios?err=error_sincronizacion:{str(e)}", status_code=303)
+
 @app.get("/usuarios", response_class=HTMLResponse)
 def usuarios_list(request: Request, user=Depends(require_roles("admin"))):
     conn = get_conn()
@@ -4061,7 +4061,7 @@ def usuarios_list(request: Request, user=Depends(require_roles("admin"))):
     cur.execute("SELECT id, username, role, is_active, created_at FROM users ORDER BY id DESC;")
     users = [dict(r) for r in cur.fetchall()]
     conn.close()
-    return templates.TemplateResponse("users.html", {"request": request, "user": user, "users": users})
+    return templates.TemplateResponse(request, "users.html", {"user": user, "users": users})
 
 
 @app.get("/usuarios/nuevo", response_class=HTMLResponse)
@@ -4070,9 +4070,7 @@ def usuarios_new_form(request: Request, user=Depends(require_roles("admin"))):
     cur = conn.cursor()
     clientes = _list_clientes(cur)
     conn.close()
-    return templates.TemplateResponse(
-        "user_form.html",
-        {"request": request, "user": user, "mode": "new", "u": {"username": "", "role": "tecnico", "is_active": 1, "cliente_id": None}, "clientes": clientes, "error": None},
+    return templates.TemplateResponse(request, "user_form.html", {"user": user, "mode": "new", "u": {"username": "", "role": "tecnico", "is_active": 1, "cliente_id": None}, "clientes": clientes, "error": None},
     )
 
 
@@ -4089,23 +4087,20 @@ def usuarios_new(
     username = (username or "").strip()
 
     if role not in ("admin", "recepcion", "tecnico", "grabado", "cliente", "socio"):
-        return templates.TemplateResponse(
-            "user_form.html",
-            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Rol inválido"},
+        return templates.TemplateResponse(request, "user_form.html",
+            {"user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Rol inválido"},
             status_code=400,
         )
 
     if len(username) < 3:
-        return templates.TemplateResponse(
-            "user_form.html",
-            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "El usuario debe tener al menos 3 caracteres"},
+        return templates.TemplateResponse(request, "user_form.html",
+            {"user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "El usuario debe tener al menos 3 caracteres"},
             status_code=400,
         )
 
     if not password or len(password) < 6:
-        return templates.TemplateResponse(
-            "user_form.html",
-            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "La contraseña debe tener al menos 6 caracteres"},
+        return templates.TemplateResponse(request, "user_form.html",
+            {"user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "La contraseña debe tener al menos 6 caracteres"},
             status_code=400,
         )
 
@@ -4116,9 +4111,8 @@ def usuarios_new(
     pw_col = schema.get("password_col")
     if not pw_col:
         conn.close()
-        return templates.TemplateResponse(
-            "user_form.html",
-            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Error de esquema DB"},
+        return templates.TemplateResponse(request, "user_form.html",
+            {"user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Error de esquema DB"},
             status_code=400,
         )
 
@@ -4218,17 +4212,14 @@ def usuarios_new(
         conn.commit()
     except sqlite3.IntegrityError:
         conn.close()
-        return templates.TemplateResponse(
-            "user_form.html",
-            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Ese usuario ya existe"},
+        return templates.TemplateResponse(request, "user_form.html", {"user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Ese usuario ya existe"},
             status_code=400,
         )
     except Exception as e:
         conn.close()
         print(f"Error creating user: {e}")
-        return templates.TemplateResponse(
-            "user_form.html",
-            {"request": request, "user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Error interno de base de datos"},
+        return templates.TemplateResponse(request, "user_form.html",
+            {"user": user, "mode": "new", "u": {"username": username, "role": role, "is_active": is_active}, "error": "Error interno de base de datos"},
             status_code=400,
         )
 
@@ -4780,7 +4771,7 @@ def recogidas_list(request: Request, user=Depends(get_current_user)):
     """, tuple(params))
     items = [dict(r) for r in cur.fetchall()]
     conn.close()
-    return templates.TemplateResponse("recogidas_list.html", {"request": request, "user": user, "items": items})
+    return templates.TemplateResponse(request, "recogidas_list.html", {"user": user, "items": items})
 
 
 @app.post("/peticion_recogida/{peticion_id}/completar")
@@ -4893,12 +4884,9 @@ async def consulta_detalle(request: Request, consulta_id: int, user=Depends(get_
     mensajes = [dict(r) for r in cur.fetchall()]
     
     conn.close()
-    return templates.TemplateResponse("consulta_chat.html", {
-        "request": request,
-        "user": user,
+    return templates.TemplateResponse(request, "consulta_chat.html", {"user": user,
         "consulta": dict(consulta),
-        "mensajes": mensajes
-    })
+        "mensajes": mensajes})
 
 @app.post("/consultas/{consulta_id}/mensaje")
 async def consulta_mensaje_enviar(consulta_id: int, mensaje: str = Form(...), user=Depends(get_current_user)):
@@ -4975,8 +4963,7 @@ def estadisticas_tecnicos(
 
     conn.close()
 
-    return templates.TemplateResponse("estadisticas_tecnicos.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "estadisticas_tecnicos.html", {
         "user": user,
         "stats": stats,
         "fecha_inicio": fecha_inicio,

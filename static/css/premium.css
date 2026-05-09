@@ -1,0 +1,102 @@
+:root {
+    --primary: #0f172a;
+    --primary-light: #1e293b;
+    --accent: #5c7f9c; /* Muted Slate Blue */
+    --accent-hover: #4a667e;
+    --success: #678d7a; /* Muted Sage Green */
+    --warning: #b5a48b; /* Muted Tan/Gold */
+    --danger: #9c6c6c; /* Muted Dusty Rose */
+    --bg-app: #0f172a; /* Dark sleek background */
+    --card-bg: rgba(255, 255, 255, 0.96);
+    --card-border: rgba(15, 23, 42, 0.08);
+    --text-main: #334155; /* Slate 700 - Professional Dark Gray */
+    --text-muted: #64748b; /* Slate 500 */
+    --border: rgba(226, 232, 240, 0.8);
+    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --radius: 16px;
+}
+
+body {
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+}
+
+.premium-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(15px);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12); /* Stronger shadow */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    border-color: var(--accent);
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted); /* More neutral label */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.btn-premium {
+    background-color: var(--accent);
+    color: white;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    transition: background 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-premium:hover {
+    background-color: var(--accent-hover);
+    color: white;
+    text-decoration: none;
+}
+
+/* Fix for vertical buttons */
+.btn-vertical-fix {
+    writing-mode: horizontal-tb !important;
+    transform: none !important;
+    padding: 6px 12px !important;
+}
+
+.navbar-premium {
+    background: var(--primary);
+    padding: 1rem;
+}
+
+.navbar-premium .nav-link {
+    color: #cbd5e1 !important;
+    font-weight: 500;
+}
+
+.navbar-premium .nav-link.active {
+    color: #ffffff !important;
+}
