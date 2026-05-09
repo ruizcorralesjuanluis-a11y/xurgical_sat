@@ -36,3 +36,4 @@ et_xmlfile
 six
 colorama
 python-dotenv
+cloudinary

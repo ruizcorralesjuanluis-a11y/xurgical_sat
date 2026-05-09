@@ -251,7 +251,7 @@
                         <label class="form-label fw-bold">QC Foto Entrada 1 (Diagnóstico)</label>
                         {% if qc.qc_foto_entrada_1 %}
                         <div class="mb-2">
-                            <img src="{{ qc.qc_foto_entrada_1 }}" class="img-thumbnail" style="height: 100px;">
+                            <img src="{{ qc.qc_foto_entrada_1 | image_url }}" class="img-thumbnail" style="height: 100px;">
                         </div>
                         {% endif %}
                         <input type="file" name="qc_foto_entrada_1" class="form-control" accept="image/*"
@@ -261,7 +261,7 @@
                         <label class="form-label fw-bold">QC Foto Entrada 2 (Diagnóstico)</label>
                         {% if qc.qc_foto_entrada_2 %}
                         <div class="mb-2">
-                            <img src="{{ qc.qc_foto_entrada_2 }}" class="img-thumbnail" style="height: 100px;">
+                            <img src="{{ qc.qc_foto_entrada_2 | image_url }}" class="img-thumbnail" style="height: 100px;">
                         </div>
                         {% endif %}
                         <input type="file" name="qc_foto_entrada_2" class="form-control" accept="image/*"
@@ -272,7 +272,7 @@
                         <label class="form-label fw-bold">QC Foto Salida 1 (Reparación)</label>
                         {% if qc.qc_foto_salida_1 %}
                         <div class="mb-2">
-                            <img src="{{ qc.qc_foto_salida_1 }}" class="img-thumbnail" style="height: 100px;">
+                            <img src="{{ qc.qc_foto_salida_1 | image_url }}" class="img-thumbnail" style="height: 100px;">
                         </div>
                         {% endif %}
                         <input type="file" name="qc_foto_salida_1" class="form-control" accept="image/*"
@@ -282,7 +282,7 @@
                         <label class="form-label fw-bold">QC Foto Salida 2 (Reparación)</label>
                         {% if qc.qc_foto_salida_2 %}
                         <div class="mb-2">
-                            <img src="{{ qc.qc_foto_salida_2 }}" class="img-thumbnail" style="height: 100px;">
+                            <img src="{{ qc.qc_foto_salida_2 | image_url }}" class="img-thumbnail" style="height: 100px;">
                         </div>
                         {% endif %}
                         <input type="file" name="qc_foto_salida_2" class="form-control" accept="image/*"

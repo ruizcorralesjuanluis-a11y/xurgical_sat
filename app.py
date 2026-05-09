@@ -64,7 +64,7 @@ try:
 except Exception:  # pragma: no cover
     load_workbook = None
 
-from fastapi import FastAPI, Request, UploadFile, File, Form, Depends, HTTPException
+from fastapi import FastAPI, Request, UploadFile, File, Form, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -96,6 +96,63 @@ except ImportError:
 
 app = FastAPI(title="Xurgical SAT")
 from fastapi.middleware.cors import CORSMiddleware
+
+# --- CONFIGURACIÓN DE CLOUDINARY ---
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+cloudinary.config(
+  cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"),
+  api_key = os.environ.get("CLOUDINARY_API_KEY"),
+  api_secret = os.environ.get("CLOUDINARY_API_SECRET"),
+  secure = True
+)
+
+def get_image_url(filename: str) -> str:
+    """Retorna la URL de la imagen. Si hay Cloudinary configurado, retorna la URL de la nube.
+    De lo contrario, retorna la ruta local."""
+    if not filename:
+        return ""
+    
+    # Si filename ya es una URL completa (empieza por http), la devolvemos tal cual
+    if filename.startswith("http"):
+        return filename
+    
+    # Si tenemos las claves de Cloudinary
+    if os.environ.get("CLOUDINARY_CLOUD_NAME"):
+        cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
+        # Quitamos /static/fotos/ si lo tiene
+        clean_name = filename.replace("/static/fotos/", "").replace("/fotos/", "")
+        return f"https://res.cloudinary.com/{cloud_name}/image/upload/xurgical/{clean_name}"
+    
+    # Si no, usamos la ruta local habitual
+    if filename.startswith("/"):
+        return filename
+    return f"/static/fotos/{filename}"
+
+async def _upload_to_cloudinary(content: bytes, filename: str) -> str:
+    """Sube un archivo a Cloudinary y retorna su URL pública."""
+    if not os.environ.get("CLOUDINARY_CLOUD_NAME"):
+        return ""
+    
+    # Limpiamos el nombre para que no tenga caracteres raros
+    public_id = re.sub(r"[^a-zA-Z0-9.-]", "_", filename)
+    # Cloudinary no quiere la extensión en el public_id por defecto si manejamos nosotros el formato
+    # pero vamos a dejarlo para que coincida con la BD
+    
+    try:
+        upload_result = cloudinary.uploader.upload(
+            content,
+            public_id = f"xurgical/{public_id}",
+            resource_type = "image",
+            overwrite = True,
+            invalidate = True
+        )
+        return upload_result.get("secure_url")
+    except Exception as e:
+        print(f"Error subiendo a Cloudinary: {e}")
+        return ""
 
 app.add_middleware(
     CORSMiddleware,
@@ -165,6 +222,7 @@ def format_fecha(value):
         return value
 
 templates.env.filters["fecha"] = format_fecha
+templates.env.filters["image_url"] = get_image_url
 
 
 
@@ -2806,6 +2864,12 @@ async def qc_optica_save(
                     out.write(content)
             
             public_url = f"/static/fotos/{fname}"
+            
+            # --- SUBIR A CLOUDINARY ---
+            cloudinary_url = await _upload_to_cloudinary(content, fname)
+            if cloudinary_url:
+                public_url = cloudinary_url
+
             qc_fotos_vals[key] = public_url
             
             # Borrar anterior si existía en la tabla QC
@@ -3564,6 +3628,11 @@ async def foto_webcam(instrumento_id: int, slot: int, request: Request, user=Dep
         f.write(raw)
 
     public_path = f"/static/fotos/{filename}"
+
+    # --- SUBIR A CLOUDINARY SI ESTÁ CONFIGURADO ---
+    cloudinary_url = await _upload_to_cloudinary(raw, filename)
+    if cloudinary_url:
+        public_path = cloudinary_url
 
     # borrar anterior si existe
     old_path = row.get("old")
@@ -4774,6 +4843,57 @@ def recogidas_list(request: Request, user=Depends(get_current_user)):
     return templates.TemplateResponse(request, "recogidas_list.html", {"user": user, "items": items})
 
 
+async def _migrate_photos_task():
+    """Tarea en segundo plano para migrar fotos a Cloudinary."""
+    if not os.environ.get("CLOUDINARY_CLOUD_NAME"):
+        print("MIGRACION: Cloudinary no configurado. Abortando.")
+        return
+
+    conn = get_conn()
+    cur = conn.cursor()
+    
+    # 1. Buscar fotos de instrumentos
+    cur.execute("SELECT id, foto_entrada_1, foto_entrada_2, foto_entrada_3, foto_entrada_4, foto_entrada_5, foto_entrada_6 FROM instrumentos")
+    rows = cur.fetchall()
+    
+    total = 0
+    migrated = 0
+    errors = 0
+    
+    for row in rows:
+        for i in range(1, 7):
+            col = f"foto_entrada_{i}"
+            path_val = row[col]
+            if path_val and not path_val.startswith("http"):
+                filename = path_val.replace("/static/fotos/", "").replace("/fotos/", "")
+                local_path = os.path.join(FOTOS_DIR, filename)
+                
+                if os.path.exists(local_path):
+                    total += 1
+                    with open(local_path, "rb") as f:
+                        content = f.read()
+                    
+                    url = await _upload_to_cloudinary(content, filename)
+                    if url:
+                        migrated += 1
+                        print(f"MIGRACION: OK {filename}")
+                    else:
+                        errors += 1
+                        print(f"MIGRACION: ERROR en {filename}")
+        
+    print(f"MIGRACION FINALIZADA: {migrated}/{total} fotos migradas. Errores: {errors}")
+    conn.close()
+
+@app.get("/admin/migrate_to_cloudinary")
+async def trigger_migration(background_tasks: BackgroundTasks, user=Depends(require_roles("admin"))):
+    """Lanza la migración de fotos en segundo plano."""
+    if not os.environ.get("CLOUDINARY_CLOUD_NAME"):
+        return {"error": "Cloudinary no configurado en las variables de entorno"}
+        
+    background_tasks.add_task(_migrate_photos_task)
+    return {"msg": "Migración iniciada en segundo plano. Revisa los logs de Render para ver el progreso."}
+
+
 @app.post("/peticion_recogida/{peticion_id}/completar")
 def completar_peticion_recogida(peticion_id: int, user=Depends(require_roles("admin", "recepcion"))):
     conn = get_conn()
@@ -4834,9 +4954,21 @@ async def consulta_nueva(
             fname = f"consulta_{int(time.time())}_{uuid.uuid4().hex[:6]}_{safe_name}"
             path = os.path.join(FOTOS_DIR, fname)
             content = await f.read()
-            with open(path, "wb") as out:
-                out.write(content)
-            fotos_urls.append(f"/static/fotos/{fname}")
+            
+            # Guardar local como backup (si hay disco)
+            try:
+                with open(path, "wb") as out:
+                    out.write(content)
+            except:
+                pass
+            
+            # --- SUBIR A CLOUDINARY ---
+            public_url = f"/static/fotos/{fname}"
+            cloudinary_url = await _upload_to_cloudinary(content, fname)
+            if cloudinary_url:
+                public_url = cloudinary_url
+                
+            fotos_urls.append(public_url)
         else:
             fotos_urls.append(None)
 

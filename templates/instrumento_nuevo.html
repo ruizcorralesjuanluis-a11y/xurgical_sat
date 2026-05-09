@@ -203,7 +203,7 @@
             <div class="photo-box">
               {% set foto_url = inst['foto_entrada_' ~ i] %}
               {% if foto_url %}
-              <img src="{{ foto_url }}" alt="Foto {{ i }}">
+              <img src="{{ foto_url | image_url }}" alt="Foto {{ i }}">
               {% else %}
               <span class="muted">Sin foto</span>
               {% endif %}

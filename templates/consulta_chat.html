@@ -132,13 +132,13 @@
                     {% if consulta.foto_1 or consulta.foto_2 or consulta.foto_3 %}
                     <div class="row g-2 justify-content-center justify-content-md-start">
                         {% if consulta.foto_1 %}<div class="col-4 col-md-3"><a href="{{ consulta.foto_1 }}"
-                                target="_blank"><img src="{{ consulta.foto_1 }}"
+                                target="_blank"><img src="{{ consulta.foto_1 | image_url }}"
                                     class="img-fluid rounded shadow-sm img-preview border"></a></div>{% endif %}
                         {% if consulta.foto_2 %}<div class="col-4 col-md-3"><a href="{{ consulta.foto_2 }}"
-                                target="_blank"><img src="{{ consulta.foto_2 }}"
+                                target="_blank"><img src="{{ consulta.foto_2 | image_url }}"
                                     class="img-fluid rounded shadow-sm img-preview border"></a></div>{% endif %}
                         {% if consulta.foto_3 %}<div class="col-4 col-md-3"><a href="{{ consulta.foto_3 }}"
-                                target="_blank"><img src="{{ consulta.foto_3 }}"
+                                target="_blank"><img src="{{ consulta.foto_3 | image_url }}"
                                     class="img-fluid rounded shadow-sm img-preview border"></a></div>{% endif %}
                     </div>
                     {% endif %}

@@ -420,7 +420,7 @@
               <strong>Foto {{ i }}</strong>
               <a class="btn btn-sm btn-outline-primary" href="{{ foto_url }}" target="_blank">Abrir</a>
             </div>
-            <img class="photo-img" src="{{ foto_url }}" alt="Foto {{ i }}">
+            <img class="photo-img" src="{{ foto_url | image_url }}" alt="Foto {{ i }}">
           </div>
         </div>
         {% endif %}

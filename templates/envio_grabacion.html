@@ -302,7 +302,7 @@
                 {% for i in range(1, 7) %}
                 {% set f = 'foto_entrada_' ~ i %}
                 {% if inst[f] %}
-                <img src="{{ inst[f] }}" class="thumb" alt="Foto {{ i }}">
+                <img src="{{ inst[f] | image_url }}" class="thumb" alt="Foto {{ i }}">
                 {% else %}
                 <div class="placeholder">Falta {{ i }}</div>
                 {% endif %}
