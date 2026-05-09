@@ -4968,28 +4968,6 @@ def count_consultas_unread(user=Depends(get_current_user)):
 # -----------------------------
 # CONSULTAS TÉCNICAS (Chat)
 # -----------------------------
-@app.get("/admin/debug_articulos")
-async def debug_articulos(user=Depends(require_roles("admin"))):
-    """Ruta de diagnóstico para el catálogo."""
-    import os
-    error_msg = None
-    try:
-        # Forzamos la carga para ver si da error
-        load_articulos_map(force_refresh=True)
-    except Exception as e:
-        error_msg = str(e)
-        
-    res = {
-        "cwd": os.getcwd(),
-        "base_dir": str(BASE_DIR),
-        "excel_path_default": str(BASE_DIR / 'Articulos.xlsx'),
-        "excel_exists": os.path.exists(str(BASE_DIR / 'Articulos.xlsx')),
-        "pandas_ok": pd is not None,
-        "items_in_memory": len(_articulos_map) if _articulos_map else 0,
-        "error": error_msg
-    }
-    return res
-
 @app.post("/consultas/nueva")
 async def consulta_nueva(
     titulo: str = Form(...),
