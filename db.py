@@ -203,6 +203,7 @@ def init_db():
         role TEXT NOT NULL,
         is_active INTEGER NOT NULL DEFAULT 1,
         cliente_id INTEGER,
+        color TEXT,
         created_at {dt}
     )
     """)
@@ -211,6 +212,8 @@ def init_db():
     cols_users = get_table_columns(cur, "users")
     if "cliente_id" not in cols_users:
         cur.execute("ALTER TABLE users ADD COLUMN cliente_id INTEGER")
+    if "color" not in cols_users:
+        cur.execute("ALTER TABLE users ADD COLUMN color TEXT")
 
     # 2. Clientes
     cur.execute(f"""
@@ -578,6 +581,20 @@ def init_db():
     if "num_peticion" not in cols_pr:
         cur.execute("ALTER TABLE peticiones_recogida ADD COLUMN num_peticion TEXT")
         cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_peticiones_num ON peticiones_recogida(num_peticion)")
+
+    # 13. VACACIONES (NUEVO)
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS vacaciones (
+        id {pk},
+        user_id INTEGER NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        tipo TEXT DEFAULT 'natural', -- natural, laboral
+        observaciones TEXT,
+        creado_en {dt},
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
 
     # Migración: Vincular automáticamente envíos con cliente_id si coinciden por nombre
     cur.execute("""

@@ -5166,3 +5166,118 @@ def estadisticas_tecnicos(
             "total": total_general
         }
     })
+
+# -----------------------------
+# VACACIONES (NUEVO)
+# -----------------------------
+
+@app.get("/vacaciones")
+def view_vacaciones(
+    request: Request,
+    user=Depends(require_roles("admin", "socio")),
+):
+    conn = get_conn()
+    cur = conn.cursor()
+    # Listado de personal para el lateral
+    cur.execute("SELECT id, username, color FROM users WHERE is_active=1 ORDER BY username ASC")
+    users_list = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    
+    return templates.TemplateResponse(request, "vacaciones.html", {
+        "user": user,
+        "users": users_list
+    })
+
+@app.get("/api/vacaciones")
+def api_get_vacaciones(
+    user=Depends(require_roles("admin", "recepcion", "tecnico", "grabado", "socio", "cliente")),
+):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT v.*, u.username, u.color 
+        FROM vacaciones v
+        JOIN users u ON v.user_id = u.id
+    """)
+    rows = cur.fetchall()
+    conn.close()
+    
+    events = []
+    for r in rows:
+        # FullCalendar espera 'end' exclusivo, pero en nuestro input de fecha es inclusivo
+        # Para que se pinte bien si es 1 solo día (ej: 01-01 al 01-01), le sumamos un día al end para el calendario
+        try:
+            from datetime import datetime, timedelta
+            end_dt = datetime.strptime(r["fecha_fin"], "%Y-%m-%d") + timedelta(days=1)
+            end_str = end_dt.strftime("%Y-%m-%d")
+        except:
+            end_str = r["fecha_fin"]
+            
+        events.append({
+            "id": r["id"],
+            "title": f"{r['username']} ({r['tipo'][0].upper()})",
+            "start": r["fecha_inicio"],
+            "end": end_str,
+            "color": r["color"] or "#0d6efd",
+            "extendedProps": {
+                "username": r["username"],
+                "tipo": r["tipo"],
+                "obs": r["observaciones"]
+            }
+        })
+    return events
+
+@app.post("/api/vacaciones")
+async def api_post_vacacion(
+    request: Request,
+    user=Depends(require_roles("admin")),
+):
+    data = await request.json()
+    user_id = data.get("user_id")
+    f_start = data.get("fecha_inicio")
+    f_end = data.get("fecha_fin")
+    tipo = data.get("tipo", "natural")
+    obs = data.get("observaciones", "")
+    
+    if not user_id or not f_start or not f_end:
+        raise HTTPException(status_code=400, detail="Faltan datos")
+        
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO vacaciones (user_id, fecha_inicio, fecha_fin, tipo, observaciones)
+        VALUES (?, ?, ?, ?, ?)
+    """, (user_id, f_start, f_end, tipo, obs))
+    conn.commit()
+    conn.close()
+    return {"status": "ok"}
+
+@app.delete("/api/vacaciones/{vac_id}")
+def api_delete_vacacion(
+    vac_id: int,
+    user=Depends(require_roles("admin")),
+):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM vacaciones WHERE id=?", (vac_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "ok"}
+
+@app.post("/api/usuarios/{u_id}/color")
+async def api_post_user_color(
+    u_id: int,
+    request: Request,
+    user=Depends(require_roles("admin")),
+):
+    data = await request.json()
+    color = data.get("color")
+    if not color:
+        raise HTTPException(status_code=400, detail="Falta color")
+        
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET color=? WHERE id=?", (color, u_id))
+    conn.commit()
+    conn.close()
+    return {"status": "ok"}
