@@ -134,26 +134,31 @@
       min-height: 20px;
     }
 
-    /* SOLUCIÓN FINAL: LÍNEAS FINAS QUE ESTIRAN */
+    /* RECONSTRUCCIÓN TOTAL VISTA AÑO */
+    .fc-view-multiMonthYear .fc-daygrid-day-frame {
+      min-height: 50px !important; /* Forzar que la celda sea alta */
+    }
     .fc-view-multiMonthYear .fc-daygrid-day-events {
-      min-height: 40px !important; /* Espacio de sobra para apilar hilos */
-      padding-top: 18px !important;
+      margin-bottom: 0 !important;
     }
     .fc-view-multiMonthYear .fc-daygrid-event-harness {
-      visibility: visible !important;
       display: block !important;
+      visibility: visible !important;
     }
     .fc-view-multiMonthYear .fc-daygrid-event {
-      height: 4px !important;
-      min-height: 4px !important;
-      margin: 0 !important;
-      padding: 0 !important;
+      height: 3px !important;
+      min-height: 3px !important;
       font-size: 0 !important;
-      border-radius: 0 !important;
+      margin: 1px 0 !important;
       border: none !important;
+      border-radius: 0 !important;
     }
     .fc-view-multiMonthYear .fc-daygrid-more-link {
       display: none !important;
+    }
+    .fc-view-multiMonthYear .fc-daygrid-event-harness-abs {
+      visibility: visible !important;
+      display: block !important;
     }
   </style>
 </head>
