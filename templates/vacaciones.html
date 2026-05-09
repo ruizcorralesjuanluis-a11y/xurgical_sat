@@ -321,8 +321,14 @@
         titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
         dayHeaderFormat: { weekday: 'short' },
         selectable: true,
-        dayMaxEvents: 99, // Forzar mostrar todos los eventos en vista mes
-        multiMonthMaxEvents: 99, // Forzar mostrar todos los eventos en vista año
+        dayMaxEvents: false,
+        multiMonthMaxEvents: false,
+        views: {
+          multiMonthYear: {
+            multiMonthMaxEvents: false,
+            dayMaxEvents: false
+          }
+        },
         events: '/api/vacaciones',
         select: function (info) {
           document.getElementById('eventForm').reset();
