@@ -439,7 +439,9 @@ def load_articulos_map(force_refresh=False) -> dict:
         try:
             engine = 'openpyxl' if path.lower().endswith('.xlsx') else None
             df = pd.read_excel(path, engine=engine)
-        except Exception: pass
+        except Exception as e:
+            print(f">>> [ARTICULOS] Error leyendo Excel: {e}", flush=True)
+            raise e
 
     if df is not None:
         cols_raw = [str(c).strip() for c in df.columns]
@@ -4957,14 +4959,21 @@ def count_consultas_unread(user=Depends(get_current_user)):
 async def debug_articulos(user=Depends(require_roles("admin"))):
     """Ruta de diagnóstico para el catálogo."""
     import os
+    error_msg = None
+    try:
+        # Forzamos la carga para ver si da error
+        load_articulos_map(force_refresh=True)
+    except Exception as e:
+        error_msg = str(e)
+        
     res = {
         "cwd": os.getcwd(),
         "base_dir": str(BASE_DIR),
-        "files_in_root": os.listdir("."),
         "excel_path_default": str(BASE_DIR / 'Articulos.xlsx'),
         "excel_exists": os.path.exists(str(BASE_DIR / 'Articulos.xlsx')),
         "pandas_ok": pd is not None,
-        "items_in_memory": len(_articulos_map) if _articulos_map else 0
+        "items_in_memory": len(_articulos_map) if _articulos_map else 0,
+        "error": error_msg
     }
     return res
 
