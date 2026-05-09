@@ -5216,7 +5216,11 @@ def view_vacaciones(
                         tmp += timedelta(days=1)
                     laboral_total += count_lab
                 else:
-                    natural_total += count_natural
+                    # REGLA CONVENIO: Si empieza lunes o termina viernes, suma +2
+                    extra = 0
+                    if d1.weekday() == 0: extra += 2 # Lunes
+                    if d2.weekday() == 4: extra += 2 # Viernes
+                    natural_total += (count_natural + extra)
             except:
                 pass
         
