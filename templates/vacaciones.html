@@ -126,11 +126,22 @@
     /* Estilos de los eventos */
     .fc-event {
       border: none !important;
-      border-radius: 3px !important;
+      border-radius: 2px !important;
       padding: 1px 4px !important;
       font-size: 0.7rem !important;
       font-weight: 600 !important;
       cursor: pointer;
+    }
+    /* Líneas ultra-finas para vista de año */
+    .fc-multimonth-daygrid-event {
+      height: 12px !important;
+      line-height: 12px !important;
+      font-size: 0.55rem !important;
+      padding: 0 2px !important;
+      margin-bottom: 1px !important;
+    }
+    .fc-multimonth-daygrid-event .fc-event-title {
+      font-weight: 700 !important;
     }
   </style>
 </head>
@@ -332,6 +343,7 @@
         dayHeaderFormat: { weekday: 'short' },
         selectable: true,
         dayMaxEvents: 99, 
+        multiMonthMaxEvents: 99, // Forzar en vista año también
         eventDisplay: 'block',
         events: '/api/vacaciones',
         select: function (info) {
