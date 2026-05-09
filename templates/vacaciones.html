@@ -429,8 +429,8 @@
           });
           if (resp.ok) {
             eventModal.hide();
-            calendar.refetchEvents();
-            Swal.fire({ icon: 'success', title: 'Guardado', timer: 1500, showConfirmButton: false });
+            // Recargamos la página entera para que los saldos de la izquierda se actualicen
+            window.location.reload();
           } else {
             const err = await resp.text();
             alert("Error: " + err);
@@ -472,8 +472,7 @@
         try {
           const resp = await fetch(`/api/vacaciones/${id}`, { method: 'DELETE' });
           if (resp.ok) {
-            calendar.refetchEvents();
-            Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1000, showConfirmButton: false });
+            window.location.reload();
           }
         } catch (e) {
           alert("Error al eliminar");
