@@ -122,8 +122,14 @@ def get_image_url(filename: str) -> str:
     # Si tenemos las claves de Cloudinary
     if os.environ.get("CLOUDINARY_CLOUD_NAME"):
         cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME")
-        # Quitamos /static/fotos/ si lo tiene
+        # Quitamos rutas estáticas
         clean_name = filename.replace("/static/fotos/", "").replace("/fotos/", "")
+        
+        # Para evitar problemas de doble extensión, si el archivo ya termina en .jpg, .png, etc.
+        # Cloudinary lo sirve mejor si pedimos el nombre base + extensión.
+        # PERO, si lo subimos con la extensión en el public_id (como hemos hecho con las primeras),
+        # necesitamos un pequeño truco.
+        
         return f"https://res.cloudinary.com/{cloud_name}/image/upload/xurgical/{clean_name}"
     
     # Si no, usamos la ruta local habitual
@@ -136,10 +142,11 @@ async def _upload_to_cloudinary(content: bytes, filename: str) -> str:
     if not os.environ.get("CLOUDINARY_CLOUD_NAME"):
         return ""
     
-    # Limpiamos el nombre para que no tenga caracteres raros
-    public_id = re.sub(r"[^a-zA-Z0-9.-]", "_", filename)
-    # Cloudinary no quiere la extensión en el public_id por defecto si manejamos nosotros el formato
-    # pero vamos a dejarlo para que coincida con la BD
+    # Limpiamos el nombre
+    # IMPORTANTE: Cloudinary prefiere que el public_id NO tenga extensión.
+    # Vamos a quitarla para las nuevas subidas.
+    name_only, ext = os.path.splitext(filename)
+    public_id = re.sub(r"[^a-zA-Z0-9.-]", "_", name_only)
     
     try:
         upload_result = cloudinary.uploader.upload(
@@ -149,6 +156,7 @@ async def _upload_to_cloudinary(content: bytes, filename: str) -> str:
             overwrite = True,
             invalidate = True
         )
+        # Retornamos la URL segura que nos da Cloudinary
         return upload_result.get("secure_url")
     except Exception as e:
         print(f"Error subiendo a Cloudinary: {e}")
