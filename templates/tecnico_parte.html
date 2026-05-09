@@ -207,7 +207,7 @@
                 {% endif %}
 
                 {% if ns_pic.first %}
-                <img src="{{ ns_pic.first }}" class="inst-img" alt="Foto Instrumento">
+                <img src="{{ ns_pic.first | image_url }}" class="inst-img" alt="Foto Instrumento">
                 {% else %}
                 <div class="inst-img d-flex align-items-center justify-content-center text-secondary">
                     <i class="fa-solid fa-image fa-3x"></i>
@@ -557,13 +557,13 @@
                 try {
                     html5QrCode = new Html5Qrcode("reader");
                     const config = {
-                        fps: 30,
+                        fps: 50, // Más rápido para mejor respuesta
                         qrbox: (viewfinderWidth, viewfinderHeight) => {
                             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                            const size = Math.floor(minEdge * 0.75);
+                            const size = Math.floor(minEdge * 0.70);
                             return { width: size, height: size };
                         },
-                        aspectRatio: 1.0,
+                        disableFlip: true, // Importante para cámara trasera
                         experimentalFeatures: {
                             useBarCodeDetectorIfSupported: true
                         }
