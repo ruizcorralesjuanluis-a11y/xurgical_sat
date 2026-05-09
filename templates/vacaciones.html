@@ -128,7 +128,6 @@
       display: none !important;
     }
     .fc-daygrid-event-harness {
-      display: block !important;
       visibility: visible !important;
       margin-top: 1px !important;
     }
@@ -353,8 +352,9 @@
         titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
         dayHeaderFormat: { weekday: 'short' },
         selectable: true,
-        dayMaxEvents: false,
-        multiMonthMaxEvents: false,
+        dayMaxEvents: 99, 
+        multiMonthMaxEvents: 99,
+        eventDisplay: 'block', // Forzar que sean bloques/barras
         views: {
           multiMonthYear: {
             multiMonthMaxEvents: false,
