@@ -64,7 +64,7 @@ try:
 except Exception:  # pragma: no cover
     load_workbook = None
 
-from fastapi import FastAPI, Request, UploadFile, File, Form, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Request, UploadFile, File, Form, Depends, HTTPException, BackgroundTasks, Query
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
