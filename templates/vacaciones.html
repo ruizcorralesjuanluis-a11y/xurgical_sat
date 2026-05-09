@@ -135,26 +135,33 @@
     }
 
     /* SOLUCIÓN ATÓMICA PARA VISTA AÑO */
-    .fc-view-multiMonthYear .fc-daygrid-day-events {
+    /* Target ANY view that might be showing the year/multi-month */
+    .fc-multiMonthYear-view .fc-daygrid-day-events,
+    .fc-view-multiMonthYear .fc-daygrid-day-events,
+    [class*="multiMonth"] [class*="day-events"] {
       display: flex !important;
       flex-direction: column !important;
       gap: 1px !important;
-      padding-top: 20px !important; /* Espacio para el número del día */
+      padding-top: 18px !important;
     }
-    .fc-view-multiMonthYear .fc-daygrid-event-harness {
+
+    [class*="multiMonth"] [class*="event-harness"] {
       position: static !important;
       visibility: visible !important;
       display: block !important;
       width: 100% !important;
     }
-    .fc-view-multiMonthYear .fc-daygrid-event {
+
+    [class*="multiMonth"] [class*="event"] {
       height: 4px !important;
+      min-height: 4px !important;
       margin: 0 !important;
       padding: 0 !important;
       font-size: 0 !important;
       border-radius: 0 !important;
     }
-    .fc-view-multiMonthYear .fc-daygrid-more-link {
+
+    [class*="more-link"] {
       display: none !important;
     }
   </style>
@@ -167,7 +174,7 @@
       <div class="d-flex align-items-center justify-content-between w-100">
         <div class="d-flex align-items-center gap-3">
           <img src="/static/logo-xurgical.png" alt="Xurgical" style="height: 40px;">
-          <h4 class="mb-0 fw-bold text-primary">Calendario de Vacaciones</h4>
+          <h4 class="mb-0 fw-bold text-primary">Calendario de Vacaciones <small class="text-muted" style="font-size:0.6rem">v2.2</small></h4>
         </div>
         <div class="d-flex gap-2">
           <button onclick="window.print()" class="btn btn-outline-dark btn-sm no-print">
