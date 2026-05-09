@@ -320,16 +320,16 @@ def load_articulos_map(force_refresh=False) -> dict:
     if not force_refresh:
         try:
             cur.execute("SELECT codigo, descripcion, fabricante FROM articulos_catalogo")
-        rows = cur.fetchall()
-        if rows:
-            for r in rows:
-                m[r["codigo"]] = {"descripcion": r["descripcion"], "fabricante": r["fabricante"]}
-            _articulos_map = m
-            conn.close()
-            print(f">>> [ARTICULOS] {len(m)} artículos cargados desde la Base de Datos.", flush=True)
-            return _articulos_map
-    except Exception as e:
-        print(f">>> [ARTICULOS] Error leyendo de BD: {e}", flush=True)
+            rows = cur.fetchall()
+            if rows:
+                for r in rows:
+                    m[r["codigo"]] = {"descripcion": r["descripcion"], "fabricante": r["fabricante"]}
+                _articulos_map = m
+                conn.close()
+                print(f">>> [ARTICULOS] {len(m)} artículos cargados desde la Base de Datos.", flush=True)
+                return _articulos_map
+        except Exception as e:
+            print(f">>> [ARTICULOS] Error leyendo de BD: {e}", flush=True)
 
     # 2. Si la BD está vacía, cargar desde EXCEL y GUARDAR en la BD
     path = ARTICULOS_XLS if os.path.exists(ARTICULOS_XLS) else ARTICULOS_XLSX
