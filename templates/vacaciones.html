@@ -123,25 +123,35 @@
       }
     }
 
-    /* Estilos de los eventos */
+    /* Estilos base de los eventos (Vista Mes/Semana) */
     .fc-event {
       border: none !important;
-      border-radius: 2px !important;
+      border-radius: 4px !important;
       padding: 1px 4px !important;
-      font-size: 0.7rem !important;
+      font-size: 0.75rem !important;
       font-weight: 600 !important;
       cursor: pointer;
+      min-height: 20px;
     }
-    /* Líneas ultra-finas para vista de año */
+
+    /* SOLUCIÓN DEFINITIVA PARA VISTA AÑO (Líneas finas) */
     .fc-multimonth-daygrid-event {
-      height: 12px !important;
-      line-height: 12px !important;
-      font-size: 0.55rem !important;
-      padding: 0 2px !important;
-      margin-bottom: 1px !important;
+      height: 4px !important;
+      margin-bottom: 2px !important;
+      padding: 0 !important;
+      font-size: 0 !important; /* Ocultamos texto en año para que solo sea la línea de color */
+      border-radius: 0 !important;
     }
-    .fc-multimonth-daygrid-event .fc-event-title {
-      font-weight: 700 !important;
+    /* Forzar que se vean todos los eventos ocultos */
+    .fc-daygrid-event-harness.fc-daygrid-event-harness-abs {
+      visibility: visible !important;
+      display: block !important;
+    }
+    .fc-daygrid-more-link {
+      display: none !important;
+    }
+    .fc-multimonth-daygrid-day-events {
+      min-height: 20px;
     }
   </style>
 </head>
