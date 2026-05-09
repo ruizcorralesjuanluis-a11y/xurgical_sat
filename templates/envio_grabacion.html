@@ -283,9 +283,9 @@
             data-inst-ge="{{ inst.codigo_cliente or '' }}"
             data-inst-nt="{{ (inst.nombre_trazabilidad or '')|e }}" data-inst-marca="{{ inst.fabricante or '' }}"
             data-inst-modelo="{{ inst.codigo_producto or '' }}" data-inst-denom="{{ inst.denominacion or '' }}"
-            data-inst-foto1="{{ inst.foto_entrada_1 or '' }}" data-inst-foto2="{{ inst.foto_entrada_2 or '' }}"
-            data-inst-foto3="{{ inst.foto_entrada_3 or '' }}" data-inst-foto4="{{ inst.foto_entrada_4 or '' }}"
-            data-inst-foto5="{{ inst.foto_entrada_5 or '' }}" data-inst-foto6="{{ inst.foto_entrada_6 or '' }}"
+            data-inst-foto1="{{ inst.foto_entrada_1 | image_url }}" data-inst-foto2="{{ inst.foto_entrada_2 | image_url }}"
+            data-inst-foto3="{{ inst.foto_entrada_3 | image_url }}" data-inst-foto4="{{ inst.foto_entrada_4 | image_url }}"
+            data-inst-foto5="{{ inst.foto_entrada_5 | image_url }}" data-inst-foto6="{{ inst.foto_entrada_6 | image_url }}"
             data-inst-obs="{{ inst.observaciones or '' }}" data-inst-grabado="{{ 1 if is_grabado else 0 }}">
 
             <div class="inst-header">
