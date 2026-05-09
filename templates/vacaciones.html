@@ -134,34 +134,25 @@
       min-height: 20px;
     }
 
-    /* SOLUCIÓN ATÓMICA PARA VISTA AÑO */
-    /* Target ANY view that might be showing the year/multi-month */
-    .fc-multiMonthYear-view .fc-daygrid-day-events,
-    .fc-view-multiMonthYear .fc-daygrid-day-events,
-    [class*="multiMonth"] [class*="day-events"] {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 1px !important;
+    /* SOLUCIÓN FINAL: LÍNEAS FINAS QUE ESTIRAN */
+    .fc-view-multiMonthYear .fc-daygrid-day-events {
+      min-height: 40px !important; /* Espacio de sobra para apilar hilos */
       padding-top: 18px !important;
     }
-
-    [class*="multiMonth"] [class*="event-harness"] {
-      position: static !important;
+    .fc-view-multiMonthYear .fc-daygrid-event-harness {
       visibility: visible !important;
       display: block !important;
-      width: 100% !important;
     }
-
-    [class*="multiMonth"] [class*="event"] {
+    .fc-view-multiMonthYear .fc-daygrid-event {
       height: 4px !important;
       min-height: 4px !important;
       margin: 0 !important;
       padding: 0 !important;
       font-size: 0 !important;
       border-radius: 0 !important;
+      border: none !important;
     }
-
-    [class*="more-link"] {
+    .fc-view-multiMonthYear .fc-daygrid-more-link {
       display: none !important;
     }
   </style>
