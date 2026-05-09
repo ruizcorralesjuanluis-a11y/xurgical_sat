@@ -105,22 +105,43 @@
     .fc-day-today {
       background: var(--fc-today-bg-color) !important;
     }
+    /* Estilos de impresión */
+    @media print {
+      .sidebar, .btn, .fc-header-toolbar button, .navbar, .no-print {
+        display: none !important;
+      }
+      .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+      }
+      .card {
+        border: none !important;
+        box-shadow: none !important;
+      }
+      body {
+        background: white !important;
+      }
+    }
   </style>
 </head>
 
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4 shadow-sm">
     <div class="container-fluid px-4">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-        <i class="fa-solid fa-calendar-day text-warning"></i>
-        <span class="fw-bold">Gestión de Vacaciones</span>
-      </a>
-      <div class="d-flex align-items-center gap-3">
-        <span class="text-white-50 small">Panel Administrativo</span>
-        <a href="/" class="btn btn-outline-light btn-sm">
-          <i class="fa-solid fa-house"></i> Dashboard
-        </a>
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div class="d-flex align-items-center gap-3">
+          <img src="/static/logo-xurgical.png" alt="Xurgical" style="height: 40px;">
+          <h4 class="mb-0 fw-bold text-primary">Calendario de Vacaciones</h4>
+        </div>
+        <div class="d-flex gap-2">
+          <button onclick="window.print()" class="btn btn-outline-dark btn-sm no-print">
+            <i class="fa-solid fa-print"></i> Imprimir
+          </button>
+          <a href="/dashboard" class="btn btn-outline-secondary btn-sm no-print">
+            <i class="fa-solid fa-house"></i> Dashboard
+          </a>
+        </div>
       </div>
     </div>
   </nav>
@@ -300,6 +321,7 @@
         titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
         dayHeaderFormat: { weekday: 'short' },
         selectable: true,
+        dayMaxEvents: false, // Mostrar todos los eventos siempre, sin comprimir en "+ more"
         events: '/api/vacaciones',
         select: function (info) {
           document.getElementById('eventForm').reset();
